@@ -7,6 +7,7 @@
 		<link rel="stylesheet" type="text/css" href="//unpkg.com/iview/dist/styles/iview.css">
 
 		<script src="//unpkg.com/vue"></script>
+		<script src="//unpkg.com/vue-router/dist/vue-router.js"></script>
 		<script src="//unpkg.com/iview/dist/iview.min.js"></script>
 		<script src="//unpkg.com/iview/dist/locale/en-US.js"></script>
 		<script>
@@ -29,8 +30,11 @@
 					<br />
 				</i-col>
 			</row>
+			<router-view></router-view>
+		</div>
 
-			<row v-if="selectedShipIdIndex == undefined">
+		<template id="ship-list">
+			<row>
 				<i-col span="24">
 					<i-table
 						:columns="attributeColumns"
@@ -41,11 +45,13 @@
 					</i-table>
 				</i-col>
 			</row>
+		</template>
 
-			<row v-if="selectedShipIdIndex != undefined" :gutter="16">
+		<template id="ship-details">
+			<row :gutter="16">
 				<i-col span="6">
-					<i-select v-model="selectedShipIdIndex">
-						<i-option v-for="(id, index) in shipIds" :value="index" :key="index">
+					<i-select :value="selectedShipIdIndex" @on-change="onChange">
+						<i-option v-for="(id, index) in $parent.shipIds" :value="index" :key="index">
 							{{id.loadoutId}}
 						</i-option>
 					</i-select>
@@ -77,7 +83,7 @@
 					<i-table :columns="survivabilityColumns" :data="selectedCustomization.getAttributes('Survivability')"></i-table>
 				</i-col>
 			</row>
-		</div>
+		</template>
 
 		<template id="component-display">
 			<i-button :disabled="disabled">

@@ -499,6 +499,23 @@ class ShipCustomization {
 	}
 }
 
+
+// Translate underlying data into model objects.
+for (key of Object.keys(shipSpecifications)) {
+	shipSpecifications[key] = new ShipSpecification(shipSpecifications[key]);
+}
+
+var mergedComponents = {}
+for (key of Object.keys(dataforgeComponents)) {
+	mergedComponents[key] = new DataforgeComponent(dataforgeComponents[key]);
+}
+for (key of Object.keys(spaceshipComponents)) {
+	if (!(key in mergedComponents)) {
+		mergedComponents[key] = new SpaceshipComponent(spaceshipComponents[key]);
+	}
+}
+
+
 var componentDisplay = Vue.component('component-display', {
 	template: '#component-display',
 	props: ['componentName', 'disabled'],
@@ -510,10 +527,6 @@ var componentDisplay = Vue.component('component-display', {
 		component: function () {
 			return mergedComponents[this.componentName];
 		}
-	},
-	watch: {
-	},
-	methods: {
 	}
 });
 
@@ -576,113 +589,48 @@ var componentSelector = Vue.component('component-selector', {
 	}
 });
 
-
-// Translate underlying data into model objects.
-for (key of Object.keys(shipSpecifications)) {
-	shipSpecifications[key] = new ShipSpecification(shipSpecifications[key]);
-}
-
-var mergedComponents = {}
-for (key of Object.keys(dataforgeComponents)) {
-	mergedComponents[key] = new DataforgeComponent(dataforgeComponents[key]);
-}
-for (key of Object.keys(spaceshipComponents)) {
-	if (!(key in mergedComponents)) {
-		mergedComponents[key] = new SpaceshipComponent(spaceshipComponents[key]);
-	}
-}
-
-
-var app = new Vue({
-	el: '#app',
-	data: {
-		selectedShipIdIndex: undefined,
-		selectedCustomization: {},
-
-		expandedSections: ["Weapons"],
-		sections: {
-			"Weapons": ['WeaponMissile', 'WeaponGun', 'Turret', 'TurretBase'],
-			"Systems": ['Cooler', 'Shield', 'PowerPlant']
-		},
-
-		attributeColumns: [
-			{
-				title: "Loadout",
-				key: "loadoutId",
-				sortable: true,
-				width: 240
-			},
-			{
-				title: "Normal Speed",
-				key: "Normal Speed",
-				sortable: true
-			},
-			{
-				title: "Afterburner Speed",
-				key: "Normal Speed",
-				sortable: true
-			},
-			{
-				title: "Cruise Speed",
-				key: "Normal Speed",
-				sortable: true
-			},
-			{
-				title: "Total Hitpoints",
-				key: "Total Hitpoints",
-				sortable: true
-			},
-			{
-				title: "Total Shields",
-				key: "Total Shields",
-				sortable: true
-			}
-		],
-		maneuverabilityColumns: [
-			{
-				title: "Maneuverability",
-				key: "name"
-			},
-			{
-				title: " ",
-				key: "value",
-				width: 100
-			}
-		],
-		survivabilityColumns: [
-			{
-				title: "Survivability",
-				key: "name"
-			},
-			{
-				title: " ",
-				key: "value",
-				width: 100
-			}
-		],
-	},
-	watch: {
-		selectedShipIdIndex: function (val) {
-			var shipId = this.shipIds[val];
-
-			this.selectedCustomization = new ShipCustomization(shipId);
+var shipList = Vue.component('ship-list', {
+	template: '#ship-list',
+	data: function() {
+		return {
+			attributeColumns: [
+				{
+					title: "Loadout",
+					key: "loadoutId",
+					sortable: true,
+					width: 240
+				},
+				{
+					title: "Normal Speed",
+					key: "Normal Speed",
+					sortable: true
+				},
+				{
+					title: "Afterburner Speed",
+					key: "Normal Speed",
+					sortable: true
+				},
+				{
+					title: "Cruise Speed",
+					key: "Normal Speed",
+					sortable: true
+				},
+				{
+					title: "Total Hitpoints",
+					key: "Total Hitpoints",
+					sortable: true
+				},
+				{
+					title: "Total Shields",
+					key: "Total Shields",
+					sortable: true
+				}
+			]
 		}
 	},
 	computed: {
-		shipIds: function () {
-			var unflattened = Object.values(shipSpecifications).map(n => n.getModificationLoadouts());
-			var flattened = unflattened.reduce((total, n) => total.concat(n), []);
-
-			var npcModifications = ["Pirate", "S42", "SQ42", "Dead", "CalMason", "Weak"];
-			var filtered = flattened.filter(x => !x.modificationId || !npcModifications.some(n => x.modificationId.includes(n)));
-
-			var npcSpecifications = ["Turret", "Old"];
-			var filtered = filtered.filter(x => !npcSpecifications.some(n => x.specificationId.includes(n)));
-
-			return filtered;
-		},
 		shipCustomizations: function() {
-			return this.shipIds.map(n => new ShipCustomization(n));
+			return this.$parent.shipIds.map(n => new ShipCustomization(n));
 		},
 		shipAttributes: function() {
 			var attributes = this.shipCustomizations.map(c => {
@@ -701,8 +649,53 @@ var app = new Vue({
 	},
 	methods: {
 		onRowClick(data, index) {
-			this.selectedShipIdIndex = index;
-		},
+			this.$router.push({ name: 'ships', params: { shipIdIndex: index }})
+		}
+	}
+});
+
+var shipDetails = Vue.component('ship-details', {
+	template: '#ship-details',
+	data: function() {
+		return {
+			selectedCustomization: {},
+			
+			expandedSections: ["Weapons"],
+			sections: {
+				"Weapons": ['WeaponMissile', 'WeaponGun', 'Turret', 'TurretBase'],
+				"Systems": ['Cooler', 'Shield', 'PowerPlant']
+			},
+
+			maneuverabilityColumns: [
+				{
+					title: "Maneuverability",
+					key: "name"
+				},
+				{
+					title: " ",
+					key: "value",
+					width: 100
+				}
+			],
+			survivabilityColumns: [
+				{
+					title: "Survivability",
+					key: "name"
+				},
+				{
+					title: " ",
+					key: "value",
+					width: 100
+				}
+			]
+		}
+	},
+	computed: {
+		selectedShipIdIndex() {
+			return Number(this.$route.params.shipIdIndex);
+		}
+	},
+	methods: {
 		getAttachedComponentName: function (portName, childPortName = undefined) {
 			var component = this.selectedCustomization.getAttachedComponent(portName, childPortName);
 			if (component) {
@@ -714,6 +707,54 @@ var app = new Vue({
 			if (component) {
 				return component.itemPorts;
 			}
+		},
+		onChange: function(shipIdIndex) {
+			this.$router.push({ name: 'ships', params: { shipIdIndex: shipIdIndex }})
 		}
+	},
+	
+	// TODO These hooks feel janky -- there should be a better way make the selection reactive.
+	created() {
+		var shipId = this.$parent.shipIds[this.selectedShipIdIndex];
+		this.selectedCustomization = new ShipCustomization(shipId);
+	},
+	beforeRouteUpdate(to, from, next) {
+		var shipId = this.$parent.shipIds[to.params.shipIdIndex];
+		this.selectedCustomization = new ShipCustomization(shipId);
+		next();
 	}
 });
+
+Vue.use(VueRouter)
+const router = new VueRouter({
+	routes: [
+		{
+			path: '/',
+			component: shipList
+		},
+		{
+			name: "ships",
+			path: '/ships/:shipIdIndex',
+			component: shipDetails
+		}
+	]
+});
+
+var app = new Vue({
+	router,
+	el: '#app',
+	computed: {
+		shipIds: function () {
+			var unflattened = Object.values(shipSpecifications).map(n => n.getModificationLoadouts());
+			var flattened = unflattened.reduce((total, n) => total.concat(n), []);
+
+			var npcModifications = ["Pirate", "S42", "SQ42", "Dead", "CalMason", "Weak"];
+			var filtered = flattened.filter(x => !x.modificationId || !npcModifications.some(n => x.modificationId.includes(n)));
+
+			var npcSpecifications = ["Turret", "Old"];
+			var filtered = filtered.filter(x => !npcSpecifications.some(n => x.specificationId.includes(n)));
+
+			return filtered;
+		}
+	}
+}).$mount('#app');
