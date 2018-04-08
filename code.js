@@ -624,6 +624,20 @@ var shipList = Vue.component('ship-list', {
 					title: "Total Shields",
 					key: "Total Shields",
 					sortable: true
+				},
+				{
+					title: 'Action',
+					width: 150,
+					align: 'center',
+					render: (h, params) => {
+						return h('Button', {
+							on: {
+								click: () => {
+									this.customize(params.index)
+								}
+							}
+						}, 'Customize');
+					}
 				}
 			]
 		}
@@ -648,7 +662,7 @@ var shipList = Vue.component('ship-list', {
 		}
 	},
 	methods: {
-		onRowClick(data, index) {
+		customize(index) {
 			this.$router.push({ name: 'ships', params: { shipIdIndex: index }})
 		}
 	}
