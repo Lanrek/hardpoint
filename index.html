@@ -3,16 +3,16 @@
 	<head>
 		<meta charset="utf-8">
 		<title>Hardpoint</title>
-		
-		<link rel="stylesheet" type="text/css" href="http://unpkg.com/iview/dist/styles/iview.css">
-		
+
+		<link rel="stylesheet" type="text/css" href="//unpkg.com/iview/dist/styles/iview.css">
+
 		<script src="//unpkg.com/vue"></script>
 		<script src="//unpkg.com/iview/dist/iview.min.js"></script>
 		<script src="//unpkg.com/iview/dist/locale/en-US.js"></script>
 		<script>
 			iview.lang('en-US');
 		</script>
-		
+
 		<script type="text/javascript" src="data/3.1.0-739258/shipSpecifications.js"></script>
 		<script type="text/javascript" src="data/3.1.0-739258/shipLoadouts.js"></script>
 		<script type="text/javascript" src="data/3.1.0-739258/spaceshipComponents.js"></script>
@@ -35,7 +35,7 @@
 					</i-select>
 				</i-col>
 			</row>
-			
+
 			<row>
 				<i-col span="16" v-if="selectedShipIdIndex != undefined">
 					<collapse v-model="expandedSections">
@@ -65,7 +65,7 @@
 				</i-col>
 			</row>
 		</div>
-		
+
 		<template id="component-display">
 			<i-button :disabled="disabled">
 				<row>
@@ -98,11 +98,11 @@
 					class="component-selector"
 					@on-visible-change="onVisibleChange"
 					@on-click="onClick">
-					
+
 					<component-display :component-name="selectedComponentName" :disabled="!itemPort.editable">
 					</component-display>
 					<span :class="{'flip-icon':visible}"><i class="ivu-icon ivu-icon-arrow-down-b ivu-select-arrow"></i></span>
-					
+
 					<dropdown-menu slot="list">
 						<dropdown-item v-for="componentName in availableComponents" :name="componentName" :key="componentName">
 							<component-display :component-name="componentName">
