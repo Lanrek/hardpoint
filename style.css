@@ -1,9 +1,46 @@
-#app {
-	padding: 32px;
+.layout {
+	border: 1px solid #d7dde4;
+	background: #f5f7f9;
+	border-radius: 4px;
+	max-width: 1200px;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.layout .header {
+	background-color: rgb(73, 80, 96);
+	padding: 8px 16px 8px 16px;
+	color: white;
+	line-height: normal;
+}
+
+.layout .header h1 {
+	padding-bottom: 8px;
+}
+
+.layout .header p {
+	padding-bottom: 8px;
+}
+
+.layout .content {
+	padding: 16px;
+}
+
+.layout .footer {
+	text-align: center;
+	padding: 8px 16px 8px 16px;
 }
 
 .right {
 	text-align: right;
+}
+
+/* Separate stacked tables. */
+.ivu-table-wrapper {
+	margin-top: 16px;
+}
+.ivu-table-wrapper:first-child {
+	margin-top: 0px;
 }
 
 /* Add a bit of space between the collapse section dropdown arrow and the header text. */

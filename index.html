@@ -23,14 +23,29 @@
 	</head>
 	<body>
 		<div id="app">
-			<row>
-				<i-col span="24">
-					<h1>Hardpoint</h1>
-					<p>An increasingly weaponized spreadsheet for Star Citizen ships and equipment</p>
-					<br />
-				</i-col>
-			</row>
-			<router-view></router-view>
+			<div class="layout">
+				<div class="header">
+				<row>
+					<i-col span="24">
+						<h1>Hardpoint</h1>
+					</i-col>
+				</row>
+				<row>
+					<i-col span="12">
+						<p>An increasingly weaponized spreadsheet for Star Citizen ships and equipment</p>
+					</i-col>
+					<i-col span="12" class="right">
+						<p>Star Citizen Version 3.1.0-739258</p>
+					</i-col>
+				</row>
+				</div>
+				<div class="content">
+					<router-view></router-view>
+				</div>
+				<div class="footer">
+					<p>Thanks to <a href="http://starcitizendb.com/">StarCitizenDB</a> for the data!</p>
+				</div>
+			</div>
 		</div>
 
 		<template id="ship-list">
