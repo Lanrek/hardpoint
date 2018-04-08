@@ -51,7 +51,7 @@
 			<row :gutter="16">
 				<i-col span="6">
 					<i-select :value="selectedShipIdIndex" @on-change="onChange">
-						<i-option v-for="(id, index) in $parent.shipIds" :value="index" :key="index">
+						<i-option v-for="(id, index) in $root.shipIds" :value="index" :key="index">
 							{{id.loadoutId}}
 						</i-option>
 					</i-select>

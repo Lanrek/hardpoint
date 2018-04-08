@@ -630,7 +630,7 @@ var shipList = Vue.component('ship-list', {
 	},
 	computed: {
 		shipCustomizations: function() {
-			return this.$parent.shipIds.map(n => new ShipCustomization(n));
+			return this.$root.shipIds.map(n => new ShipCustomization(n));
 		},
 		shipAttributes: function() {
 			var attributes = this.shipCustomizations.map(c => {
@@ -715,11 +715,11 @@ var shipDetails = Vue.component('ship-details', {
 	
 	// TODO These hooks feel janky -- there should be a better way make the selection reactive.
 	created() {
-		var shipId = this.$parent.shipIds[this.selectedShipIdIndex];
+		var shipId = this.$root.shipIds[this.selectedShipIdIndex];
 		this.selectedCustomization = new ShipCustomization(shipId);
 	},
 	beforeRouteUpdate(to, from, next) {
-		var shipId = this.$parent.shipIds[to.params.shipIdIndex];
+		var shipId = this.$root.shipIds[to.params.shipIdIndex];
 		this.selectedCustomization = new ShipCustomization(shipId);
 		next();
 	}
