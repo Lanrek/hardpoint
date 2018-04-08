@@ -751,6 +751,10 @@ const router = new VueRouter({
 			name: "ships",
 			path: '/ships/:shipIdIndex',
 			component: shipDetails
+		},
+		{
+			path: "*",
+			component: shipList
 		}
 	]
 });
