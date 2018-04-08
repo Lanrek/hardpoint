@@ -111,7 +111,10 @@
 
 		<template id="component-display">
 			<i-button :disabled="disabled">
-				<row>
+				<row v-if="componentName==undefined" style="text-align: center;">
+					Empty
+				</row>
+				<row v-if="componentName">
 					<i-col span="12">
 						<!-- componentName needs to be outside the conditional to bind correctly. Odd! -->
 						{{componentName}}
