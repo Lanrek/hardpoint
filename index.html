@@ -27,17 +27,30 @@
 					<h1>Hardpoint</h1>
 					<p>An increasingly weaponized spreadsheet for Star Citizen ships and equipment</p>
 					<br />
-					Ship
+				</i-col>
+			</row>
+
+			<row v-if="selectedShipIdIndex == undefined">
+				<i-col span="24">
+					<i-table
+						:columns="attributeColumns"
+						:data="shipAttributes"
+						@on-row-click="onRowClick"
+						highlight-row
+						stripe>
+					</i-table>
+				</i-col>
+			</row>
+
+			<row v-if="selectedShipIdIndex != undefined" :gutter="16">
+				<i-col span="6">
 					<i-select v-model="selectedShipIdIndex">
 						<i-option v-for="(id, index) in shipIds" :value="index" :key="index">
 							{{id.loadoutId}}
 						</i-option>
 					</i-select>
 				</i-col>
-			</row>
-
-			<row>
-				<i-col span="16" v-if="selectedShipIdIndex != undefined">
+				<i-col span="12">
 					<collapse v-model="expandedSections">
 						<panel v-for="sectionTypes, sectionName in sections" :key="sectionName" :name="sectionName">
 							{{sectionName}}
@@ -59,7 +72,7 @@
 						</panel>
 					</collapse>
 				</i-col>
-				<i-col span="8" v-if="selectedShipIdIndex != undefined">
+				<i-col span="6">
 					<i-table :columns="maneuverabilityColumns" :data="selectedCustomization.getAttributes('Maneuverability')"></i-table>
 					<i-table :columns="survivabilityColumns" :data="selectedCustomization.getAttributes('Survivability')"></i-table>
 				</i-col>
