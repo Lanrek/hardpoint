@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>Hardpoint</title>
+		
+		<link rel="stylesheet" type="text/css" href="http://unpkg.com/iview/dist/styles/iview.css">
+		
+		<script src="//unpkg.com/vue"></script>
+		<script src="//unpkg.com/iview/dist/iview.min.js"></script>
+		<script src="//unpkg.com/iview/dist/locale/en-US.js"></script>
+		<script>
+			iview.lang('en-US');
+		</script>
+		
+		<script type="text/javascript" src="data/3.1.0-739258/shipSpecifications.js"></script>
+		<script type="text/javascript" src="data/3.1.0-739258/shipLoadouts.js"></script>
+		<script type="text/javascript" src="data/3.1.0-739258/spaceshipComponents.js"></script>
+		<script type="text/javascript" src="data/3.1.0-739258/dataforgeComponents.js"></script>
+
+		<link rel="stylesheet" href="style.css">
+	</head>
+	<body>
+		<div id="app">
+			<row>
+				<i-col span="24">
+					<h1>Hardpoint</h1>
+					<p>An increasingly weaponized spreadsheet for Star Citizen ships and equipment</p>
+					<br />
+					Ship
+					<i-select v-model="selectedShipIdIndex">
+						<i-option v-for="(id, index) in shipIds" :value="index" :key="index">
+							{{id.loadoutId}}
+						</i-option>
+					</i-select>
+				</i-col>
+			</row>
+			
+			<row>
+				<i-col span="16" v-if="selectedShipIdIndex != undefined">
+					<collapse v-model="expandedSections">
+						<panel v-for="sectionTypes, sectionName in sections" :key="sectionName" :name="sectionName">
+							{{sectionName}}
+							<div slot="content">
+								<div v-for="port in selectedCustomization.getItemPortsMatchingTypes(sectionTypes)">
+									<component-selector
+										v-bind:customization="selectedCustomization"
+										v-bind:item-port="port">
+									</component-selector>
+									<div v-for="childPort in getAttachedComponentItemPorts(port.name)" style="padding-left: 50px">
+										<component-selector
+											v-bind:customization="selectedCustomization"
+											v-bind:item-port="childPort"
+											v-bind:parent-port-name="port.name">
+										</component-selector>
+									</div>
+								</div>
+							</div>
+						</panel>
+					</collapse>
+				</i-col>
+				<i-col span="8" v-if="selectedShipIdIndex != undefined">
+					<i-table :columns="maneuverabilityColumns" :data="selectedCustomization.getAttributes('Maneuverability')"></i-table>
+					<i-table :columns="survivabilityColumns" :data="selectedCustomization.getAttributes('Survivability')"></i-table>
+				</i-col>
+			</row>
+		</div>
+		
+		<template id="component-display">
+			<i-button :disabled="disabled">
+				<row>
+					<i-col span="12">
+						<!-- componentName needs to be outside the conditional to bind correctly. Odd! -->
+						{{componentName}}
+					</i-col>
+					<i-col span="12" class="right" v-if="componentName">
+						{{component.type}}
+					</i-col>
+				</row>
+				<row v-if="componentName">
+					<i-col span="12">
+						TODO
+					</i-col>
+						<i-col span="12" class="right">
+						Size {{component.size}}
+					</i-col>
+				</row>
+			</i-button>
+		</template>
+
+		<template id="component-selector">
+			<div style="padding:8px;">
+				{{label}}
+				<br />
+				<dropdown
+					ref="dropdown"
+					:trigger="itemPort.editable ? 'click' : 'custom'"
+					class="component-selector"
+					@on-visible-change="onVisibleChange"
+					@on-click="onClick">
+					
+					<component-display :component-name="selectedComponentName" :disabled="!itemPort.editable">
+					</component-display>
+					<span :class="{'flip-icon':visible}"><i class="ivu-icon ivu-icon-arrow-down-b ivu-select-arrow"></i></span>
+					
+					<dropdown-menu slot="list">
+						<dropdown-item v-for="componentName in availableComponents" :name="componentName" :key="componentName">
+							<component-display :component-name="componentName">
+							</component-display>
+						</dropdown-item>
+					</dropdown-menu>
+				</dropdown>
+			</div>
+		</template>
+
+		<script src="code.js"></script>
+	</body>
+</html>

@@ -1,0 +1,43 @@
+#app {
+	padding: 32px;
+}
+
+.right {
+	text-align: right;
+}
+
+/* Add a bit of space between the collapse section dropdown arrow and the header text. */
+.ivu-collapse-header > i {
+	margin-right: 8px;
+}
+
+/* Component selection dropdown -- make it look and behave like a form select. */
+.component-selector {
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.component-selector .ivu-dropdown-rel .ivu-btn {
+	padding-right: 32px;
+}
+
+.component-selector .ivu-btn {
+	text-align: left;
+	width: 100%;
+}
+
+.flip-icon > i {
+    -webkit-transform: rotate(180deg);
+    -ms-transform: rotate(180deg);
+    transform: rotate(180deg);
+}
+
+/* Add scrollbars back to dropdowns. */
+.ivu-dropdown .ivu-select-dropdown {
+	overflow: auto;
+}
+
+/* Change the max height of all dropdown types. */
+.ivu-select-dropdown {
+	max-height: 400px !important;
+}
