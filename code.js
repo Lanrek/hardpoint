@@ -743,6 +743,7 @@ Vue.use(VueRouter)
 const router = new VueRouter({
 	routes: [
 		{
+			name: "list",
 			path: '/',
 			component: shipList
 		},

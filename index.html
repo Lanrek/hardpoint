@@ -74,6 +74,9 @@
 		<template id="ship-details">
 			<row :gutter="16">
 				<i-col span="6">
+					<i-button class="nav-button" @click="$router.push({ name: 'list' });">
+						Back to Ship Comparison
+					</i-button>
 					<i-select :value="selectedShipIdIndex" @on-change="onChange">
 						<i-option v-for="(id, index) in $root.shipIds" :value="index" :key="index">
 							{{id.loadoutId}}
