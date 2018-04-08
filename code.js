@@ -1,11 +1,14 @@
 class ShipId {
-	constructor(specificationId, modificationId) {
+	constructor(specificationId, modificationId, loadoutId) {
 		this.specificationId = specificationId;
 		this.modificationId = modificationId;
+		this.loadoutId = loadoutId;
+	}
 
+	static findLoadout(specificationId, modificationId) {
 		// This is crazy -- must be missing something about how loadouts are bound to ships.
 		var loadoutId = undefined;
-		var tryLoadoutId = function(id) {
+		var tryLoadoutId = id => {
 			if (!loadoutId) {
 				if (shipLoadouts[id]) {
 					loadoutId = id;
@@ -13,14 +16,14 @@ class ShipId {
 			}
 		}
 
-		var specificationData = shipSpecifications[this.specificationId]._data;
-		if (this.modificationId) {
-			tryLoadoutId(specificationId + "_" + this.modificationId);
+		var specificationData = shipSpecifications[specificationId]._data;
+		if (modificationId) {
+			tryLoadoutId(specificationId + "_" + modificationId);
 
-			var patchFile = specificationData["Modifications"][this.modificationId]["@patchFile"];
+			var patchFile = specificationData["Modifications"][modificationId]["@patchFile"];
 			if (patchFile) {
 				var fileName = patchFile.split("/").pop();
-				tryLoadoutId(fileName + "_" + this.modificationId);
+				tryLoadoutId(fileName + "_" + modificationId);
 				tryLoadoutId(fileName);
 			}
 		}
@@ -33,7 +36,7 @@ class ShipId {
 			}
 		}
 
-		this.loadoutId = loadoutId;
+		return new ShipId(specificationId, modificationId, loadoutId);
 	}
 }
 
@@ -68,7 +71,7 @@ class ShipSpecification {
 
 	getModificationLoadouts() {
 		var modifications = [undefined].concat(this.modificationIds);
-		var results = modifications.map(x => new ShipId(this._data["@name"], x));
+		var results = modifications.map(x => ShipId.findLoadout(this._data["@name"], x));
 
 		// Filter out anything that doesn't have a valid loadout.
 		results = results.filter(n => n.loadoutId);
@@ -673,7 +676,7 @@ var shipDetails = Vue.component('ship-details', {
 	data: function() {
 		return {
 			selectedCustomization: {},
-			
+
 			expandedSections: ["Weapons"],
 			sections: {
 				"Weapons": ['WeaponMissile', 'WeaponGun', 'Turret', 'TurretBase'],
@@ -726,7 +729,7 @@ var shipDetails = Vue.component('ship-details', {
 			this.$router.push({ name: 'ships', params: { shipIdIndex: shipIdIndex }})
 		}
 	},
-	
+
 	// TODO These hooks feel janky -- there should be a better way make the selection reactive.
 	created() {
 		var shipId = this.$root.shipIds[this.selectedShipIdIndex];
