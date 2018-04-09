@@ -144,6 +144,102 @@ class ShipSpecification {
 	}
 }
 
+class DamageQuantity {
+	constructor(distortion, energy, physical, thermal) {
+		var makeNumber = x => Number(x) || 0;
+
+		this._values = [makeNumber(distortion), makeNumber(energy), makeNumber(physical), makeNumber(thermal)];
+	}
+
+	get distortion() {
+		return this._values[0];
+	}
+
+	get energy() {
+		return this._values[1];
+	}
+
+	get physical() {
+		return this._values[2];
+	}
+
+	get thermal() {
+		return this._values[3];
+	}
+
+	get total() {
+		return this._values.reduce((total, x) => total + x, 0);
+	}
+
+	get type() {
+		var count = this._values.reduce((total, x) => x > 0 ? total + 1 : total, 0);
+		if (count > 1) {
+			return "mixed"
+		}
+		else if (this.distortion > 0) {
+			return "distortion";
+		}
+		else if (this.energy > 0) {
+			return "energy";
+		}
+		else if (this.physical > 0) {
+			return "physical";
+		}
+		else if (this.thermal > 0) {
+			return "thermal";
+		}
+		else {
+			return "none";
+		}
+	}
+
+	add(quantity) {
+		return DamageQuantity._fromValues(this._values.map((x, index) => x + quantity._values[index]));
+	}
+
+	scale(coefficient) {
+		return DamageQuantity._fromValues(this._values.map(x => x * coefficient));
+	}
+
+	static _fromValues(values) {
+		return new DamageQuantity(values[0], values[1], values[2], values[3]);
+	}
+}
+
+class SummaryText {
+	constructor(patterns, values) {
+		this.patterns = patterns;
+		this.values = values;
+
+		if (!this.patterns) {
+			this.patterns = ["Boring"];
+		}
+	}
+
+	render() {
+		var getValue = key => {
+			var split = key.split(".");
+
+			var value = this.values;
+			split.forEach(n => value = value[n]);
+
+			if (value.toFixed) {
+				// Round to two places and then drop any trailing 0s.
+				value = +value.toFixed(2);
+			}
+
+			return '<span class="summary-value">' + value + '</span>';
+		};
+
+		var expanded = this.patterns.map(p => {
+			var replaced = p.replace(/{[^}]+}/g, n => getValue(n.slice(1, -1)));
+			return "<p>" + replaced + "</p>";
+		}).join("");
+
+		return '<span class="summary">' + expanded + '</span>';
+	}
+}
+
 class SpaceshipComponent {
 	constructor(data) {
 		this._data = data;
@@ -173,6 +269,99 @@ class SpaceshipComponent {
 		}
 
 		return this._data["@requiredPortTags"].split(" ");
+	}
+
+	get bulletSpeed() {
+		if (this.type == "WeaponGun") {
+			var ammo = this._data["ammo"];
+			if (!ammo) {
+				return 0;
+			}
+
+			return ammo["@speed"];
+		}
+
+		return 0;
+	}
+
+	get bulletDuration() {
+		if (this.type == "WeaponGun") {
+			var ammo = this._data["ammo"];
+			if (!ammo) {
+				return 0;
+			}
+
+			return ammo["@lifetime"];
+		}
+
+		return 0;
+	}
+
+	get bulletRange() {
+		return this.bulletSpeed * this.bulletDuration;
+	}
+
+	get gunAlpha() {
+		if (this.type == "WeaponGun") {
+			var ammo = this._data["ammo"];
+			if (!ammo) {
+				return new DamageQuantity(0, 0, 0, 0);
+			}
+
+			var damageInfo = ammo["bullet"]["damage"]["DamageInfo"];
+			var quantity = new DamageQuantity(
+				damageInfo["@DamageDistortion"],
+				damageInfo["@DamageEnergy"],
+				damageInfo["@DamagePhysical"],
+				damageInfo["@DamageThermal"]);
+			return quantity;
+		}
+
+		return new DamageQuantity(0, 0, 0, 0);
+	}
+
+	get gunFireRate() {
+		if (this.type == "WeaponGun") {
+			return Number(this._data["firemodes"]["fire"]["rate"]) || 0;
+		}
+
+		return 0;
+	}
+
+	get gunBurstDps() {
+		var scaled = this.gunAlpha.scale(this.gunFireRate / 60.0);
+		return scaled;
+	}
+
+	get gunSustainedDps() {
+		// TODO Actually calculate heat and energy limits based on ship equipment.
+		if (this.type == "WeaponGun") {
+			var derived = this._data["derived"];
+			var quantity = new DamageQuantity(
+				derived["dps_60s_dmg_dist"],
+				derived["dps_60s_dmg_enrg"],
+				derived["dps_60s_dmg_phys"],
+				derived["dps_60s_dmg_thrm"]);
+
+			return quantity;
+		}
+
+		return new DamageQuantity(0, 0, 0, 0);
+	}
+
+	get totalShields() {
+		return 0;
+	}
+
+	get summary() {
+		if (this.type == "WeaponGun") {
+			return new SummaryText([
+				"{gunAlpha.total} {gunAlpha.type} damage X {gunFireRate}rpm = {gunBurstDps.total}dps",
+				"{gunSustainedDps.total} sustained dps (limited by heat)",
+				"{bulletSpeed}m/s projectile speed X {bulletDuration}sec = {bulletRange}m range"], this);
+		}
+
+		return new SummaryText();
 	}
 
 	_findItemPorts() {
@@ -216,11 +405,45 @@ class DataforgeComponent {
 		return tags.split(" ");
 	}
 
+	get bulletSpeed() {
+		return 0;
+	}
+
+	get bulletDuration() {
+		return 0;
+	}
+
+	get bulletRange() {
+		return 0;
+	}
+
+	get gunAlpha() {
+		return new DamageQuantity(0, 0, 0, 0);
+	}
+
+	get gunFireRate() {
+		return 0;
+	}
+
+	get gunBurstDps() {
+		return new DamageQuantity(0, 0, 0, 0);
+	}
+
+	get gunSustainedDps() {
+		return new DamageQuantity(0, 0, 0, 0);
+	}
+
 	get totalShields() {
 		var params = this._data["Components"]["SCItemShieldGeneratorParams"];
 		if (params) {
-			return params["ShieldEmitterContributions"]["@MaxShieldHealth"];
+			return Number(params["ShieldEmitterContributions"]["@MaxShieldHealth"]);
 		}
+
+		return 0;
+	}
+
+	get summary() {
+		return new SummaryText();
 	}
 
 	_findItemPorts() {
@@ -422,7 +645,17 @@ class ShipCustomization {
 			{
 				name: "Total Shields",
 				category: "Survivability",
-				value: this._getDirectlyAttachedComponents().reduce((total, x) => total + Number(x.totalShields || 0), 0)
+				value: Math.round(this._getAttachedComponents().reduce((total, x) => total + x.totalShields, 0))
+			},
+			{
+				name: "Total Burst DPS",
+				category: "Damage",
+				value: Math.round(this._getAttachedComponents().reduce((total, x) => total + x.gunBurstDps.total, 0))
+			},
+			{
+				name: "Total Sustained DPS",
+				category: "Damage",
+				value: Math.round(this._getAttachedComponents().reduce((total, x) => total + x.gunSustainedDps.total, 0))
 			}
 		]);
 
@@ -489,11 +722,20 @@ class ShipCustomization {
 		return shipLoadouts[this.shipId.loadoutId];
 	}
 
-	_getDirectlyAttachedComponents() {
+	_getAttachedComponents() {
 		var attached = [];
+
 		var directPorts = this._specification.getItemPorts(this.shipId.modificationId);
-		directPorts.forEach(x => attached.push(this.getAttachedComponent(x.name)));
-		return attached.filter(n => n);
+		directPorts.forEach(x => {
+			var component = this.getAttachedComponent(x.name);
+			attached.push(component);
+			if (component) {
+				component.itemPorts.forEach(c => attached.push(this.getAttachedComponent(c.name, x.name)));
+			}
+		});
+		attached = attached.filter(n => n);
+
+		return attached;
 	}
 
 	_makeOverrideName(portName, parentPortName) {
@@ -607,28 +849,38 @@ var shipList = Vue.component('ship-list', {
 					width: 240
 				},
 				{
-					title: "Normal Speed",
+					title: "SCM",
 					key: "Normal Speed",
 					sortable: true
 				},
 				{
-					title: "Afterburner Speed",
+					title: "Afterburner",
 					key: "Normal Speed",
 					sortable: true
 				},
 				{
-					title: "Cruise Speed",
+					title: "Cruise",
 					key: "Normal Speed",
 					sortable: true
 				},
 				{
-					title: "Total Hitpoints",
+					title: "HP",
 					key: "Total Hitpoints",
 					sortable: true
 				},
 				{
-					title: "Total Shields",
+					title: "Shields",
 					key: "Total Shields",
+					sortable: true
+				},
+				{
+					title: "DPS",
+					key: "Total Sustained DPS",
+					sortable: true
+				},
+				{
+					title: "Burst DPS",
+					key: "Total Burst DPS",
 					sortable: true
 				},
 				{
@@ -686,6 +938,17 @@ var shipDetails = Vue.component('ship-details', {
 				"Systems": ['Cooler', 'Shield', 'PowerPlant']
 			},
 
+			damageColumns: [
+				{
+					title: "Damage",
+					key: "name"
+				},
+				{
+					title: " ",
+					key: "value",
+					width: 100
+				}
+			],
 			maneuverabilityColumns: [
 				{
 					title: "Maneuverability",

@@ -1,3 +1,14 @@
+.summary-value {
+	color: #B10DC9;
+	font-weight: bolder;
+}
+
+.nav-button {
+	text-align: center;
+	width: 100%;
+	margin-bottom: 16px;
+}
+
 .layout {
 	border: 1px solid #d7dde4;
 	background: #f5f7f9;
@@ -29,12 +40,6 @@
 .layout .footer {
 	text-align: center;
 	padding: 8px 16px 8px 16px;
-}
-
-.nav-button {
-	text-align: center;
-	width: 100%;
-	margin-bottom: 16px;
 }
 
 .right {

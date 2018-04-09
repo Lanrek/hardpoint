@@ -106,6 +106,7 @@
 					</collapse>
 				</i-col>
 				<i-col span="6">
+					<i-table :columns="damageColumns" :data="selectedCustomization.getAttributes('Damage')"></i-table>
 					<i-table :columns="maneuverabilityColumns" :data="selectedCustomization.getAttributes('Maneuverability')"></i-table>
 					<i-table :columns="survivabilityColumns" :data="selectedCustomization.getAttributes('Survivability')"></i-table>
 				</i-col>
@@ -119,8 +120,7 @@
 				</row>
 				<row v-if="componentName">
 					<i-col span="12">
-						<!-- componentName needs to be outside the conditional to bind correctly. Odd! -->
-						{{componentName}}
+						<strong>{{componentName}}</strong>
 					</i-col>
 					<i-col span="12" class="right" v-if="componentName">
 						{{component.type}}
@@ -128,7 +128,7 @@
 				</row>
 				<row v-if="componentName">
 					<i-col span="12">
-						TODO
+						<span v-html="component.summary.render()"></span>
 					</i-col>
 						<i-col span="12" class="right">
 						Size {{component.size}}
