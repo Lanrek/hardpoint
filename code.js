@@ -400,7 +400,15 @@ class SpaceshipComponent {
 		return "";
 	}
 
-	get totalShields() {
+	get shieldCapacity() {
+		return 0;
+	}
+
+	get shieldRegeneration() {
+		return 0;
+	}
+
+	get shieldDownDelay() {
 		return 0;
 	}
 
@@ -515,10 +523,28 @@ class DataforgeComponent {
 		return "";
 	}
 
-	get totalShields() {
+	get shieldCapacity() {
 		var params = this._data["Components"]["SCItemShieldGeneratorParams"];
 		if (params) {
 			return Number(params["ShieldEmitterContributions"]["@MaxShieldHealth"]);
+		}
+
+		return 0;
+	}
+
+	get shieldRegeneration() {
+		var params = this._data["Components"]["SCItemShieldGeneratorParams"];
+		if (params) {
+			return Number(params["ShieldEmitterContributions"]["@MaxShieldRegen"]);
+		}
+
+		return 0;
+	}
+
+	get shieldDownDelay() {
+		var params = this._data["Components"]["SCItemShieldGeneratorParams"];
+		if (params) {
+			return Number(params["ShieldEmitterContributions"]["@DownedRegenDelay"]);
 		}
 
 		return 0;
@@ -529,6 +555,12 @@ class DataforgeComponent {
 			if (this.itemPorts[0]) {
 				return new SummaryText(["{itemPorts.length} size {itemPorts.[0].maxSize} item ports"], this);
 			}
+		}
+
+		if (this.type == "Shield") {
+			return new SummaryText([
+				"{shieldCapacity} shield capacity",
+				"{shieldRegeneration}/sec regeneration with a {shieldDownDelay} sec delay after dropping"], this);
 		}
 
 		return new SummaryText();
@@ -741,7 +773,7 @@ class ShipCustomization {
 			{
 				name: "Total Shields",
 				category: "Survivability",
-				value: Math.round(this._getAttachedComponents().reduce((total, x) => total + x.totalShields, 0))
+				value: Math.round(this._getAttachedComponents().reduce((total, x) => total + x.shieldCapacity, 0))
 			},
 			{
 				name: "Total Burst DPS",
