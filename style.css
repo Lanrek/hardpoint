@@ -46,6 +46,22 @@
 	text-align: right;
 }
 
+/* Color the section headers differently from the buttons. */
+.ivu-collapse-header {
+	background-color: #0d83c9;
+	color: white !important;
+	font-weight: bold;
+}
+
+.ivu-table th {
+	background-color: #0d83c9;
+	color: white !important;
+}
+
+.ivu-table-sort i.on {
+	color: white;
+}
+
 /* Drop the padding significantly to allow more columns. */
 .ivu-table-cell {
 	padding-left: 8px;
