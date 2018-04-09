@@ -369,6 +369,37 @@ class SpaceshipComponent {
 		return new DamageQuantity(0, 0, 0, 0);
 	}
 
+	get missileDamage() {
+		if (this.type == "Ordinance") {
+			var explosion = this._data["explosion"];
+			var quantity = new DamageQuantity(
+				explosion["damage_distortion"],
+				explosion["damage_energy"],
+				explosion["damage"],
+				0);
+
+			return quantity;
+		}
+
+		return new DamageQuantity(0, 0, 0, 0);
+	}
+
+	get missileRange() {
+		if (this.type == "Ordinance") {
+			return this._data["derived"]["max_range"];
+		}
+
+		return 0;
+	}
+
+	get missileGuidance() {
+		if (this.type == "Ordinance") {
+			return this._data["missile"]["MGCS"]["tracking"]["signalType"];
+		}
+
+		return "";
+	}
+
 	get totalShields() {
 		return 0;
 	}
@@ -388,6 +419,12 @@ class SpaceshipComponent {
 
 		if (this.type == "WeaponMissile") {
 			return new SummaryText(["{itemPorts.length} size {itemPorts.[0].maxSize} missiles"], this);
+		}
+
+		if (this.type == "Ordinance") {
+			return new SummaryText([
+				"{missileDamage.total} {missileDamage.type} damage",
+				"{missileGuidance} tracking with {missileRange}m max range"], this);
 		}
 
 		return new SummaryText();
@@ -464,6 +501,18 @@ class DataforgeComponent {
 
 	get gunSustainedDps() {
 		return new DamageQuantity(0, 0, 0, 0);
+	}
+
+	get missileDamage() {
+		return new DamageQuantity(0, 0, 0, 0);
+	}
+
+	get missileRange() {
+		return 0;
+	}
+
+	get missileGuidance() {
+		return "";
 	}
 
 	get totalShields() {
@@ -703,6 +752,11 @@ class ShipCustomization {
 				name: "Total Sustained DPS",
 				category: "Damage",
 				value: Math.round(this._getAttachedComponents().reduce((total, x) => total + x.gunSustainedDps.total, 0))
+			},
+			{
+				name: "Total Missile Damage",
+				category: "Damage",
+				value: Math.round(this._getAttachedComponents().reduce((total, x) => total + x.missileDamage.total, 0))
 			}
 		]);
 
@@ -946,6 +1000,11 @@ var shipList = Vue.component('ship-list', {
 				{
 					title: "Burst DPS",
 					key: "Total Burst DPS",
+					sortable: true
+				},
+				{
+					title: "Missiles",
+					key: "Total Missile Damage",
 					sortable: true
 				},
 				{
