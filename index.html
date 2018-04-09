@@ -74,7 +74,7 @@
 
 		<template id="ship-details">
 			<row :gutter="16">
-				<i-col span="6">
+				<i-col span="5">
 					<i-button class="nav-button" @click="$router.push({ name: 'list' });">
 						Back to Ship Comparison
 					</i-button>
@@ -84,7 +84,7 @@
 						</i-option>
 					</i-select>
 				</i-col>
-				<i-col span="12">
+				<i-col span="14">
 					<collapse v-model="expandedSections">
 						<panel v-for="sectionTypes, sectionName in sections" :key="sectionName" :name="sectionName">
 							{{sectionName}}
@@ -106,7 +106,7 @@
 						</panel>
 					</collapse>
 				</i-col>
-				<i-col span="6">
+				<i-col span="5">
 					<i-table :columns="damageColumns" :data="selectedCustomization.getAttributes('Damage')"></i-table>
 					<i-table :columns="maneuverabilityColumns" :data="selectedCustomization.getAttributes('Maneuverability')"></i-table>
 					<i-table :columns="survivabilityColumns" :data="selectedCustomization.getAttributes('Survivability')"></i-table>

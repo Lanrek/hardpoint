@@ -1117,7 +1117,7 @@ var shipDetails = Vue.component('ship-details', {
 				{
 					title: " ",
 					key: "value",
-					width: 100
+					width: 60
 				}
 			],
 			maneuverabilityColumns: [
@@ -1128,7 +1128,7 @@ var shipDetails = Vue.component('ship-details', {
 				{
 					title: " ",
 					key: "value",
-					width: 100
+					width: 60
 				}
 			],
 			survivabilityColumns: [
@@ -1139,7 +1139,7 @@ var shipDetails = Vue.component('ship-details', {
 				{
 					title: " ",
 					key: "value",
-					width: 100
+					width: 60
 				}
 			]
 		}
