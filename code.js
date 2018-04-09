@@ -1056,9 +1056,10 @@ var shipDetails = Vue.component('ship-details', {
 		return {
 			selectedCustomization: {},
 
-			expandedSections: ["Weapons"],
+			expandedSections: ["Guns", "Missiles"],
 			sections: {
-				"Weapons": ['WeaponMissile', 'WeaponGun', 'Turret', 'TurretBase'],
+				"Guns": ['WeaponGun', 'Turret', 'TurretBase'],
+				"Missiles": ['WeaponMissile'],
 				"Systems": ['Cooler', 'Shield', 'PowerPlant']
 			},
 
