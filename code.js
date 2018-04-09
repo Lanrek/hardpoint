@@ -1010,7 +1010,8 @@ var shipList = Vue.component('ship-list', {
 				{
 					title: "SCM",
 					key: "Normal Speed",
-					sortable: true
+					sortable: true,
+					width: 80
 				},
 				{
 					title: "Afterburner",
@@ -1049,7 +1050,7 @@ var shipList = Vue.component('ship-list', {
 				},
 				{
 					title: 'Action',
-					width: 150,
+					width: 120,
 					align: 'center',
 					render: (h, params) => {
 						return h('Button', {
@@ -1081,6 +1082,11 @@ var shipList = Vue.component('ship-list', {
 				return reduced;
 			});
 			return attributes;
+		},
+		tableHeight: function() {
+			// TODO This is a terribly sad hack, but it's good enough for now.
+			// At the very least it should adjust with window resizing.
+			return window.innerHeight - 144;
 		}
 	},
 	methods: {

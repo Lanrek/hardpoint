@@ -46,6 +46,12 @@
 	text-align: right;
 }
 
+/* Drop the padding significantly to allow more columns. */
+.ivu-table-cell {
+	padding-left: 8px;
+	padding-right: 8px;
+}
+
 /* Separate stacked tables. */
 .ivu-table-wrapper {
 	margin-top: 16px;
