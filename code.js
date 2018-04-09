@@ -221,7 +221,15 @@ class SummaryText {
 			var split = key.split(".");
 
 			var value = this.values;
-			split.forEach(n => value = value[n]);
+			split.forEach(n => {
+				if (n.startsWith("[")) {
+					var index = Number(n.slice(1, -1));
+					value = value[index];
+				}
+				else {
+					value = value[n]
+				}
+			});
 
 			if (value.toFixed) {
 				// Round to two places and then drop any trailing 0s.
@@ -378,6 +386,10 @@ class SpaceshipComponent {
 				"{bulletSpeed}m/s projectile speed X {bulletDuration}sec = {bulletRange}m range"], this);
 		}
 
+		if (this.type == "WeaponMissile") {
+			return new SummaryText(["{itemPorts.length} size {itemPorts.[0].maxSize} missiles"], this);
+		}
+
 		return new SummaryText();
 	}
 
@@ -464,6 +476,12 @@ class DataforgeComponent {
 	}
 
 	get summary() {
+		if (this.type == "Turret" || this.type == "TurretBase") {
+			if (this.itemPorts[0]) {
+				return new SummaryText(["{itemPorts.length} size {itemPorts.[0].maxSize} item ports"], this);
+			}
+		}
+
 		return new SummaryText();
 	}
 
