@@ -328,13 +328,19 @@ class SpaceshipComponent {
 				return new DamageQuantity(0, 0, 0, 0);
 			}
 
-			var damageInfo = ammo["bullet"]["damage"]["DamageInfo"];
-			var quantity = new DamageQuantity(
+			var detonation = ammo["bullet"]["detonation"];
+			if (detonation) {
+				var damageInfo = detonation["explosion"]["damage"]["DamageInfo"];
+			}
+			else {
+				var damageInfo = ammo["bullet"]["damage"]["DamageInfo"];
+			}
+
+			return new DamageQuantity(
 				damageInfo["@DamageDistortion"],
 				damageInfo["@DamageEnergy"],
 				damageInfo["@DamagePhysical"],
 				damageInfo["@DamageThermal"]);
-			return quantity;
 		}
 
 		return new DamageQuantity(0, 0, 0, 0);
