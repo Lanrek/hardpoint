@@ -244,26 +244,12 @@ class DataforgeComponent {
 }
 
 class ItemPortType {
-	constructor(portType) {
-		this.type = portType["@type"];
+	constructor(type, subtypes) {
+		this.type = type;
 
-		// It looks like there are implicit defaults; the Sabre is an example.
-		var subTypes = portType["@subtypes"];
-		if (!subTypes) {
-			if (this.type == "WeaponGun") {
-				subTypes = "Gun";
-			}
-			else if (this.type == "Turret") {
-				subTypes = "GunTurret";
-			}
-			else {
-				subTypes = "Default";
-			}
-		}
-
-		this.subtypes = undefined;
-		if (subTypes) {
-			this.subtypes = subTypes.split(",");
+		this.subtypes = [];
+		if (subtypes) {
+			this.subtypes = subtypes.split(",");
 		}
 	}
 }
@@ -357,8 +343,24 @@ class SpaceshipItemPort extends BaseItemPort {
 			types = [types];
 		}
 
-		return types.map(function (type) {
-			return new ItemPortType(type)
+		return types.map(x => {
+			var type = x["@type"];
+
+			// It looks like there are implicit defaults; the Sabre is an example.
+			var subtypes = x["@subtypes"];
+			if (!subtypes) {
+				if (type == "WeaponGun") {
+					subtypes = "Gun";
+				}
+				else if (type == "Turret") {
+					subtypes = "GunTurret";
+				}
+				else {
+					subtypes = "Default";
+				}
+			}
+
+			return new ItemPortType(type, subtypes);
 		});
 	}
 }
@@ -390,10 +392,11 @@ class DataforgeItemPort extends BaseItemPort {
 	}
 
 	get types() {
-		var subtypes = this._data["Types"]["SItemPortDefTypes"]["@Type"]["SubTypes"];
+		var subtypes = this._data["Types"]["SItemPortDefTypes"]["SubTypes"];
 		if (subtypes) {
 			var subtype = subtypes["Enum"]["@value"];
 		}
+
 		var type = new ItemPortType(
 			this._data["Types"]["SItemPortDefTypes"]["@Type"],
 			subtype);
