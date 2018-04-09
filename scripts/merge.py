@@ -6,7 +6,7 @@ def load_directory(directory_path, include=None):
 	for entry in os.listdir(directory_path):
 		if include and not entry in include:
 			continue
-	
+
 		entry_path = os.path.join(directory_path, entry)
 		if os.path.isfile(entry_path) and entry_path.endswith(".json"):
 			print("Adding " + entry_path)
@@ -14,14 +14,22 @@ def load_directory(directory_path, include=None):
 				result[entry.replace(".json", "")] = json.load(fp)
 		elif os.path.isdir(entry_path):
 			result = {**result, **load_directory(entry_path)}
-	
+
 	return result
-			
-def merge_directory(directory_path, output_file, variable, include=None):
-	content = load_directory(directory_path, include)
+
+def write_json(content, output_file, variable):
 	with open(output_file, "w") as fp:
 		fp.write("var " + variable + " = ")
 		json.dump(content, fp)
+
+def merge_directory(directory_path, output_file, variable, include=None):
+	content = load_directory(directory_path, include)
+	write_json(content, output_file, variable)
+
+def adjust_file(file_path, output_file, variable):
+	with open(file_path, "r") as fp:
+		content = json.load(fp)
+	write_json(content, output_file, variable)
 
 
 snapshot_name = "3.1.0-739258"
@@ -29,10 +37,11 @@ root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 snapshot_path = os.path.join(root_path, "snapshots", snapshot_name)
 data_path = os.path.join(root_path, "data", snapshot_name)
 
-os.makedirs(data_path)
+if not os.path.exists(data_path):
+	os.makedirs(data_path)
 
 merge_directory(
-	os.path.join(snapshot_path, "ships", "specs"), 
+	os.path.join(snapshot_path, "ships", "specs"),
 	os.path.join(data_path, "shipSpecifications.js"),
 	"shipSpecifications")
 merge_directory(
@@ -48,3 +57,8 @@ merge_directory(
 	os.path.join(data_path, "dataforgeComponents.js"),
 	"dataforgeComponents",
 	["Cooler", "EMP", "PowerPlant", "Shield", "Turret", "TurretBase"])
+
+adjust_file(
+	os.path.join(snapshot_path, "local", "global.json"),
+	os.path.join(data_path, "localizationStrings.js"),
+	"localizationStrings")

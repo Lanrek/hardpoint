@@ -255,6 +255,10 @@ class SpaceshipComponent {
 		this.itemPorts = this._findItemPorts();
 	}
 
+	get displayName() {
+		return localizationDictionary[this.name] || this.name;
+	}
+
 	get name() {
 		return this._data["@name"];
 	}
@@ -458,6 +462,10 @@ class DataforgeComponent {
 		this._data = data;
 
 		this.itemPorts = this._findItemPorts();
+	}
+
+	get displayName() {
+		return localizationDictionary[this.name] || this.name;
 	}
 
 	get name() {
@@ -920,6 +928,11 @@ for (key of Object.keys(spaceshipComponents)) {
 	if (!(key in mergedComponents)) {
 		mergedComponents[key] = new SpaceshipComponent(spaceshipComponents[key]);
 	}
+}
+
+var localizationDictionary = {};
+for (entry of localizationStrings) {
+	localizationDictionary[entry["item"]] = entry["item_Name"];
 }
 
 

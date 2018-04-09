@@ -28,6 +28,7 @@
 		<script type="text/javascript" src="data/3.1.0-739258/shipLoadouts.js"></script>
 		<script type="text/javascript" src="data/3.1.0-739258/spaceshipComponents.js"></script>
 		<script type="text/javascript" src="data/3.1.0-739258/dataforgeComponents.js"></script>
+		<script type="text/javascript" src="data/3.1.0-739258/localizationStrings.js"></script>
 
 		<link rel="stylesheet" href="style.css">
 	</head>
@@ -121,9 +122,9 @@
 				</row>
 				<row v-if="componentName">
 					<i-col span="12">
-						<strong>{{componentName}}</strong>
+						<strong>{{component.displayName}}</strong>
 					</i-col>
-					<i-col span="12" class="right" v-if="componentName">
+					<i-col span="12" class="right">
 						{{component.type}}
 					</i-col>
 				</row>
