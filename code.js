@@ -960,10 +960,6 @@ var componentSelector = Vue.component('component-selector', {
 		}
 	},
 	watch: {
-		selectedComponentName: function (val) {
-			this.customization.setAttachedComponent(this.itemPort.name, this.parentPortName, val);
-		},
-
 		// Invalidate the selected component when the properties change from widget reuse.
 		// TODO Not sure why this is necessary...
 		customization: function(val) {
@@ -986,6 +982,7 @@ var componentSelector = Vue.component('component-selector', {
 		},
 		onClick: function(name) {
 			this.selectedComponentName = name;
+			this.customization.setAttachedComponent(this.itemPort.name, this.parentPortName, name);
 		},
 		getSelectedComponentName: function () {
 			var component = this.customization.getAttachedComponent(this.itemPort.name, this.parentPortName);
