@@ -627,10 +627,18 @@ class DataforgeItemPort extends BaseItemPort {
 	}
 }
 
+class BoundItemPort {
+	constructor(portName, componentName) {
+		this.portName = portName;
+		this.componentName = componentName;
+		this.children = {};
+	}
+}
+
 class ShipCustomization {
 	constructor(shipId) {
 		this.shipId = shipId;
-		this._overrides = {};
+		this._bindings = {};
 	}
 
 	// Abstracted because ship modifications will probably have their own tags eventually.
@@ -672,18 +680,44 @@ class ShipCustomization {
 	}
 
 	setAttachedComponent(portName, parentPortName, componentName) {
-		var overrideName = this._makeOverrideName(portName, parentPortName);
-		Vue.set(this._overrides, overrideName, componentName);
+		var bindings = this._bindings;
+		if (parentPortName) {
+			// The parent port might be missing from the binding tree because it's set on the loadout
+			// not the customization. Copy the parent binding from the loadout first in that case.
+			if (!bindings[parentPortName]) {
+				Vue.set(bindings, parentPortName, new BoundItemPort(parentPortName, this.getAttachedComponent(parentPortName).name));
+			}
+			bindings = bindings[parentPortName].children;
+		}
+
+		Vue.set(bindings, portName, new BoundItemPort(portName, componentName));
 	}
 
 	getAttachedComponent(portName, parentPortName) {
 		var componentName;
-		var overrideName = this._makeOverrideName(portName, parentPortName);
 
-		if (overrideName in this._overrides) {
-			componentName = this._overrides[overrideName] ;
+		// First check if the component is customized in the binding tree.
+		if (parentPortName) {
+			if (this._bindings[parentPortName]) {
+				var children = this._bindings[parentPortName].children;
+				if (portName in children) {
+					componentName = children[portName].componentName;
+				}
+				else {
+					// If the parent port is customized, don't fall back to the loadout for the children.
+					// Ports often have similar names, so it might match even with a different parent.
+					return undefined;
+				}
+			}
 		}
 		else {
+			if (this._bindings[portName]) {
+				componentName = this._bindings[portName].componentName;
+			}
+		}
+
+		// If the component isn't found in the binding tree, fall back to the loadout.
+		if (!componentName) {
 			if (parentPortName) {
 				var entry = this._loadout.find(n => n[parentPortName] != undefined);
 				if (!entry) {
@@ -736,14 +770,6 @@ class ShipCustomization {
 		attached = attached.filter(n => n);
 
 		return attached;
-	}
-
-	_makeOverrideName(portName, parentPortName) {
-		if (parentPortName) {
-			return parentPortName + "." + portName;
-		}
-
-		return portName;
 	}
 }
 
