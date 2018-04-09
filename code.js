@@ -614,8 +614,13 @@ class BaseItemPort {
 
 			// Match all subtypes when looking for interesting types.
 			if (subtype != undefined) {
-				if (!portType.subtypes.some(s => s == subtype)) {
-					return false;
+				// It looks like subtypes are ports constraining what components can fit,
+				// the subtypes on components aren't constraints just informative.
+				// TODO Or maybe I'm just missing a lot of implicit defaults and rules?
+				if (portType.subtypes.length > 0) {
+					if (!portType.subtypes.some(s => s == subtype)) {
+						return false;
+					}
 				}
 			}
 
@@ -697,9 +702,6 @@ class SpaceshipItemPort extends BaseItemPort {
 				}
 				else if (type == "Turret") {
 					subtypes = "GunTurret";
-				}
-				else {
-					subtypes = "Default";
 				}
 			}
 
