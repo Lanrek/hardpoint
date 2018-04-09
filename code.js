@@ -301,6 +301,18 @@ class SpaceshipComponent {
 		return this.bulletSpeed * this.bulletDuration;
 	}
 
+	get bulletCount() {
+		if (this.type == "WeaponGun") {
+			var shotgun = this._data["firemodes"]["shotgun"];
+			if (shotgun) {
+				return Number(shotgun["pellets"]) || 0;
+			}
+			return 1;
+		}
+
+		return 0;
+	}
+
 	get gunAlpha() {
 		if (this.type == "WeaponGun") {
 			var ammo = this._data["ammo"];
@@ -329,7 +341,7 @@ class SpaceshipComponent {
 	}
 
 	get gunBurstDps() {
-		var scaled = this.gunAlpha.scale(this.gunFireRate / 60.0);
+		var scaled = this.gunAlpha.scale(this.bulletCount + this.gunFireRate / 60.0);
 		return scaled;
 	}
 
@@ -355,8 +367,13 @@ class SpaceshipComponent {
 
 	get summary() {
 		if (this.type == "WeaponGun") {
+			var damage = "{gunAlpha.total}";
+			if (this.bulletCount > 1) {
+				damage += " X {bulletCount}";
+			}
+
 			return new SummaryText([
-				"{gunAlpha.total} {gunAlpha.type} damage X {gunFireRate}rpm = {gunBurstDps.total}dps",
+				damage + " {gunAlpha.type} damage X {gunFireRate}rpm = {gunBurstDps.total}dps",
 				"{gunSustainedDps.total} sustained dps (limited by heat)",
 				"{bulletSpeed}m/s projectile speed X {bulletDuration}sec = {bulletRange}m range"], this);
 		}
@@ -414,6 +431,10 @@ class DataforgeComponent {
 	}
 
 	get bulletRange() {
+		return 0;
+	}
+
+	get bulletCount() {
 		return 0;
 	}
 
