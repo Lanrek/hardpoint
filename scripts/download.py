@@ -94,5 +94,5 @@ def download_directory(url, target):
 
 
 snapshot_name = "3.1.0-739258"
-snapshot_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", snapshot_name))
+snapshot_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "snapshots", snapshot_name))
 download_directory("http://starcitizendb.com/api/", snapshot_path)
