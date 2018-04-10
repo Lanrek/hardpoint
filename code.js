@@ -1186,7 +1186,8 @@ var shipDetails = Vue.component('ship-details', {
 		getAttachedComponentItemPorts: function (portName) {
 			var component = this.selectedCustomization.getAttachedComponent(portName);
 			if (component) {
-				return component.itemPorts;
+				// Hide AmmoBox item ports until they're worth customizing.
+				return component.itemPorts.filter(n => !n.matchesType("AmmoBox"));
 			}
 		},
 		onChange: function(shipIdIndex) {
