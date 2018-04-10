@@ -87,10 +87,10 @@
 				</i-col>
 				<i-col span="14">
 					<collapse v-model="expandedSections">
-						<panel v-for="sectionTypes, sectionName in sections" :key="sectionName" :name="sectionName">
+						<panel v-for="sectionName in sectionNames" :key="sectionName" :name="sectionName">
 							{{sectionName}}
 							<div slot="content">
-								<div v-for="port in selectedCustomization.getItemPortsMatchingTypes(sectionTypes)">
+								<div v-for="port in getSectionItemPorts(sectionName)">
 									<component-selector
 										v-bind:customization="selectedCustomization"
 										v-bind:item-port="port">

@@ -1112,8 +1112,11 @@ var shipDetails = Vue.component('ship-details', {
 		return {
 			selectedCustomization: {},
 
+			// Also defines the section display order.
+			sectionNames: ["Guns", "Missiles", "Systems"],
 			expandedSections: ["Guns", "Missiles"],
-			sections: {
+			// Also defines the section precedence order; lowest precedence is first.
+			sectionDefinitions: {
 				"Guns": ['WeaponGun', 'Turret', 'TurretBase'],
 				"Missiles": ['WeaponMissile'],
 				"Systems": ['Cooler', 'Shield', 'PowerPlant']
@@ -1160,6 +1163,20 @@ var shipDetails = Vue.component('ship-details', {
 		}
 	},
 	methods: {
+		getSectionItemPorts: function(sectionName) {
+			var sectionIndex = Object.keys(this.sectionDefinitions).indexOf(sectionName);
+			var excludedTypes = [];
+			Object.keys(this.sectionDefinitions).forEach((x, index) => {
+				if (index > sectionIndex) {
+					excludedTypes = excludedTypes.concat(this.sectionDefinitions[x]);
+				}
+			});
+
+			var candidates = this.selectedCustomization.getItemPortsMatchingTypes(this.sectionDefinitions[sectionName]);
+			var filtered = candidates.filter(x => !excludedTypes.some(e => x.matchesType(e, undefined)));
+			return filtered;
+
+		},
 		getAttachedComponentName: function (portName, childPortName = undefined) {
 			var component = this.selectedCustomization.getAttachedComponent(portName, childPortName);
 			if (component) {
