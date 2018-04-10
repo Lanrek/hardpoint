@@ -10,7 +10,7 @@ def load_directory(directory_path, include=None):
 		entry_path = os.path.join(directory_path, entry)
 		if os.path.isfile(entry_path) and entry_path.endswith(".json"):
 			print("Adding " + entry_path)
-			with open(entry_path, "r") as fp:
+			with open(entry_path, "r", encoding="UTF-8") as fp:
 				result[entry.replace(".json", "")] = json.load(fp)
 		elif os.path.isdir(entry_path):
 			result = {**result, **load_directory(entry_path)}
