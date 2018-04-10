@@ -1025,12 +1025,12 @@ var shipList = Vue.component('ship-list', {
 				},
 				{
 					title: "Afterburner",
-					key: "Normal Speed",
+					key: "Afterburner Speed",
 					sortable: true
 				},
 				{
 					title: "Cruise",
-					key: "Normal Speed",
+					key: "Cruise Speed",
 					sortable: true
 				},
 				{
