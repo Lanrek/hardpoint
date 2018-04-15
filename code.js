@@ -832,8 +832,8 @@ class ShipCustomization {
 				// Also copy over all children.
 				if (parentComponent) {
 					for (childPort of parentComponent.itemPorts) {
-						var childComponent = this.getAttachedComponent(childPort.name, parentPortName);
-						Vue.set(parentBinding.children, childPort.name, new BoundItemPort(childPort.name, childComponent.name));
+						var childComponentName = _.get(this.getAttachedComponent(childPort.name, parentPortName), "name");
+						Vue.set(parentBinding.children, childPort.name, new BoundItemPort(childPort.name, childComponentName));
 					}
 				}
 
