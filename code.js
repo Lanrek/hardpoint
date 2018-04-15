@@ -864,37 +864,25 @@ class ShipCustomization {
 			}
 		}
 		else {
-			if (this._bindings[portName]) {
-				componentName = this._bindings[portName].componentName;
-			}
+			componentName = _.get(this._bindings[portName], "componentName");
 		}
 
 		// If the component isn't found in the binding tree, fall back to the loadout.
 		if (!componentName) {
 			if (parentPortName) {
 				var entry = this._loadout.find(n => n[parentPortName] != undefined);
-				if (!entry) {
-					return undefined;
-				}
 
-				var attached = entry["attached"];
+				var attached = _.get(entry, "attached");
 				if (!attached) {
 					return undefined;
 				}
 
 				var childEntry = attached.find(n => n[portName] != undefined);
-				if (!childEntry) {
-					return undefined;
-				}
-				componentName = childEntry[portName];
+				componentName = _.get(childEntry, portName);
 			}
 			else {
 				var entry = this._loadout.find(n => n[portName] != undefined);
-				if (!entry) {
-					return undefined;
-				}
-
-				componentName = entry[portName];
+				componentName = _.get(entry, portName);
 			}
 		}
 
@@ -1108,9 +1096,7 @@ var componentSelector = Vue.component('component-selector', {
 			}
 
 			var component = this.customization.getAttachedComponent(this.itemPorts[0].name, parentPortName);
-			if (component) {
-				return component.name;
-			}
+			return _.get(component, "name");
 		}
 	}
 });
@@ -1285,12 +1271,6 @@ var shipDetails = Vue.component('ship-details', {
 			var filtered = candidates.filter(x => !excludedTypes.some(e => x.matchesType(e, undefined)));
 			return filtered;
 		},
-		getAttachedComponentName: function (portName, childPortName = undefined) {
-			var component = this.selectedCustomization.getAttachedComponent(portName, childPortName);
-			if (component) {
-				return component.name;
-			}
-		},
 		getAttachedComponentItemPorts: function (portName) {
 			var component = this.selectedCustomization.getAttachedComponent(portName);
 			if (component) {
@@ -1299,6 +1279,11 @@ var shipDetails = Vue.component('ship-details', {
 			}
 		},
 		getItemPortGroups(itemPorts, parentPorts = undefined) {
+			var getAttachedComponentName = (portName, parentPortName) => {
+				var component = this.selectedCustomization.getAttachedComponent(portName, parentPortName);
+				return _.get(component, "name");
+			};
+
 			if (itemPorts == undefined) {
 				return undefined;
 			}
@@ -1317,8 +1302,8 @@ var shipDetails = Vue.component('ship-details', {
 					// Handle the case where uneditable item ports have different components attached.
 					// TODO Consider allowing different types of turrets that share child ports to group.
 					(g[0].editable ||
-						this.getAttachedComponentName(g[0].name, parentPortName) ==
-						this.getAttachedComponentName(port.name, parentPortName)) &&
+						getAttachedComponentName(g[0].name, parentPortName) ==
+						getAttachedComponentName(port.name, parentPortName)) &&
 					_.isEqual(g[0].types, port.types) &&
 					_.isEqual(g[0].tags, port.tags));
 
