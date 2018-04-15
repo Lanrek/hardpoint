@@ -1054,19 +1054,6 @@ var componentSelector = Vue.component('component-selector', {
 			return name + " (size " + size + ")";
 		}
 	},
-	watch: {
-		// Invalidate the selected component when the properties change from widget reuse.
-		// TODO Not sure why this is necessary...
-		customization: function(val) {
-			this.selectedComponentName = this.getSelectedComponentName();
-		},
-		itemPorts: function(val) {
-			this.selectedComponentName = this.getSelectedComponentName();
-		},
-		parentItemPorts: function(val) {
-			this.selectedComponentName = this.getSelectedComponentName();
-		}
-	},
 	methods: {
 		onVisibleChange: function(visible) {
 			this.visible = visible;
