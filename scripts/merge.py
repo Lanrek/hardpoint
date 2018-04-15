@@ -56,7 +56,7 @@ merge_directory(
 	os.path.join(snapshot_path, "components", "df"),
 	os.path.join(data_path, "dataforgeComponents.js"),
 	"dataforgeComponents",
-	["Cooler", "EMP", "PowerPlant", "Shield", "Turret", "TurretBase"])
+	["Cooler", "EMP", "PowerPlant", "Shield", "Turret", "TurretBase", "WeaponMissile"])
 
 adjust_file(
 	os.path.join(snapshot_path, "local", "global.json"),

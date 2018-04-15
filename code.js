@@ -435,10 +435,6 @@ class SpaceshipComponent {
 				"{bulletSpeed}m/s projectile speed X {bulletDuration}sec = {bulletRange}m range"], this);
 		}
 
-		if (this.type == "WeaponMissile") {
-			return new SummaryText(["{itemPorts.length} size {itemPorts.[0].maxSize} missiles"], this);
-		}
-
 		if (this.type == "Ordinance") {
 			return new SummaryText([
 				"{missileDamage.total} {missileDamage.type} damage",
@@ -569,6 +565,10 @@ class DataforgeComponent {
 			if (this.itemPorts[0]) {
 				return new SummaryText(["{itemPorts.length} size {itemPorts.[0].maxSize} item ports"], this);
 			}
+		}
+
+		if (this.type == "WeaponMissile") {
+			return new SummaryText(["{itemPorts.length} size {itemPorts.[0].maxSize} missiles"], this);
 		}
 
 		if (this.type == "Shield") {
