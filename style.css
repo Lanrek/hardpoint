@@ -1,9 +1,3 @@
-.group-indicator-border {
-	border-width: 2px 0px 2px 2px;
-	border-style: solid;
-	border-color: #0d83c9;
-}
-
 .summary-value {
 	color: #B10DC9;
 	font-weight: bolder;
@@ -19,15 +13,45 @@
 	text-align: right;
 }
 
+/* Group indicator through the magic of after selectors. */
+.group-indicator-label {
+	position: relative;
+	z-index: 1;
+	background-color: white;
+	padding-top: 4px;
+	padding-bottom: 4px;
+}
+
+.group-indicator-label > p {
+	line-height: normal;
+}
+
+.group-indicator-border {
+	position:relative;
+}
+
+.group-indicator-border:after {
+	content: '';
+	display: block;
+	position: absolute;
+	top: 0;
+	width: 25%;
+	height: 100%;
+	left: 50%;
+	border-width: 2px 0px 2px 2px;
+	border-style: solid;
+	border-color: #0d83c9;
+}
+
 /* Spacing between component selectors and item port groups. */
 .group-content-entry + .group-content-entry,
 .component-and-children-selector + .component-and-children-selector,
 .item-port-group + .item-port-group {
-	padding-top: 8px;
+	padding-top: 16px;
 }
 
 .component-selector + .item-port-group {
-	margin-top: 8px;
+	margin-top: 16px;
 }
 
 /* Item port group table layout. */

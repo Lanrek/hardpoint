@@ -79,7 +79,7 @@
 			<div class="item-port-group">
 				<div class="group-row">
 					<div class="group-indicator" :class="{'group-indicator-border': linkable}">
-						<div v-if="linkable">
+						<div class="group-indicator-label" v-if="linkable">
 							<p v-if="linked">
 								{{ group.length }}x
 							</p>
