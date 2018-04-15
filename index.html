@@ -14,6 +14,8 @@
 		<meta charset="utf-8">
 		<title>Hardpoint</title>
 
+		<script src="//unpkg.com/lodash"></script>
+
 		<link rel="stylesheet" type="text/css" href="//unpkg.com/iview/dist/styles/iview.css">
 
 		<script src="//unpkg.com/vue"></script>
@@ -73,6 +75,31 @@
 			</row>
 		</template>
 
+		<template id="item-port-group">
+			<div class="item-port-group">
+				<div class="group-row">
+					<div class="group-indicator" :class="{'group-indicator-border': linkable}">
+						<div v-if="linkable">
+							<p v-if="linked">
+								{{ group.length }}x
+							</p>
+							<i-button size="small" @click="onClick">
+								{{ buttonText }}
+							</i-button>
+						</div>
+					</div>
+					<div class="group-content">
+						<div class="group-content-entry" v-for="port in group" v-if="!linked">
+							<slot :ports="[port]"></slot>
+						</div>
+						<div class="group-content-entry" v-if="linked">
+							<slot :ports="group"></slot>
+						</div>
+					</div>
+				</div>
+			</div>
+		</template>
+
 		<template id="ship-details">
 			<row :gutter="16">
 				<i-col span="5">
@@ -90,19 +117,34 @@
 						<panel v-for="sectionName in sectionNames" :key="sectionName" :name="sectionName">
 							{{sectionName}}
 							<div slot="content">
-								<div v-for="port in getSectionItemPorts(sectionName)">
-									<component-selector
-										v-bind:customization="selectedCustomization"
-										v-bind:item-port="port">
-									</component-selector>
-									<div v-for="childPort in getAttachedComponentItemPorts(port.name)" style="padding-left: 50px">
-										<component-selector
-											v-bind:customization="selectedCustomization"
-											v-bind:item-port="childPort"
-											v-bind:parent-port-name="port.name">
-										</component-selector>
-									</div>
-								</div>
+								<item-port-group
+									v-for="group in getItemPortGroups(getSectionItemPorts(sectionName))"
+									:key="JSON.stringify(selectedCustomization.shipId) + JSON.stringify(group)"
+									:customization="selectedCustomization"
+									:group="group" >
+									<template slot-scope="parent">
+										<div class="component-and-children-selector">
+											<component-selector
+												:customization="selectedCustomization"
+												:item-ports="parent.ports">
+											</component-selector>
+											<item-port-group
+												v-for="childGroup in getItemPortGroups(getAttachedComponentItemPorts(parent.ports[0].name), parent.ports)"
+												:key="JSON.stringify(selectedCustomization.shipId) + JSON.stringify(childGroup)"
+												:customization="selectedCustomization"
+												:group="childGroup"
+												:parent-ports="parent.ports">
+												<template slot-scope="child">
+													<component-selector
+														:customization="selectedCustomization"
+														:item-ports="child.ports"
+														:parent-item-ports="parent.ports">
+													</component-selector>
+												</template>
+											</item-port-group>
+										</div>
+									</template>
+								</item-port-group>
 							</div>
 						</panel>
 					</collapse>
@@ -140,19 +182,19 @@
 		</template>
 
 		<template id="component-selector">
-			<div style="padding:8px;">
+			<div class="component-selector">
 				{{label}}
 				<br />
 				<dropdown
 					ref="dropdown"
-					:trigger="itemPort.editable ? 'click' : 'custom'"
+					:trigger="itemPorts[0].editable ? 'click' : 'custom'"
 					class="component-selector"
 					@on-visible-change="onVisibleChange"
 					@on-click="onClick">
 
-					<component-display :component-name="selectedComponentName" :disabled="!itemPort.editable">
+					<component-display :component-name="selectedComponentName" :disabled="!itemPorts[0].editable">
 					</component-display>
-					<span :class="{'flip-icon':visible}"><i class="ivu-icon ivu-icon-arrow-down-b ivu-select-arrow"></i></span>
+					<span :class="{'flip-icon': visible}"><i class="ivu-icon ivu-icon-arrow-down-b ivu-select-arrow"></i></span>
 
 					<dropdown-menu slot="list">
 						<dropdown-item v-for="componentName in availableComponents" :name="componentName" :key="componentName">
