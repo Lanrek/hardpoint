@@ -831,6 +831,7 @@ class ShipCustomization {
 	serialize() {
 		let result = "1";
 		result += this.shipId.serialize();
+
 		return result;
 	}
 
@@ -888,6 +889,10 @@ class ShipCustomization {
 	}
 
 	setAttachedComponent(portName, parentPortName, componentName) {
+		if (_.get(this.getAttachedComponent(portName, parentPortName), "name") == componentName) {
+			return;
+		}
+
 		let bindings = this._bindings;
 		if (parentPortName) {
 			// The parent port might be missing from the binding tree because it's set on the loadout
