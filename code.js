@@ -1,11 +1,11 @@
 var hashString = function(str) {
-	var hash = 0;
+	let hash = 0;
 	if (!str) {
 		return hash;
 	}
 
 	for (let i = 0; i < str.length; i++) {
-		var c = str.charCodeAt(i);
+		const c = str.charCodeAt(i);
 		hash = (hash * 31) + c;
 		hash |= 0;
 	}
@@ -14,10 +14,10 @@ var hashString = function(str) {
 };
 
 var hashAndEncode = function(str) {
-	 var hash = hashString(str);
+	 const hash = hashString(str);
 
 	 // Limit to 24 bits for nice alignment with four base64 characters.
-	 var unencoded =
+	 const unencoded =
 		String.fromCharCode((hash & 0xff0000) >> 16) +
 		String.fromCharCode((hash & 0xff00) >> 8) +
 		String.fromCharCode(hash & 0xff);
@@ -38,11 +38,11 @@ class ShipId {
 	}
 
 	static deserialize(str) {
-		var hashedSpecificationId = str.substr(0, 4);
-		var hashedModificationId = str.substr(4, 4);
-		var hashedLoadoutId = str.substr(8, 4);
+		const hashedSpecificationId = str.substr(0, 4);
+		const hashedModificationId = str.substr(4, 4);
+		const hashedLoadoutId = str.substr(8, 4);
 
-		var specificationId = Object.keys(shipSpecifications).find(n => hashAndEncode(n) == hashedSpecificationId);
+		const specificationId = Object.keys(shipSpecifications).find(n => hashAndEncode(n) == hashedSpecificationId);
 
 		return new ShipId(
 			specificationId,
@@ -52,8 +52,8 @@ class ShipId {
 
 	static findLoadout(specificationId, modificationId) {
 		// This is crazy -- must be missing something about how loadouts are bound to ships.
-		var loadoutId = undefined;
-		var tryLoadoutId = id => {
+		let loadoutId;
+		const tryLoadoutId = id => {
 			if (!loadoutId) {
 				if (shipLoadouts[id]) {
 					loadoutId = id;
@@ -61,13 +61,13 @@ class ShipId {
 			}
 		}
 
-		var specificationData = shipSpecifications[specificationId]._data;
+		const specificationData = shipSpecifications[specificationId]._data;
 		if (modificationId) {
 			tryLoadoutId(specificationId + "_" + modificationId);
 
-			var patchFile = specificationData["Modifications"][modificationId]["@patchFile"];
+			const patchFile = specificationData["Modifications"][modificationId]["@patchFile"];
 			if (patchFile) {
-				var fileName = patchFile.split("/").pop();
+				const fileName = patchFile.split("/").pop();
 				tryLoadoutId(fileName + "_" + modificationId);
 				tryLoadoutId(fileName);
 			}
@@ -120,8 +120,8 @@ class ShipSpecification {
 	}
 
 	getModificationLoadouts() {
-		var modifications = [undefined].concat(this.modificationIds);
-		var results = modifications.map(x => ShipId.findLoadout(this._data["@name"], x));
+		const modifications = [undefined].concat(this.modificationIds);
+		let results = modifications.map(x => ShipId.findLoadout(this._data["@name"], x));
 
 		// Filter out anything that doesn't have a valid loadout.
 		results = results.filter(n => n.loadoutId);
@@ -155,17 +155,17 @@ class ShipSpecification {
 	}
 
 	_findParts(modificationId, className = undefined) {
-		var unsearched = [this._data["Parts"]["Part"]];
+		let unsearched = [this._data["Parts"]["Part"]];
 		if (modificationId) {
-			var modification = this._data["Modifications"][modificationId];
+			const modification = this._data["Modifications"][modificationId];
 			if (modification["mod"] && modification["mod"]["Parts"]) {
 				unsearched = [modification["mod"]["Parts"]["Part"]];
 			}
 		}
 
-		var result = [];
+		let result = [];
 		while (unsearched.length > 0) {
-			var potential = unsearched.pop();
+			const potential = unsearched.pop();
 
 			if (!className || potential["@class"] == className) {
 				result.push(potential);
@@ -186,7 +186,7 @@ class ShipSpecification {
 	}
 
 	_findItemPorts(modificationId = undefined) {
-		var itemPorts = this._findParts(modificationId, "ItemPort");
+		const itemPorts = this._findParts(modificationId, "ItemPort");
 
 		return itemPorts.filter(n => n["ItemPort"]).map(function (part) {
 			return new SpaceshipItemPort(part["ItemPort"], part["@name"]);
@@ -196,7 +196,7 @@ class ShipSpecification {
 
 class DamageQuantity {
 	constructor(distortion, energy, physical, thermal) {
-		var makeNumber = x => Number(x) || 0;
+		const makeNumber = x => Number(x) || 0;
 
 		this._values = [makeNumber(distortion), makeNumber(energy), makeNumber(physical), makeNumber(thermal)];
 	}
@@ -222,7 +222,7 @@ class DamageQuantity {
 	}
 
 	get type() {
-		var count = this._values.reduce((total, x) => x > 0 ? total + 1 : total, 0);
+		const count = this._values.reduce((total, x) => x > 0 ? total + 1 : total, 0);
 		if (count > 1) {
 			return "mixed"
 		}
@@ -267,13 +267,13 @@ class SummaryText {
 	}
 
 	render() {
-		var getValue = key => {
-			var split = key.split(".");
+		let getValue = key => {
+			const split = key.split(".");
 
-			var value = this.values;
+			let value = this.values;
 			split.forEach(n => {
 				if (n.startsWith("[")) {
-					var index = Number(n.slice(1, -1));
+					const index = Number(n.slice(1, -1));
 					value = value[index];
 				}
 				else {
@@ -289,8 +289,8 @@ class SummaryText {
 			return '<span class="summary-value">' + value + '</span>';
 		};
 
-		var expanded = this.patterns.map(p => {
-			var replaced = p.replace(/{[^}]+}/g, n => getValue(n.slice(1, -1)));
+		const expanded = this.patterns.map(p => {
+			const replaced = p.replace(/{[^}]+}/g, n => getValue(n.slice(1, -1)));
 			return "<p>" + replaced + "</p>";
 		}).join("");
 
@@ -335,7 +335,7 @@ class SpaceshipComponent {
 
 	get bulletSpeed() {
 		if (this.type == "WeaponGun") {
-			var ammo = this._data["ammo"];
+			const ammo = this._data["ammo"];
 			if (!ammo) {
 				return 0;
 			}
@@ -348,7 +348,7 @@ class SpaceshipComponent {
 
 	get bulletDuration() {
 		if (this.type == "WeaponGun") {
-			var ammo = this._data["ammo"];
+			const ammo = this._data["ammo"];
 			if (!ammo) {
 				return 0;
 			}
@@ -365,7 +365,7 @@ class SpaceshipComponent {
 
 	get bulletCount() {
 		if (this.type == "WeaponGun") {
-			var shotgun = this._data["firemodes"]["shotgun"];
+			const shotgun = this._data["firemodes"]["shotgun"];
 			if (shotgun) {
 				return Number(shotgun["pellets"]) || 0;
 			}
@@ -377,17 +377,18 @@ class SpaceshipComponent {
 
 	get gunAlpha() {
 		if (this.type == "WeaponGun") {
-			var ammo = this._data["ammo"];
+			const ammo = this._data["ammo"];
 			if (!ammo) {
 				return new DamageQuantity(0, 0, 0, 0);
 			}
 
-			var detonation = ammo["bullet"]["detonation"];
+			const detonation = ammo["bullet"]["detonation"];
+			let damageInfo;
 			if (detonation) {
-				var damageInfo = detonation["explosion"]["damage"]["DamageInfo"];
+				damageInfo = detonation["explosion"]["damage"]["DamageInfo"];
 			}
 			else {
-				var damageInfo = ammo["bullet"]["damage"]["DamageInfo"];
+				damageInfo = ammo["bullet"]["damage"]["DamageInfo"];
 			}
 
 			return new DamageQuantity(
@@ -409,15 +410,15 @@ class SpaceshipComponent {
 	}
 
 	get gunBurstDps() {
-		var scaled = this.gunAlpha.scale(this.bulletCount + this.gunFireRate / 60.0);
+		const scaled = this.gunAlpha.scale(this.bulletCount + this.gunFireRate / 60.0);
 		return scaled;
 	}
 
 	get gunSustainedDps() {
 		// TODO Actually calculate heat and energy limits based on ship equipment.
 		if (this.type == "WeaponGun") {
-			var derived = this._data["derived"];
-			var quantity = new DamageQuantity(
+			const derived = this._data["derived"];
+			const quantity = new DamageQuantity(
 				derived["dps_60s_dmg_dist"],
 				derived["dps_60s_dmg_enrg"],
 				derived["dps_60s_dmg_phys"],
@@ -431,8 +432,8 @@ class SpaceshipComponent {
 
 	get missileDamage() {
 		if (this.type == "Ordinance") {
-			var explosion = this._data["explosion"];
-			var quantity = new DamageQuantity(
+			const explosion = this._data["explosion"];
+			const quantity = new DamageQuantity(
 				explosion["damage_distortion"],
 				explosion["damage_energy"],
 				explosion["damage"],
@@ -474,7 +475,7 @@ class SpaceshipComponent {
 
 	get summary() {
 		if (this.type == "WeaponGun") {
-			var damage = "{gunAlpha.total}";
+			let damage = "{gunAlpha.total}";
 			if (this.bulletCount > 1) {
 				damage += " X {bulletCount}";
 			}
@@ -531,7 +532,7 @@ class DataforgeComponent {
 	}
 
 	get requiredTags() {
-		var tags = this._data["Components"]["SCItem"]["ItemDefinition"]["@RequiredTags"];
+		const tags = this._data["Components"]["SCItem"]["ItemDefinition"]["@RequiredTags"];
 		if (!tags) {
 			return [];
 		}
@@ -584,7 +585,7 @@ class DataforgeComponent {
 	}
 
 	get shieldCapacity() {
-		var params = this._data["Components"]["SCItemShieldGeneratorParams"];
+		const params = this._data["Components"]["SCItemShieldGeneratorParams"];
 		if (params) {
 			return Number(params["ShieldEmitterContributions"]["@MaxShieldHealth"]);
 		}
@@ -593,7 +594,7 @@ class DataforgeComponent {
 	}
 
 	get shieldRegeneration() {
-		var params = this._data["Components"]["SCItemShieldGeneratorParams"];
+		const params = this._data["Components"]["SCItemShieldGeneratorParams"];
 		if (params) {
 			return Number(params["ShieldEmitterContributions"]["@MaxShieldRegen"]);
 		}
@@ -602,7 +603,7 @@ class DataforgeComponent {
 	}
 
 	get shieldDownDelay() {
-		var params = this._data["Components"]["SCItemShieldGeneratorParams"];
+		const params = this._data["Components"]["SCItemShieldGeneratorParams"];
 		if (params) {
 			return Number(params["ShieldEmitterContributions"]["@DownedRegenDelay"]);
 		}
@@ -631,12 +632,12 @@ class DataforgeComponent {
 	}
 
 	_findItemPorts() {
-		var ports = this._data["Components"]["SCItem"]["ItemPorts"];
+		let ports = this._data["Components"]["SCItem"]["ItemPorts"];
 		if (!ports) {
 			return [];
 		}
 
-		var ports = ports["SItemPortCoreParams"]["Ports"];
+		ports = ports["SItemPortCoreParams"]["Ports"];
 		if (!ports) {
 			return [];
 		}
@@ -706,7 +707,7 @@ class BaseItemPort {
 		}
 
 		if (component.requiredTags) {
-			var portTags = tags.concat(this.tags);
+			const portTags = tags.concat(this.tags);
 
 			for (const tag of component.requiredTags) {
 				if (!portTags.includes(tag)) {
@@ -750,16 +751,16 @@ class SpaceshipItemPort extends BaseItemPort {
 			return [];
 		}
 
-		var types = this._data["Types"]["Type"];
+		let types = this._data["Types"]["Type"];
 		if (!Array.isArray(types)) {
 			types = [types];
 		}
 
 		return types.map(x => {
-			var type = x["@type"];
+			const type = x["@type"];
 
 			// It looks like there are implicit defaults; the Sabre is an example.
-			var subtypes = x["@subtypes"];
+			let subtypes = x["@subtypes"];
 			if (!subtypes) {
 				if (type == "WeaponGun") {
 					subtypes = "Gun";
@@ -801,12 +802,12 @@ class DataforgeItemPort extends BaseItemPort {
 	}
 
 	get types() {
-		var subtypes = this._data["Types"]["SItemPortDefTypes"]["SubTypes"];
+		const subtypes = this._data["Types"]["SItemPortDefTypes"]["SubTypes"];
 		if (subtypes) {
 			var subtype = subtypes["Enum"]["@value"];
 		}
 
-		var type = new ItemPortType(
+		const type = new ItemPortType(
 			this._data["Types"]["SItemPortDefTypes"]["@Type"],
 			subtype);
 		return [type];
@@ -828,14 +829,14 @@ class ShipCustomization {
 	}
 
 	serialize() {
-		var result = "1";
+		let result = "1";
 		result += this.shipId.serialize();
 		return result;
 	}
 
 	static deserialize(str) {
-		var version = str.substr(0, 1);
-		var shipId = str.substr(1, 12);
+		const version = str.substr(0, 1);
+		const shipId = str.substr(1, 12);
 		return new ShipCustomization(ShipId.deserialize(shipId));
 	}
 
@@ -849,7 +850,7 @@ class ShipCustomization {
 	}
 
 	getAttributes(category=undefined) {
-		var attributes = this._specification.getAttributes(this.shipId.modificationId);
+		let attributes = this._specification.getAttributes(this.shipId.modificationId);
 
 		attributes = attributes.concat([
 			{
@@ -887,18 +888,18 @@ class ShipCustomization {
 	}
 
 	setAttachedComponent(portName, parentPortName, componentName) {
-		var bindings = this._bindings;
+		let bindings = this._bindings;
 		if (parentPortName) {
 			// The parent port might be missing from the binding tree because it's set on the loadout
 			// not the customization. Copy the parent binding from the loadout first in that case.
 			if (!bindings[parentPortName]) {
-				var parentComponent = this.getAttachedComponent(parentPortName);
-				var parentBinding = new BoundItemPort(parentPortName, parentComponent.name);
+				const parentComponent = this.getAttachedComponent(parentPortName);
+				const parentBinding = new BoundItemPort(parentPortName, parentComponent.name);
 
 				// Also copy over all children.
 				if (parentComponent) {
 					for (const childPort of parentComponent.itemPorts) {
-						var childComponentName = _.get(this.getAttachedComponent(childPort.name, parentPortName), "name");
+						const childComponentName = _.get(this.getAttachedComponent(childPort.name, parentPortName), "name");
 						Vue.set(parentBinding.children, childPort.name, new BoundItemPort(childPort.name, childComponentName));
 					}
 				}
@@ -913,12 +914,12 @@ class ShipCustomization {
 	}
 
 	getAttachedComponent(portName, parentPortName) {
-		var componentName;
+		let componentName;
 
 		// First check if the component is customized in the binding tree.
 		if (parentPortName) {
 			if (this._bindings[parentPortName]) {
-				var children = this._bindings[parentPortName].children;
+				const children = this._bindings[parentPortName].children;
 				if (portName in children) {
 					componentName = children[portName].componentName;
 				}
@@ -936,18 +937,18 @@ class ShipCustomization {
 		// If the component isn't found in the binding tree, fall back to the loadout.
 		if (!componentName) {
 			if (parentPortName) {
-				var entry = this._loadout.find(n => n[parentPortName] != undefined);
+				const entry = this._loadout.find(n => n[parentPortName] != undefined);
 
-				var attached = _.get(entry, "attached");
+				const attached = _.get(entry, "attached");
 				if (!attached) {
 					return undefined;
 				}
 
-				var childEntry = attached.find(n => n[portName] != undefined);
+				const childEntry = attached.find(n => n[portName] != undefined);
 				componentName = _.get(childEntry, portName);
 			}
 			else {
-				var entry = this._loadout.find(n => n[portName] != undefined);
+				const entry = this._loadout.find(n => n[portName] != undefined);
 				componentName = _.get(entry, portName);
 			}
 		}
@@ -964,11 +965,11 @@ class ShipCustomization {
 	}
 
 	_getAttachedComponents() {
-		var attached = [];
+		let attached = [];
 
-		var directPorts = this._specification.getItemPorts(this.shipId.modificationId);
+		const directPorts = this._specification.getItemPorts(this.shipId.modificationId);
 		directPorts.forEach(x => {
-			var component = this.getAttachedComponent(x.name);
+			const component = this.getAttachedComponent(x.name);
 			attached.push(component);
 			if (component) {
 				component.itemPorts.forEach(c => attached.push(this.getAttachedComponent(c.name, x.name)));
@@ -1034,8 +1035,8 @@ var itemPortGroup = Vue.component('item-port-group', {
 
 			// When linking item ports, set their attached components to match the first in the group.
 			if (this.linked) {
-				var firstComponent = this.customization.getAttachedComponent(this.group[0].name);
-				var firstComponentName = _.get(firstComponent, "name");
+				const firstComponent = this.customization.getAttachedComponent(this.group[0].name);
+				const firstComponentName = _.get(firstComponent, "name");
 
 				for (const port of this.group.slice(1)) {
 					if (this.parentPorts) {
@@ -1049,7 +1050,7 @@ var itemPortGroup = Vue.component('item-port-group', {
 						this.customization.setAttachedComponent(port.name, undefined, firstComponentName);
 						if (firstComponent) {
 							for (const childPort of firstComponent.itemPorts) {
-								var childComponent = this.customization.getAttachedComponent(childPort.name, this.group[0].name);
+								const childComponent = this.customization.getAttachedComponent(childPort.name, this.group[0].name);
 								this.customization.setAttachedComponent(childPort.name, port.name, _.get(childComponent, "name"));
 							}
 						}
@@ -1058,14 +1059,14 @@ var itemPortGroup = Vue.component('item-port-group', {
 			}
 		},
 		allIdentical: function() {
-			var componentsIdentical = function(left, right) {
+			const componentsIdentical = function(left, right) {
 				return _.get(left, "name") == _.get(right, "name");
 			};
 
-			var firstComponent = this.customization.getAttachedComponent(this.group[0].name);
+			const firstComponent = this.customization.getAttachedComponent(this.group[0].name);
 
 			for (const other of this.group.slice(1)) {
-				var otherComponent = this.customization.getAttachedComponent(other.name);
+				const otherComponent = this.customization.getAttachedComponent(other.name);
 				if (!componentsIdentical(firstComponent, otherComponent)) {
 					return false;
 				}
@@ -1112,13 +1113,13 @@ var componentSelector = Vue.component('component-selector', {
 			return this.itemPorts[0].availableComponents(this.customization.tags);
 		},
 		label: function () {
-			var size = this.itemPorts[0].minSize;
+			let size = this.itemPorts[0].minSize;
 			if (this.itemPorts[0].minSize != this.itemPorts[0].maxSize)
 			{
 				size += "-" + this.itemPorts[0].maxSize;
 			}
 
-			var name = this.itemPorts[0].name;
+			let name = this.itemPorts[0].name;
 			if (this.itemPorts.length > 1) {
 				name += " and similar";
 			}
@@ -1131,7 +1132,7 @@ var componentSelector = Vue.component('component-selector', {
 			this.visible = visible;
 
 			// Fix the width of the dropdown dynamically since the dropdown widget doesn't handle padding.
-			var elementWidth = this.$refs["dropdown"].$el.offsetWidth;
+			const elementWidth = this.$refs["dropdown"].$el.offsetWidth;
 			this.$refs["dropdown"].$refs["drop"].$el.style.width = elementWidth + "px";
 		},
 		onClick: function(name) {
@@ -1149,12 +1150,12 @@ var componentSelector = Vue.component('component-selector', {
 			}
 		},
 		getSelectedComponentName: function () {
-			var parentPortName = undefined;
+			let parentPortName;
 			if (this.parentItemPorts) {
 				parentPortName = this.parentItemPorts[0].name
 			}
 
-			var component = this.customization.getAttachedComponent(this.itemPorts[0].name, parentPortName);
+			const component = this.customization.getAttachedComponent(this.itemPorts[0].name, parentPortName);
 			return _.get(component, "name");
 		}
 	}
@@ -1234,9 +1235,9 @@ var shipList = Vue.component('ship-list', {
 			return this.$root.shipIds.map(n => new ShipCustomization(n));
 		},
 		shipAttributes: function() {
-			var attributes = this.shipCustomizations.map(c => {
-				var attributes = c.getAttributes();
-				var reduced = attributes.reduce((total, a) => {
+			return this.shipCustomizations.map(c => {
+				const attributes = c.getAttributes();
+				let reduced = attributes.reduce((total, a) => {
 					total[a.name] = a.value;
 					return total;
 				}, {});
@@ -1248,7 +1249,6 @@ var shipList = Vue.component('ship-list', {
 				reduced.serialized = c.serialize();
 				return reduced;
 			});
-			return attributes;
 		},
 		tableHeight: function() {
 			// TODO This is a terribly sad hack, but it's good enough for now.
@@ -1318,28 +1318,28 @@ var shipDetails = Vue.component('ship-details', {
 	},
 	methods: {
 		getSectionItemPorts: function(sectionName) {
-			var sectionIndex = Object.keys(this.sectionDefinitions).indexOf(sectionName);
-			var excludedTypes = [];
+			const sectionIndex = Object.keys(this.sectionDefinitions).indexOf(sectionName);
+			let excludedTypes = [];
 			Object.keys(this.sectionDefinitions).forEach((x, index) => {
 				if (index > sectionIndex) {
 					excludedTypes = excludedTypes.concat(this.sectionDefinitions[x]);
 				}
 			});
 
-			var candidates = this.selectedCustomization.getItemPortsMatchingTypes(this.sectionDefinitions[sectionName]);
-			var filtered = candidates.filter(x => !excludedTypes.some(e => x.matchesType(e, undefined)));
+			const candidates = this.selectedCustomization.getItemPortsMatchingTypes(this.sectionDefinitions[sectionName]);
+			const filtered = candidates.filter(x => !excludedTypes.some(e => x.matchesType(e, undefined)));
 			return filtered;
 		},
 		getAttachedComponentItemPorts: function (portName) {
-			var component = this.selectedCustomization.getAttachedComponent(portName);
+			const component = this.selectedCustomization.getAttachedComponent(portName);
 			if (component) {
 				// Hide AmmoBox item ports until they're worth customizing.
 				return component.itemPorts.filter(n => !n.matchesType("AmmoBox"));
 			}
 		},
 		getItemPortGroups(itemPorts, parentPorts = undefined) {
-			var getAttachedComponentName = (portName, parentPortName) => {
-				var component = this.selectedCustomization.getAttachedComponent(portName, parentPortName);
+			const getAttachedComponentName = (portName, parentPortName) => {
+				const component = this.selectedCustomization.getAttachedComponent(portName, parentPortName);
 				return _.get(component, "name");
 			};
 
@@ -1347,14 +1347,14 @@ var shipDetails = Vue.component('ship-details', {
 				return undefined;
 			}
 
-			var parentPortName = undefined;
+			let parentPortName;
 			if (parentPorts) {
 				parentPortName = parentPorts[0].name;
 			}
 
-			var groups = [];
+			let groups = [];
 			for (const port of itemPorts) {
-				var groupIndex = groups.findIndex(g =>
+				const groupIndex = groups.findIndex(g =>
 					g[0].minSize == port.minSize &&
 					g[0].maxSize == port.maxSize &&
 					g[0].editable == port.editable &&
@@ -1413,14 +1413,14 @@ var app = new Vue({
 	el: '#app',
 	computed: {
 		shipIds: function () {
-			var unflattened = Object.values(shipSpecifications).map(n => n.getModificationLoadouts());
-			var flattened = unflattened.reduce((total, n) => total.concat(n), []);
+			const unflattened = Object.values(shipSpecifications).map(n => n.getModificationLoadouts());
+			const flattened = unflattened.reduce((total, n) => total.concat(n), []);
 
-			var npcModifications = ["Pirate", "S42", "SQ42", "Dead", "CalMason", "Weak"];
-			var filtered = flattened.filter(x => !x.modificationId || !npcModifications.some(n => x.modificationId.includes(n)));
+			const npcModifications = ["Pirate", "S42", "SQ42", "Dead", "CalMason", "Weak"];
+			let filtered = flattened.filter(x => !x.modificationId || !npcModifications.some(n => x.modificationId.includes(n)));
 
-			var npcSpecifications = ["Turret", "Old"];
-			var filtered = filtered.filter(x => !npcSpecifications.some(n => x.specificationId.includes(n)));
+			const npcSpecifications = ["Turret", "Old"];
+			filtered = filtered.filter(x => !npcSpecifications.some(n => x.specificationId.includes(n)));
 
 			return filtered;
 		}
