@@ -153,10 +153,12 @@
 
 		<template id="component-display">
 			<i-button :disabled="disabled">
-				<row v-if="componentName==undefined" style="text-align: center;">
+				<!-- Gutters in nested rows are broken; they intermittently inherit the setting from their ancestors. -->
+				<!-- Setting identical gutter on the child rows seems to at least make the behavior consistent.  -->
+				<row v-if="componentName==undefined" :gutter="16" style="text-align: center;">
 					Empty
 				</row>
-				<row v-if="componentName">
+				<row v-if="componentName" :gutter="16">
 					<i-col span="12">
 						<strong>{{component.displayName}}</strong>
 					</i-col>
@@ -164,7 +166,7 @@
 						{{component.type}}
 					</i-col>
 				</row>
-				<row v-if="componentName">
+				<row v-if="componentName" :gutter="16">
 					<i-col span="12">
 						<span v-html="component.summary.render()"></span>
 					</i-col>
