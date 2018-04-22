@@ -4,7 +4,7 @@ var hashString = function(str) {
 		return hash;
 	}
 
-	for (var i = 0; i < str.length; i++) {
+	for (let i = 0; i < str.length; i++) {
 		var c = str.charCodeAt(i);
 		hash = (hash * 31) + c;
 		hash |= 0;
@@ -708,7 +708,7 @@ class BaseItemPort {
 		if (component.requiredTags) {
 			var portTags = tags.concat(this.tags);
 
-			for (var tag of component.requiredTags) {
+			for (const tag of component.requiredTags) {
 				if (!portTags.includes(tag)) {
 					return false;
 				}
@@ -897,7 +897,7 @@ class ShipCustomization {
 
 				// Also copy over all children.
 				if (parentComponent) {
-					for (childPort of parentComponent.itemPorts) {
+					for (const childPort of parentComponent.itemPorts) {
 						var childComponentName = _.get(this.getAttachedComponent(childPort.name, parentPortName), "name");
 						Vue.set(parentBinding.children, childPort.name, new BoundItemPort(childPort.name, childComponentName));
 					}
@@ -982,15 +982,15 @@ class ShipCustomization {
 
 
 // Translate underlying data into model objects.
-for (key of Object.keys(shipSpecifications)) {
+for (const key of Object.keys(shipSpecifications)) {
 	shipSpecifications[key] = new ShipSpecification(shipSpecifications[key]);
 }
 
 var mergedComponents = {}
-for (key of Object.keys(dataforgeComponents)) {
+for (const key of Object.keys(dataforgeComponents)) {
 	mergedComponents[key] = new DataforgeComponent(dataforgeComponents[key]);
 }
-for (key of Object.keys(spaceshipComponents)) {
+for (const key of Object.keys(spaceshipComponents)) {
 	if (!(key in mergedComponents)) {
 		mergedComponents[key] = new SpaceshipComponent(spaceshipComponents[key]);
 	}
@@ -998,7 +998,7 @@ for (key of Object.keys(spaceshipComponents)) {
 
 var localizationItems = {};
 var localizationVehicles = {};
-for (entry of localizationStrings) {
+for (const entry of localizationStrings) {
 	if (entry["item_Name"]) {
 		localizationItems[entry["item"]] = entry["item_Name"];
 	}
@@ -1037,10 +1037,10 @@ var itemPortGroup = Vue.component('item-port-group', {
 				var firstComponent = this.customization.getAttachedComponent(this.group[0].name);
 				var firstComponentName = _.get(firstComponent, "name");
 
-				for (port of this.group.slice(1)) {
+				for (const port of this.group.slice(1)) {
 					if (this.parentPorts) {
 						// For child ports, set them across all parents in the parent group.
-						for (parentPort of this.parentPorts) {
+						for (const parentPort of this.parentPorts) {
 							this.customization.setAttachedComponent(port.name, parentPort.name, firstComponentName);
 						}
 					}
@@ -1048,7 +1048,7 @@ var itemPortGroup = Vue.component('item-port-group', {
 						// For parent ports, also set all the child ports to match.
 						this.customization.setAttachedComponent(port.name, undefined, firstComponentName);
 						if (firstComponent) {
-							for (childPort of firstComponent.itemPorts) {
+							for (const childPort of firstComponent.itemPorts) {
 								var childComponent = this.customization.getAttachedComponent(childPort.name, this.group[0].name);
 								this.customization.setAttachedComponent(childPort.name, port.name, _.get(childComponent, "name"));
 							}
@@ -1064,14 +1064,14 @@ var itemPortGroup = Vue.component('item-port-group', {
 
 			var firstComponent = this.customization.getAttachedComponent(this.group[0].name);
 
-			for (other of this.group.slice(1)) {
+			for (const other of this.group.slice(1)) {
 				var otherComponent = this.customization.getAttachedComponent(other.name);
 				if (!componentsIdentical(firstComponent, otherComponent)) {
 					return false;
 				}
 
 				if (firstComponent) {
-					for (childPort of firstComponent.itemPorts) {
+					for (const childPort of firstComponent.itemPorts) {
 						if (!componentsIdentical(
 							this.customization.getAttachedComponent(childPort.name, this.group[0].name),
 							this.customization.getAttachedComponent(childPort.name, other.name))) {
@@ -1137,9 +1137,9 @@ var componentSelector = Vue.component('component-selector', {
 		onClick: function(name) {
 			this.selectedComponentName = name;
 
-			for (port of this.itemPorts) {
+			for (const port of this.itemPorts) {
 				if (this.parentItemPorts) {
-					for (parentPort of this.parentItemPorts) {
+					for (const parentPort of this.parentItemPorts) {
 						this.customization.setAttachedComponent(port.name, parentPort.name, name);
 					}
 				}
@@ -1353,7 +1353,7 @@ var shipDetails = Vue.component('ship-details', {
 			}
 
 			var groups = [];
-			for (port of itemPorts) {
+			for (const port of itemPorts) {
 				var groupIndex = groups.findIndex(g =>
 					g[0].minSize == port.minSize &&
 					g[0].maxSize == port.maxSize &&
