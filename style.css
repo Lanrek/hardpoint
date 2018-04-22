@@ -9,6 +9,11 @@
 	margin-bottom: 16px;
 }
 
+.title {
+	text-align: center;
+	padding-bottom: 16px;
+}
+
 .right {
 	text-align: right;
 }
@@ -155,10 +160,11 @@
 }
 
 .component-selector .ivu-dropdown-rel .ivu-btn {
-	padding-right: 32px;
+	padding-right: 16px;
 }
 
 .component-selector .ivu-btn {
+	padding-left: 0px;
 	text-align: left;
 	width: 100%;
 }

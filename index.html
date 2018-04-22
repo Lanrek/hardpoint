@@ -102,17 +102,11 @@
 
 		<template id="ship-details">
 			<row :gutter="16">
-				<i-col span="5">
-					<i-button class="nav-button" @click="$router.push({ name: 'list' });">
-						Back to Ship Comparison
-					</i-button>
-					<i-select :value="selectedShipIdIndex" @on-change="onChange">
-						<i-option v-for="(id, index) in $root.shipIds" :value="index" :key="index">
-							{{id.loadoutId}}
-						</i-option>
-					</i-select>
+				<i-col span="24" class="title">
+					<h1>{{selectedCustomization.displayName}}</h1>
+					<p>Return to the <router-link :to="{name: 'list'}">comparison view</router-link> to select a different ship</p>
 				</i-col>
-				<i-col span="14">
+				<i-col span="17">
 					<collapse v-model="expandedSections">
 						<panel v-for="sectionName in sectionNames" :key="sectionName" :name="sectionName">
 							{{sectionName}}
@@ -149,7 +143,7 @@
 						</panel>
 					</collapse>
 				</i-col>
-				<i-col span="5">
+				<i-col span="7">
 					<i-table :columns="damageColumns" :data="selectedCustomization.getAttributes('Damage')"></i-table>
 					<i-table :columns="maneuverabilityColumns" :data="selectedCustomization.getAttributes('Maneuverability')"></i-table>
 					<i-table :columns="survivabilityColumns" :data="selectedCustomization.getAttributes('Survivability')"></i-table>

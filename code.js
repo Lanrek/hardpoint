@@ -1,8 +1,53 @@
+var hashString = function(str) {
+	var hash = 0;
+	if (!str) {
+		return hash;
+	}
+
+	for (var i = 0; i < str.length; i++) {
+		var c = str.charCodeAt(i);
+		hash = (hash * 31) + c;
+		hash |= 0;
+	}
+
+	return hash;
+};
+
+var hashAndEncode = function(str) {
+	 var hash = hashString(str);
+
+	 // Limit to 24 bits for nice alignment with four base64 characters.
+	 var unencoded =
+		String.fromCharCode((hash & 0xff0000) >> 16) +
+		String.fromCharCode((hash & 0xff00) >> 8) +
+		String.fromCharCode(hash & 0xff);
+
+	return btoa(unencoded).replace(/\+/g, '-').replace(/\//g, '_');
+}
+
+
 class ShipId {
 	constructor(specificationId, modificationId, loadoutId) {
 		this.specificationId = specificationId;
 		this.modificationId = modificationId;
 		this.loadoutId = loadoutId;
+	}
+
+	serialize() {
+		return hashAndEncode(this.specificationId) + hashAndEncode(this.modificationId) + hashAndEncode(this.loadoutId);
+	}
+
+	static deserialize(str) {
+		var hashedSpecificationId = str.substr(0, 4);
+		var hashedModificationId = str.substr(4, 4);
+		var hashedLoadoutId = str.substr(8, 4);
+
+		var specificationId = Object.keys(shipSpecifications).find(n => hashAndEncode(n) == hashedSpecificationId);
+
+		return new ShipId(
+			specificationId,
+			shipSpecifications[specificationId].modificationIds.find(n => hashAndEncode(n) == hashedModificationId),
+			Object.keys(shipLoadouts).find(n => hashAndEncode(n) == hashedLoadoutId));
 	}
 
 	static findLoadout(specificationId, modificationId) {
@@ -59,6 +104,11 @@ class ShipSpecification {
 
 	get modificationIds() {
 		return Object.keys(this._data["Modifications"] || {});
+	}
+
+	getDisplayName(modificationId) {
+		// This looks like a complete mess...
+		return undefined;
 	}
 
 	getItemPorts(modificationId) {
@@ -256,7 +306,7 @@ class SpaceshipComponent {
 	}
 
 	get displayName() {
-		return localizationDictionary[this.name] || this.name;
+		return localizationItems[this.name] || this.name;
 	}
 
 	get name() {
@@ -461,7 +511,7 @@ class DataforgeComponent {
 	}
 
 	get displayName() {
-		return localizationDictionary[this.name] || this.name;
+		return localizationItems[this.name] || this.name;
 	}
 
 	get name() {
@@ -777,6 +827,22 @@ class ShipCustomization {
 		this._bindings = {};
 	}
 
+	serialize() {
+		var result = "1";
+		result += this.shipId.serialize();
+		return result;
+	}
+
+	static deserialize(str) {
+		var version = str.substr(0, 1);
+		var shipId = str.substr(1, 12);
+		return new ShipCustomization(ShipId.deserialize(shipId));
+	}
+
+	get displayName() {
+		return this._specification.getDisplayName(this.shipId.modificationId) || this.shipId.loadoutId;
+	}
+
 	// Abstracted because ship modifications will probably have their own tags eventually.
 	get tags() {
 		return this._specification.tags;
@@ -930,9 +996,15 @@ for (key of Object.keys(spaceshipComponents)) {
 	}
 }
 
-var localizationDictionary = {};
+var localizationItems = {};
+var localizationVehicles = {};
 for (entry of localizationStrings) {
-	localizationDictionary[entry["item"]] = entry["item_Name"];
+	if (entry["item_Name"]) {
+		localizationItems[entry["item"]] = entry["item_Name"];
+	}
+	else if (entry["vehicle_Name"]) {
+		localizationVehicles[entry["item"]] = entry["vehicle_Name"];
+	}
 }
 
 
@@ -1094,8 +1166,8 @@ var shipList = Vue.component('ship-list', {
 		return {
 			attributeColumns: [
 				{
-					title: "Loadout",
-					key: "loadoutId",
+					title: "Vehicle",
+					key: "displayName",
 					sortable: true,
 					width: 240
 				},
@@ -1148,7 +1220,7 @@ var shipList = Vue.component('ship-list', {
 						return h('Button', {
 							on: {
 								click: () => {
-									this.customize(params.index)
+									this.customize(params.row.serialized)
 								}
 							}
 						}, 'Customize');
@@ -1168,9 +1240,12 @@ var shipList = Vue.component('ship-list', {
 					total[a.name] = a.value;
 					return total;
 				}, {});
-				reduced.specificationId = c.shipId.specificationId;
-				reduced.modificationId = c.shipId.modificationId;
-				reduced.loadoutId = c.shipId.loadoutId;
+
+				// Displayed as the row name.
+				reduced.displayName = c.displayName;
+
+				// Used for navigation to the customization page.
+				reduced.serialized = c.serialize();
 				return reduced;
 			});
 			return attributes;
@@ -1182,8 +1257,8 @@ var shipList = Vue.component('ship-list', {
 		}
 	},
 	methods: {
-		customize(index) {
-			this.$router.push({ name: 'ships', params: { shipIdIndex: index }})
+		customize(serialized) {
+			this.$router.push({ name: 'customize', params: { serialized: serialized }});
 		}
 	}
 });
@@ -1240,9 +1315,6 @@ var shipDetails = Vue.component('ship-details', {
 		}
 	},
 	computed: {
-		selectedShipIdIndex() {
-			return Number(this.$route.params.shipIdIndex);
-		}
 	},
 	methods: {
 		getSectionItemPorts: function(sectionName) {
@@ -1303,20 +1375,15 @@ var shipDetails = Vue.component('ship-details', {
 			}
 
 			return groups;
-		},
-		onChange: function(shipIdIndex) {
-			this.$router.push({ name: 'ships', params: { shipIdIndex: shipIdIndex }})
 		}
 	},
 
 	// TODO These hooks feel janky -- there should be a better way make the selection reactive.
 	created() {
-		var shipId = this.$root.shipIds[this.selectedShipIdIndex];
-		this.selectedCustomization = new ShipCustomization(shipId);
+		this.selectedCustomization = ShipCustomization.deserialize(this.$route.params.serialized);
 	},
 	beforeRouteUpdate(to, from, next) {
-		var shipId = this.$root.shipIds[to.params.shipIdIndex];
-		this.selectedCustomization = new ShipCustomization(shipId);
+		this.selectedCustomization = ShipCustomization.deserialize(to.params.serialized);
 		next();
 	}
 });
@@ -1330,8 +1397,8 @@ const router = new VueRouter({
 			component: shipList
 		},
 		{
-			name: "ships",
-			path: '/ships/:shipIdIndex',
+			name: "customize",
+			path: '/customize/:serialized',
 			component: shipDetails
 		},
 		{
