@@ -89,10 +89,10 @@
 						</div>
 					</div>
 					<div class="group-content">
-						<div class="group-content-entry" v-for="map in getBoundItemPortMap()">
+						<div class="group-content-entry" v-for="map in getBindingMap()">
 							<slot
-								:prototype-bound-item-port="map.prototypeBoundItemPort"
-								:target-bound-item-ports="map.targetBoundItemPorts">
+								:prototype-binding="map.prototypeBinding"
+								:target-bindings="map.targetBindings">
 							</slot>
 						</div>
 					</div>
@@ -112,7 +112,7 @@
 							{{sectionName}}
 							<div slot="content">
 								<item-port-group
-									v-for="group in getSectionBoundItemPortGroups(sectionName)"
+									v-for="group in getSectionBindingGroups(sectionName)"
 									:key="JSON.stringify(selectedCustomization.shipId) + JSON.stringify(group.memberPortNames)"
 									:customization="selectedCustomization"
 									:group-name="group.name">
@@ -120,21 +120,21 @@
 										<div class="component-and-children-selector">
 											<component-selector
 												:customization="selectedCustomization"
-												:bound-item-ports="parent.targetBoundItemPorts">
+												:bindings="parent.targetBindings">
 											</component-selector>
 											<item-port-group
-												v-for="childGroup in getChildBoundItemPortGroups(parent.prototypeBoundItemPort)"
+												v-for="childGroup in getChildBindingGroups(parent.prototypeBinding)"
 												:key="JSON.stringify(selectedCustomization.shipId) +
-													JSON.stringify(parent.prototypeBoundItemPort.selectedComponent) +
-													JSON.stringify(parent.targetBoundItemPorts.map(b => b.port.name)) +
+													JSON.stringify(parent.prototypeBinding.selectedComponent) +
+													JSON.stringify(parent.targetBindings.map(b => b.port.name)) +
 													JSON.stringify(childGroup.memberPortNames)"
 												:customization="selectedCustomization"
 												:group-name="childGroup.name"
-												:parent-bound-item-ports="parent.targetBoundItemPorts">
+												:parent-bindings="parent.targetBindings">
 												<template slot-scope="child">
 													<component-selector
 														:customization="selectedCustomization"
-														:bound-item-ports="child.targetBoundItemPorts">
+														:bindings="child.targetBindings">
 													</component-selector>
 												</template>
 											</item-port-group>
@@ -185,12 +185,12 @@
 				<br />
 				<dropdown
 					ref="dropdown"
-					:trigger="boundItemPorts[0].port.editable ? 'click' : 'custom'"
+					:trigger="bindings[0].port.editable ? 'click' : 'custom'"
 					class="component-selector"
 					@on-visible-change="onVisibleChange"
 					@on-click="onClick">
 
-					<component-display :component-name="selectedComponentName" :disabled="!boundItemPorts[0].port.editable">
+					<component-display :component-name="selectedComponentName" :disabled="!bindings[0].port.editable">
 					</component-display>
 					<span :class="{'flip-icon': visible}"><i class="ivu-icon ivu-icon-arrow-down-b ivu-select-arrow"></i></span>
 
