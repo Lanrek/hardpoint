@@ -81,7 +81,7 @@
 					<div class="group-indicator" :class="{'group-indicator-border': linkable}">
 						<div class="group-indicator-label" v-if="linkable">
 							<p v-if="linked">
-								{{ group.length }}x
+								{{ prototypeGroup.members.length }}x
 							</p>
 							<i-button size="small" @click="onClick">
 								{{ buttonText }}
@@ -89,11 +89,11 @@
 						</div>
 					</div>
 					<div class="group-content">
-						<div class="group-content-entry" v-for="port in group" v-if="!linked">
-							<slot :ports="[port]"></slot>
-						</div>
-						<div class="group-content-entry" v-if="linked">
-							<slot :ports="group"></slot>
+						<div class="group-content-entry" v-for="map in getBoundItemPortMap()">
+							<slot
+								:prototype-bound-item-port="map.prototypeBoundItemPort"
+								:target-bound-item-ports="map.targetBoundItemPorts">
+							</slot>
 						</div>
 					</div>
 				</div>
@@ -112,27 +112,29 @@
 							{{sectionName}}
 							<div slot="content">
 								<item-port-group
-									v-for="group in getItemPortGroups(getSectionItemPorts(sectionName))"
-									:key="JSON.stringify(selectedCustomization.shipId) + JSON.stringify(group)"
+									v-for="group in getSectionBoundItemPortGroups(sectionName)"
+									:key="JSON.stringify(selectedCustomization.shipId) + JSON.stringify(group.memberPortNames)"
 									:customization="selectedCustomization"
-									:group="group" >
+									:group-name="group.name">
 									<template slot-scope="parent">
 										<div class="component-and-children-selector">
 											<component-selector
 												:customization="selectedCustomization"
-												:item-ports="parent.ports">
+												:bound-item-ports="parent.targetBoundItemPorts">
 											</component-selector>
 											<item-port-group
-												v-for="childGroup in getItemPortGroups(getAttachedComponentItemPorts(parent.ports[0].name), parent.ports)"
-												:key="JSON.stringify(selectedCustomization.shipId) + JSON.stringify(childGroup)"
+												v-for="childGroup in getChildBoundItemPortGroups(parent.prototypeBoundItemPort)"
+												:key="JSON.stringify(selectedCustomization.shipId) +
+													JSON.stringify(parent.prototypeBoundItemPort.selectedComponent) +
+													JSON.stringify(parent.targetBoundItemPorts.map(b => b.port.name)) +
+													JSON.stringify(childGroup.memberPortNames)"
 												:customization="selectedCustomization"
-												:group="childGroup"
-												:parent-ports="parent.ports">
+												:group-name="childGroup.name"
+												:parent-bound-item-ports="parent.targetBoundItemPorts">
 												<template slot-scope="child">
 													<component-selector
 														:customization="selectedCustomization"
-														:item-ports="child.ports"
-														:parent-item-ports="parent.ports">
+														:bound-item-ports="child.targetBoundItemPorts">
 													</component-selector>
 												</template>
 											</item-port-group>
@@ -183,12 +185,12 @@
 				<br />
 				<dropdown
 					ref="dropdown"
-					:trigger="itemPorts[0].editable ? 'click' : 'custom'"
+					:trigger="boundItemPorts[0].port.editable ? 'click' : 'custom'"
 					class="component-selector"
 					@on-visible-change="onVisibleChange"
 					@on-click="onClick">
 
-					<component-display :component-name="selectedComponentName" :disabled="!itemPorts[0].editable">
+					<component-display :component-name="selectedComponentName" :disabled="!boundItemPorts[0].port.editable">
 					</component-display>
 					<span :class="{'flip-icon': visible}"><i class="ivu-icon ivu-icon-arrow-down-b ivu-select-arrow"></i></span>
 

@@ -814,18 +814,163 @@ class DataforgeItemPort extends BaseItemPort {
 	}
 }
 
+class BoundItemPortGroup {
+	constructor(members) {
+		this.members = members;
+	}
+
+	get name() {
+		return this.memberPortNames.sort()[0];
+	}
+
+	get memberPortNames() {
+		return this.members.map(m => m.port.name);
+	}
+
+	get allIdentical() {
+		const componentsIdentical = function(left, right) {
+			return _.get(left, "name") == _.get(right, "name");
+		};
+
+		const first = this.members[0];
+		const firstComponent = first.selectedComponent;
+
+		for (const other of this.members.slice(1)) {
+			const otherComponent = other.selectedComponent;
+			if (!componentsIdentical(firstComponent, otherComponent)) {
+				return false;
+			}
+
+			// Also check the children when this is at the root level.
+			// TODO Currently ignoring third-level ports.
+			if (first.portPath.length == 1) {
+				for (const childName of Object.keys(first.childBoundItemPorts)) {
+					const firstChild = first.childBoundItemPorts[childName];
+					const otherChild = other.childBoundItemPorts[childName];
+					if (!componentsIdentical(firstChild.selectedComponent, otherChild.selectedComponent)) {
+						return false;
+					}
+				}
+			}
+		}
+
+		return true;
+	};
+
+	static findGroups(boundItemPorts) {
+		if (boundItemPorts == undefined) {
+			return undefined;
+		}
+
+		let groups = [];
+		for (const boundPort of boundItemPorts) {
+			const groupIndex = groups.findIndex(g =>
+				g[0].port.minSize == boundPort.port.minSize &&
+				g[0].port.maxSize == boundPort.port.maxSize &&
+				g[0].port.editable == boundPort.port.editable &&
+				// Handle the case where uneditable item ports have different components attached.
+				// TODO Consider allowing different types of turrets that share child ports to group.
+				(g[0].port.editable || _.get(g[0].selectedComponent, "name") == _.get(boundPort.selectedComponent, "name")) &&
+				_.isEqual(g[0].port.types, boundPort.port.types) &&
+				_.isEqual(g[0].port.tags, boundPort.port.tags));
+
+			if (groupIndex >= 0) {
+				groups[groupIndex].push(boundPort);
+			}
+			else {
+				groups.push([boundPort]);
+			}
+		}
+
+		return groups.map(g => new BoundItemPortGroup(g));
+	};
+}
+
 class BoundItemPort {
-	constructor(portName, componentName) {
-		this.portName = portName;
-		this.componentName = componentName;
-		this.children = {};
+	constructor(port, parentBoundItemPort, loadout = undefined) {
+		this.port = port;
+		this.parentBoundItemPort = parentBoundItemPort;
+		this.childBoundItemPorts = {};
+
+		this.defaultComponent = undefined;
+		if (loadout) {
+			const defaultComponentName = this._getComponentFromLoadout(loadout);
+			if (defaultComponentName) {
+				this.defaultComponent = mergedComponents[defaultComponentName];
+			}
+		}
+
+		this._setSelectedComponent(this.defaultComponent, loadout);
+	}
+
+	get selectedComponent() {
+		return this._selectedComponent;
+	}
+
+	set selectedComponent(component) {
+		this._setSelectedComponent(component);
+	}
+
+	get childGroups() {
+		return BoundItemPortGroup.findGroups(Object.values(this.childBoundItemPorts));
+	}
+
+	get customized() {
+		return _.get(this.selectedComponent, "name") != _.get(this.defaultComponent, "name");
+	}
+
+	get portPath() {
+		let result = [];
+		let boundItemPort = this;
+
+		while (boundItemPort) {
+			result.unshift(boundItemPort.port.name);
+			boundItemPort = boundItemPort.parentBoundItemPort;
+		}
+
+		return result;
+	}
+
+	// Takes a loadout only for initial construction; changes will leave it undefined.
+	_setSelectedComponent(component, loadout = undefined) {
+		this._selectedComponent = component;
+
+		// Also update the children when the selected component changes.
+		this.childBoundItemPorts = {};
+		if (component) {
+			for (const childPort of component.itemPorts) {
+				// Make the new child reactive.
+				Vue.set(this.childBoundItemPorts, childPort.name, new BoundItemPort(childPort, this, loadout));
+			}
+		}
+	}
+
+	_getComponentFromLoadout(loadout) {
+		let container = loadout;
+		let entry;
+
+		for (const portName of this.portPath) {
+			if (!container) {
+				return undefined;
+			}
+			entry = container.find(n => n[portName] != undefined);
+			container = _.get(entry, "attached");
+		}
+
+		return _.get(entry, this.portPath.slice(-1)[0]);
 	}
 }
 
 class ShipCustomization {
 	constructor(shipId) {
 		this.shipId = shipId;
+
 		this._bindings = {};
+		for (const shipPort of this._specification.getItemPorts(this.shipId.modificationId)) {
+			this._bindings[shipPort.name] = new BoundItemPort(shipPort, undefined, this._loadout);
+		}
+
+		this.groups = BoundItemPortGroup.findGroups(Object.values(this._bindings));
 	}
 
 	serialize() {
@@ -857,22 +1002,22 @@ class ShipCustomization {
 			{
 				name: "Total Shields",
 				category: "Survivability",
-				value: Math.round(this._getAttachedComponents().reduce((total, x) => total + x.shieldCapacity, 0))
+				value: Math.round(this._getAllAttachedComponents().reduce((total, x) => total + x.shieldCapacity, 0))
 			},
 			{
 				name: "Total Burst DPS",
 				category: "Damage",
-				value: Math.round(this._getAttachedComponents().reduce((total, x) => total + x.gunBurstDps.total, 0))
+				value: Math.round(this._getAllAttachedComponents().reduce((total, x) => total + x.gunBurstDps.total, 0))
 			},
 			{
 				name: "Total Sustained DPS",
 				category: "Damage",
-				value: Math.round(this._getAttachedComponents().reduce((total, x) => total + x.gunSustainedDps.total, 0))
+				value: Math.round(this._getAllAttachedComponents().reduce((total, x) => total + x.gunSustainedDps.total, 0))
 			},
 			{
 				name: "Total Missile Damage",
 				category: "Damage",
-				value: Math.round(this._getAttachedComponents().reduce((total, x) => total + x.missileDamage.total, 0))
+				value: Math.round(this._getAllAttachedComponents().reduce((total, x) => total + x.missileDamage.total, 0))
 			}
 		]);
 
@@ -880,85 +1025,6 @@ class ShipCustomization {
 			attributes = attributes.filter(n => n.category == category);
 		}
 		return attributes;
-	}
-
-	getItemPortsMatchingTypes(types) {
-		return this._specification.getItemPorts(this.shipId.modificationId).filter(function (port) {
-			return types.some(n => port.matchesType(n, undefined));
-		});
-	}
-
-	setAttachedComponent(portName, parentPortName, componentName) {
-		if (_.get(this.getAttachedComponent(portName, parentPortName), "name") == componentName) {
-			return;
-		}
-
-		let bindings = this._bindings;
-		if (parentPortName) {
-			// The parent port might be missing from the binding tree because it's set on the loadout
-			// not the customization. Copy the parent binding from the loadout first in that case.
-			if (!bindings[parentPortName]) {
-				const parentComponent = this.getAttachedComponent(parentPortName);
-				const parentBinding = new BoundItemPort(parentPortName, parentComponent.name);
-
-				// Also copy over all children.
-				if (parentComponent) {
-					for (const childPort of parentComponent.itemPorts) {
-						const childComponentName = _.get(this.getAttachedComponent(childPort.name, parentPortName), "name");
-						Vue.set(parentBinding.children, childPort.name, new BoundItemPort(childPort.name, childComponentName));
-					}
-				}
-
-				Vue.set(bindings, parentPortName, parentBinding);
-			}
-
-			bindings = bindings[parentPortName].children;
-		}
-
-		Vue.set(bindings, portName, new BoundItemPort(portName, componentName));
-	}
-
-	getAttachedComponent(portName, parentPortName) {
-		let componentName;
-
-		// First check if the component is customized in the binding tree.
-		if (parentPortName) {
-			if (this._bindings[parentPortName]) {
-				const children = this._bindings[parentPortName].children;
-				if (portName in children) {
-					componentName = children[portName].componentName;
-				}
-				else {
-					// If the parent port is customized, don't fall back to the loadout for the children.
-					// Ports often have similar names, so it might match even with a different parent.
-					return undefined;
-				}
-			}
-		}
-		else {
-			componentName = _.get(this._bindings[portName], "componentName");
-		}
-
-		// If the component isn't found in the binding tree, fall back to the loadout.
-		if (!componentName) {
-			if (parentPortName) {
-				const entry = this._loadout.find(n => n[parentPortName] != undefined);
-
-				const attached = _.get(entry, "attached");
-				if (!attached) {
-					return undefined;
-				}
-
-				const childEntry = attached.find(n => n[portName] != undefined);
-				componentName = _.get(childEntry, portName);
-			}
-			else {
-				const entry = this._loadout.find(n => n[portName] != undefined);
-				componentName = _.get(entry, portName);
-			}
-		}
-
-		return mergedComponents[componentName];
 	}
 
 	get _specification() {
@@ -969,20 +1035,23 @@ class ShipCustomization {
 		return shipLoadouts[this.shipId.loadoutId];
 	}
 
-	_getAttachedComponents() {
-		let attached = [];
-
-		const directPorts = this._specification.getItemPorts(this.shipId.modificationId);
-		directPorts.forEach(x => {
-			const component = this.getAttachedComponent(x.name);
-			attached.push(component);
-			if (component) {
-				component.itemPorts.forEach(c => attached.push(this.getAttachedComponent(c.name, x.name)));
+	_getAllAttachedComponents() {
+		const traverse = (boundItemPort) => {
+			let result = [boundItemPort.selectedComponent];
+			for (const child of Object.values(boundItemPort.childBoundItemPorts)) {
+				result = result.concat(traverse(child));
 			}
-		});
-		attached = attached.filter(n => n);
 
-		return attached;
+			return result;
+		};
+
+		let result = [];
+		for (const boundPort of Object.values(this._bindings)) {
+			result = result.concat(traverse(boundPort));
+		}
+
+		result = result.filter(n => n);
+		return result;
 	}
 }
 
@@ -1014,17 +1083,23 @@ for (const entry of localizationStrings) {
 }
 
 
+// Represents a group on potentially multiple parents. If there are all multiple parents, they are assumed
+// to be identical ports with identical components. If parents is undefined, the group is on the ship.
 var itemPortGroup = Vue.component('item-port-group', {
 	template: '#item-port-group',
-	props: ['customization', 'group', 'parentPorts'],
+	props: ['customization', 'groupName', 'parentBoundItemPorts'],
 	data: function() {
+		const allGroups = this.getAllGroups();
+
 		return {
-			linked: this.allIdentical()
+			allGroups: allGroups,
+			prototypeGroup: allGroups[0],
+			linked: allGroups[0].allIdentical
 		}
 	},
 	computed: {
 		linkable: function() {
-			return this.group.length > 1;
+			return this.prototypeGroup.members.length > 1;
 		},
 		buttonText: function() {
 			if (this.linked) {
@@ -1035,59 +1110,54 @@ var itemPortGroup = Vue.component('item-port-group', {
 		}
 	},
 	methods: {
+		getAllGroups: function() {
+			if (this.parentBoundItemPorts) {
+				return this.parentBoundItemPorts.map(b => b.childGroups.find(g => g.name == this.groupName));
+			}
+			else {
+				return [this.customization.groups.find(g => g.name == this.groupName)];
+			}
+		},
+		getBoundItemPortMap: function() {
+			let arrays = [];
+			for (const prototypeMember of this.prototypeGroup.members) {
+				arrays.push({
+					prototypeBoundItemPort: prototypeMember,
+					targetBoundItemPorts: this.allGroups.map(g => g.members.find(m => m.port.name == prototypeMember.port.name))});
+			}
+
+			if (this.linked) {
+				arrays = [{
+					prototypeBoundItemPort: this.prototypeGroup.members[0],
+					targetBoundItemPorts: arrays.reduce((total, a) => total.concat(a.targetBoundItemPorts), [])}];
+			}
+
+			return arrays;
+		},
 		onClick: function() {
 			this.linked = !this.linked;
 
 			// When linking item ports, set their attached components to match the first in the group.
 			if (this.linked) {
-				const firstComponent = this.customization.getAttachedComponent(this.group[0].name);
-				const firstComponentName = _.get(firstComponent, "name");
+				const first = this.allGroups[0].members[0];
 
-				for (const port of this.group.slice(1)) {
-					if (this.parentPorts) {
-						// For child ports, set them across all parents in the parent group.
-						for (const parentPort of this.parentPorts) {
-							this.customization.setAttachedComponent(port.name, parentPort.name, firstComponentName);
+				for (const group of this.allGroups) {
+					for (const other of group.members) {
+						if (first == other) {
+							continue;
 						}
-					}
-					else {
-						// For parent ports, also set all the child ports to match.
-						this.customization.setAttachedComponent(port.name, undefined, firstComponentName);
-						if (firstComponent) {
-							for (const childPort of firstComponent.itemPorts) {
-								const childComponent = this.customization.getAttachedComponent(childPort.name, this.group[0].name);
-								this.customization.setAttachedComponent(childPort.name, port.name, _.get(childComponent, "name"));
+
+						other.selectedComponent = first.selectedComponent;
+
+						// TODO Currently ignoring third-level ports.
+						if (first.portPath.length == 1) {
+							for (const childName of Object.keys(first.childBoundItemPorts)) {
+								other.childBoundItemPorts[childName].selectedComponent = first.childBoundItemPorts[childName].selectedComponent;
 							}
 						}
 					}
 				}
 			}
-		},
-		allIdentical: function() {
-			const componentsIdentical = function(left, right) {
-				return _.get(left, "name") == _.get(right, "name");
-			};
-
-			const firstComponent = this.customization.getAttachedComponent(this.group[0].name);
-
-			for (const other of this.group.slice(1)) {
-				const otherComponent = this.customization.getAttachedComponent(other.name);
-				if (!componentsIdentical(firstComponent, otherComponent)) {
-					return false;
-				}
-
-				if (firstComponent) {
-					for (const childPort of firstComponent.itemPorts) {
-						if (!componentsIdentical(
-							this.customization.getAttachedComponent(childPort.name, this.group[0].name),
-							this.customization.getAttachedComponent(childPort.name, other.name))) {
-							return false;
-						}
-					}
-				}
-			}
-
-			return true;
 		}
 	}
 });
@@ -1106,30 +1176,34 @@ var componentDisplay = Vue.component('component-display', {
 // If so, the selector assumes all the ports are all identical to the first!
 var componentSelector = Vue.component('component-selector', {
 	template: '#component-selector',
-	props: ['customization', 'itemPorts', 'parentItemPorts'],
+	props: ['customization', 'boundItemPorts'],
 	data: function() {
 		return {
-			selectedComponentName: this.getSelectedComponentName(),
 			visible: false
 		}
 	},
 	computed: {
 		availableComponents: function () {
-			return this.itemPorts[0].availableComponents(this.customization.tags);
+			return this.boundItemPorts[0].port.availableComponents(this.customization.tags);
 		},
 		label: function () {
-			let size = this.itemPorts[0].minSize;
-			if (this.itemPorts[0].minSize != this.itemPorts[0].maxSize)
+			const port = this.boundItemPorts[0].port;
+			let size = port.minSize;
+			if (port.minSize != port.maxSize)
 			{
-				size += "-" + this.itemPorts[0].maxSize;
+				size += "-" + port.maxSize;
 			}
 
-			let name = this.itemPorts[0].name;
-			if (this.itemPorts.length > 1) {
+			let name = port.name;
+			if (this.boundItemPorts.length > 1) {
 				name += " and similar";
 			}
 
 			return name + " (size " + size + ")";
+		},
+		selectedComponentName: function() {
+			const component = this.boundItemPorts[0].selectedComponent;
+			return _.get(component, "name");
 		}
 	},
 	methods: {
@@ -1141,27 +1215,9 @@ var componentSelector = Vue.component('component-selector', {
 			this.$refs["dropdown"].$refs["drop"].$el.style.width = elementWidth + "px";
 		},
 		onClick: function(name) {
-			this.selectedComponentName = name;
-
-			for (const port of this.itemPorts) {
-				if (this.parentItemPorts) {
-					for (const parentPort of this.parentItemPorts) {
-						this.customization.setAttachedComponent(port.name, parentPort.name, name);
-					}
-				}
-				else {
-					this.customization.setAttachedComponent(port.name, undefined, name);
-				}
+			for (const boundItemPort of this.boundItemPorts) {
+				boundItemPort.selectedComponent = mergedComponents[name];
 			}
-		},
-		getSelectedComponentName: function () {
-			let parentPortName;
-			if (this.parentItemPorts) {
-				parentPortName = this.parentItemPorts[0].name
-			}
-
-			const component = this.customization.getAttachedComponent(this.itemPorts[0].name, parentPortName);
-			return _.get(component, "name");
 		}
 	}
 });
@@ -1322,7 +1378,7 @@ var shipDetails = Vue.component('ship-details', {
 	computed: {
 	},
 	methods: {
-		getSectionItemPorts: function(sectionName) {
+		getSectionBoundItemPortGroups: function(sectionName) {
 			const sectionIndex = Object.keys(this.sectionDefinitions).indexOf(sectionName);
 			let excludedTypes = [];
 			Object.keys(this.sectionDefinitions).forEach((x, index) => {
@@ -1331,56 +1387,19 @@ var shipDetails = Vue.component('ship-details', {
 				}
 			});
 
-			const candidates = this.selectedCustomization.getItemPortsMatchingTypes(this.sectionDefinitions[sectionName]);
-			const filtered = candidates.filter(x => !excludedTypes.some(e => x.matchesType(e, undefined)));
+			const sectionTypes = this.sectionDefinitions[sectionName];
+			const candidates = this.selectedCustomization.groups;
+			const sectionalized = candidates.filter(g => sectionTypes.some(t => g.members[0].port.matchesType(t, undefined)));
+
+			const filtered = sectionalized.filter(g => !excludedTypes.some(e => g.members[0].port.matchesType(e, undefined)));
 			return filtered;
 		},
-		getAttachedComponentItemPorts: function (portName) {
-			const component = this.selectedCustomization.getAttachedComponent(portName);
-			if (component) {
-				// Hide AmmoBox item ports until they're worth customizing.
-				return component.itemPorts.filter(n => !n.matchesType("AmmoBox"));
-			}
+		getChildBoundItemPortGroups: function (prototypeBoundItemPort) {
+			const childGroups = prototypeBoundItemPort.childGroups;
+
+			// Hide AmmoBox item ports until they're worth customizing.
+			return childGroups.filter(g => !g.members[0].port.matchesType("AmmoBox"));
 		},
-		getItemPortGroups(itemPorts, parentPorts = undefined) {
-			const getAttachedComponentName = (portName, parentPortName) => {
-				const component = this.selectedCustomization.getAttachedComponent(portName, parentPortName);
-				return _.get(component, "name");
-			};
-
-			if (itemPorts == undefined) {
-				return undefined;
-			}
-
-			let parentPortName;
-			if (parentPorts) {
-				parentPortName = parentPorts[0].name;
-			}
-
-			let groups = [];
-			for (const port of itemPorts) {
-				const groupIndex = groups.findIndex(g =>
-					g[0].minSize == port.minSize &&
-					g[0].maxSize == port.maxSize &&
-					g[0].editable == port.editable &&
-					// Handle the case where uneditable item ports have different components attached.
-					// TODO Consider allowing different types of turrets that share child ports to group.
-					(g[0].editable ||
-						getAttachedComponentName(g[0].name, parentPortName) ==
-						getAttachedComponentName(port.name, parentPortName)) &&
-					_.isEqual(g[0].types, port.types) &&
-					_.isEqual(g[0].tags, port.tags));
-
-				if (groupIndex >= 0) {
-					groups[groupIndex].push(port);
-				}
-				else {
-					groups.push([port]);
-				}
-			}
-
-			return groups;
-		}
 	},
 
 	// TODO These hooks feel janky -- there should be a better way make the selection reactive.
