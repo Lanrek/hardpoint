@@ -25,6 +25,18 @@ var hashAndEncode = function(str) {
 	return btoa(unencoded).replace(/\+/g, '-').replace(/\//g, '_');
 }
 
+// Limited to ints between 0 and 25.
+var encodeSmallInt = function(num) {
+	const start = "A";
+	return String.fromCharCode(start.charCodeAt(0) + num);
+}
+
+var decodeSmallInt = function(str) {
+	const start = "A";
+	const num = str.charCodeAt(0);
+	return num - start.charCodeAt(0);
+}
+
 
 class ShipId {
 	constructor(specificationId, modificationId, loadoutId) {
@@ -820,7 +832,7 @@ class ItemBindingGroup {
 	}
 
 	get name() {
-		return this.memberPortNames.sort()[0];
+		return this.members.length + this.memberPortNames.sort()[0];
 	}
 
 	get memberPortNames() {
@@ -916,7 +928,10 @@ class ItemBinding {
 	}
 
 	get customized() {
-		return _.get(this.selectedComponent, "name") != _.get(this.defaultComponent, "name");
+		// TODO This doesn't handle that case where a port has been set back to its default component,
+		// but now has empty child ports -- it shows as not customized, although the children are changed.
+		const thisCustomized = _.get(this.selectedComponent, "name") != _.get(this.defaultComponent, "name");
+		return thisCustomized || Object.values(this.childBindings).some(n => n.customized);
 	}
 
 	get portPath() {
@@ -965,25 +980,127 @@ class ShipCustomization {
 	constructor(shipId) {
 		this.shipId = shipId;
 
-		this._bindings = {};
+		this.childBindings = {};
 		for (const shipPort of this._specification.getItemPorts(this.shipId.modificationId)) {
-			this._bindings[shipPort.name] = new ItemBinding(shipPort, undefined, this._loadout);
+			this.childBindings[shipPort.name] = new ItemBinding(shipPort, undefined, this._loadout);
 		}
 
-		this.groups = ItemBindingGroup.findGroups(Object.values(this._bindings));
+		this.childGroups = ItemBindingGroup.findGroups(Object.values(this.childBindings));
 	}
 
+	// Serialization format: <shipId><bindingList>
+	// <bindingList>: <count>{<typeDiscriminator><groupName or portName><componentName><bindingList of children>}
+	// All string keys and values are hashed to 24 bits. All elements are individually base64 encoded.
 	serialize() {
-		let result = "1";
-		result += this.shipId.serialize();
+		let str = "1";
+		str += this.shipId.serialize();
 
-		return result;
+		const walk = (bindings, groups) => {
+			const serializeBinding = (binding) => {
+				const children = walk(binding.childBindings, binding.childGroups);
+				return "B" + hashAndEncode(binding.port.name) + hashAndEncode(binding.selectedComponent.name) + children;
+			};
+
+			const serializeGroup = (group) => {
+				const template = group.members[0];
+
+				// Select the children for the template by preferring those that were customized. This ensures any child
+				// set on a group is serialized, and doesn't rely on defaults which are inconsistent within the group.
+				// TODO This probably isn't correct for third-level ports...
+				let childBindings = {};
+				for (const portName in template.childBindings) {
+					const customized = group.members.map(m => m.childBindings[portName]).find(b => b.customized);
+					childBindings[portName] = customized || template.childBindings[portName];
+				}
+
+				const children = walk(childBindings, template.childGroups);
+				return "G" + hashAndEncode(group.name) + hashAndEncode(template.selectedComponent.name) + children;
+			};
+
+			let result = "";
+			let count = 0;
+			let remaining = Object.values(bindings).filter(b => b.customized);
+
+			for (const group of groups.filter(g => g.members.length > 1)) {
+				if (group.allIdentical && group.members.some(m => remaining.some(r => r.port.name == m.port.name))) {
+					result += serializeGroup(group);
+					count += 1;
+					remaining = remaining.filter(r => !group.members.some(g => g.port.name == r.port.name));
+				}
+			}
+
+			for (const binding of remaining) {
+				result += serializeBinding(binding);
+				count += 1;
+			}
+
+			return encodeSmallInt(count) + result;
+		};
+
+		str += walk(this.childBindings, this.childGroups);
+		return str;
 	}
 
 	static deserialize(str) {
 		const version = str.substr(0, 1);
 		const shipId = str.substr(1, 12);
-		return new ShipCustomization(ShipId.deserialize(shipId));
+		let customization = new ShipCustomization(ShipId.deserialize(shipId));
+
+		const findComponent = (hashedName) => {
+			// TODO Also restrict this to matching components, to reduce hash collision chance.
+			const componentName = Object.keys(mergedComponents).find(k => hashAndEncode(k) == hashedName);
+			return mergedComponents[componentName];
+		};
+
+		const walk = (containers, index) => {
+			const count = decodeSmallInt(str.substr(index, 1));
+			index += 1;
+
+			for (let current = 0; current < count; current += 1) {
+				const discriminator = str.substr(index, 1);
+				const name = str.substr(index + 1, 4);
+				const value = str.substr(index + 5, 4);
+				index += 9;
+
+				let bindings = [];
+				if (discriminator == "B") {
+					const portName = Object.keys(containers[0].childBindings).find(k => hashAndEncode(k) == name);
+
+					for (const container of containers) {
+						const binding = container.childBindings[portName];
+						bindings.push(binding);
+					}
+				}
+				else if (discriminator == "G") {
+					const groupName = containers[0].childGroups.map(g => g.name).find(n => hashAndEncode(n) == name);
+
+					for (const container of containers) {
+						const group = container.childGroups.find(g => g.name == groupName);
+						for (const binding of group.members) {
+							bindings.push(binding);
+						}
+					}
+				}
+				else {
+					throw new Error("Invalid discriminator '" + discriminator + "'");
+				}
+
+				const component = findComponent(value);
+
+				// Don't set component if it didn't change, because that would clear the child ports unnecessarily.
+				// Set it if it's changing for other group members, though. Multi-select should stick and be consistent.
+				if (!bindings.every(b => _.get(b.selectedComponent, "name") == _.get(component, "name"))) {
+					bindings.forEach(b => b.selectedComponent = component);
+				}
+
+				index = walk(bindings, index);
+			}
+
+			return index;
+		};
+
+		walk([customization], 13);
+		return customization;
 	}
 
 	get displayName() {
@@ -1046,7 +1163,7 @@ class ShipCustomization {
 		};
 
 		let result = [];
-		for (const binding of Object.values(this._bindings)) {
+		for (const binding of Object.values(this.childBindings)) {
 			result = result.concat(traverse(binding));
 		}
 
@@ -1115,7 +1232,7 @@ var itemPortGroup = Vue.component('item-port-group', {
 				return this.parentBindings.map(b => b.childGroups.find(g => g.name == this.groupName));
 			}
 			else {
-				return [this.customization.groups.find(g => g.name == this.groupName)];
+				return [this.customization.childGroups.find(g => g.name == this.groupName)];
 			}
 		},
 		getBindingMap: function() {
@@ -1139,20 +1256,18 @@ var itemPortGroup = Vue.component('item-port-group', {
 
 			// When linking item ports, set their attached components to match the first in the group.
 			if (this.linked) {
-				const first = this.allGroups[0].members[0];
+				const selectedComponent = this.allGroups[0].members[0].selectedComponent;
+				const childBindings = this.allGroups[0].members[0].childBindings;
 
 				for (const group of this.allGroups) {
 					for (const other of group.members) {
-						if (first == other) {
-							continue;
-						}
-
-						other.selectedComponent = first.selectedComponent;
+						// Always set the component when linking a group. Multi-select should stick and be consistent.
+						other.selectedComponent = selectedComponent;
 
 						// TODO Currently ignoring third-level ports.
-						if (first.portPath.length == 1) {
-							for (const childName of Object.keys(first.childBindings)) {
-								other.childBindings[childName].selectedComponent = first.childBindings[childName].selectedComponent;
+						if (other.portPath.length == 1) {
+							for (const childName of Object.keys(childBindings)) {
+								other.childBindings[childName].selectedComponent = childBindings[childName].selectedComponent;
 							}
 						}
 					}
@@ -1215,8 +1330,12 @@ var componentSelector = Vue.component('component-selector', {
 			this.$refs["dropdown"].$refs["drop"].$el.style.width = elementWidth + "px";
 		},
 		onClick: function(name) {
-			for (const binding of this.bindings) {
-				binding.selectedComponent = mergedComponents[name];
+			// Don't set component if it didn't change, because that would clear the child ports unnecessarily.
+			// Set it if it's changing for other group members, though. Multi-select should stick and be consistent.
+			if (!this.bindings.every(b => _.get(b.selectedComponent, "name") == name)) {
+				for (const binding of this.bindings) {
+					binding.selectedComponent = mergedComponents[name];
+				}
 			}
 		}
 	}
@@ -1375,7 +1494,17 @@ var shipDetails = Vue.component('ship-details', {
 			]
 		}
 	},
-	computed: {
+	watch: {
+		selectedCustomization: {
+			handler: function(val) {
+				const serialized = val.serialize();
+				let url = new URL(location.href);
+				url.hash = "/customize/" + serialized;
+
+				history.replaceState(history.state, document.title, url.href);
+			},
+			deep: true
+		}
 	},
 	methods: {
 		getSectionBindingGroups: function(sectionName) {
@@ -1388,7 +1517,7 @@ var shipDetails = Vue.component('ship-details', {
 			});
 
 			const sectionTypes = this.sectionDefinitions[sectionName];
-			const candidates = this.selectedCustomization.groups;
+			const candidates = this.selectedCustomization.childGroups;
 			const sectionalized = candidates.filter(g => sectionTypes.some(t => g.members[0].port.matchesType(t, undefined)));
 
 			const filtered = sectionalized.filter(g => !excludedTypes.some(e => g.members[0].port.matchesType(e, undefined)));
