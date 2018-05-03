@@ -1349,7 +1349,7 @@ var shipList = Vue.component('ship-list', {
 				{
 					title: 'Action',
 					fixed: "left",
-					width: 90,
+					minWidth: 90,
 					align: 'center',
 					render: (h, params) => {
 						return h('Button', {
@@ -1369,48 +1369,56 @@ var shipList = Vue.component('ship-list', {
 					key: "displayName",
 					sortable: true,
 					fixed: "left",
-					width: 200,
+					minWidth: 200,
 					ellipsis: true
 				},
 				{
 					title: "SCM",
 					key: "Normal Speed",
-					sortable: true
+					sortable: true,
+					minWidth: 60
 				},
 				{
 					title: "Afterburner",
 					key: "Afterburner Speed",
-					sortable: true
+					sortable: true,
+					minWidth: 100
 				},
 				{
 					title: "Cruise",
 					key: "Cruise Speed",
-					sortable: true
+					sortable: true,
+					minWidth: 70
 				},
 				{
 					title: "HP",
 					key: "Total Hitpoints",
-					sortable: true
+					sortable: true,
+					minWidth: 60
 				},
 				{
 					title: "Shields",
 					key: "Total Shields",
-					sortable: true
+					sortable: true,
+					minWidth: 80
 				},
 				{
 					title: "DPS",
 					key: "Total Sustained DPS",
-					sortable: true
+					sortable: true,
+					minWidth: 60
 				},
 				{
 					title: "Burst DPS",
 					key: "Total Burst DPS",
-					sortable: true
+					sortable: true,
+					minWidth: 95
 				},
 				{
 					title: "Missiles",
 					key: "Total Missile Damage",
-					sortable: true
+					sortable: true,
+					minWidth: 80
 				}
 			]
 		}
