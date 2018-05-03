@@ -1345,6 +1345,7 @@ var shipList = Vue.component('ship-list', {
 	template: '#ship-list',
 	data: function() {
 		return {
+			tableHeight: this.getTableHeight(),
 			attributeColumns: [
 				{
 					title: 'Action',
@@ -1442,17 +1443,25 @@ var shipList = Vue.component('ship-list', {
 				reduced.serialized = c.serialize();
 				return reduced;
 			});
-		},
-		tableHeight: function() {
-			// TODO This is a terribly sad hack, but it's good enough for now.
-			// At the very least it should adjust with window resizing.
-			return window.innerHeight - 144;
 		}
 	},
 	methods: {
 		customize(serialized) {
 			this.$router.push({ name: 'customize', params: { serialized: serialized }});
+		},
+		getTableHeight() {
+			// TODO This is a terribly sad hack, but it's good enough for now.
+			return window.innerHeight - 144;
+		},
+		onResize(event) {
+			this.tableHeight = this.getTableHeight();
 		}
+	},
+	mounted() {
+		window.addEventListener('resize', this.onResize);
+	},
+	beforeDestroy() {
+		window.removeEventListener('resize', this.onResize);
 	}
 });
 
