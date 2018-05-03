@@ -1348,6 +1348,7 @@ var shipList = Vue.component('ship-list', {
 			attributeColumns: [
 				{
 					title: 'Action',
+					fixed: "left",
 					width: 90,
 					align: 'center',
 					render: (h, params) => {
@@ -1367,13 +1368,14 @@ var shipList = Vue.component('ship-list', {
 					title: "Vehicle",
 					key: "displayName",
 					sortable: true,
-					width: 240
+					fixed: "left",
+					width: 200,
+					ellipsis: true
 				},
 				{
 					title: "SCM",
 					key: "Normal Speed",
-					sortable: true,
-					width: 80
+					sortable: true
 				},
 				{
 					title: "Afterburner",
