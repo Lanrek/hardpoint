@@ -1347,6 +1347,23 @@ var shipList = Vue.component('ship-list', {
 		return {
 			attributeColumns: [
 				{
+					title: 'Action',
+					width: 90,
+					align: 'center',
+					render: (h, params) => {
+						return h('Button', {
+							props: {
+								size: "small"
+							},
+							on: {
+								click: () => {
+									this.customize(params.row.serialized)
+								}
+							}
+						}, 'Customize');
+					}
+				},
+				{
 					title: "Vehicle",
 					key: "displayName",
 					sortable: true,
@@ -1392,20 +1409,6 @@ var shipList = Vue.component('ship-list', {
 					title: "Missiles",
 					key: "Total Missile Damage",
 					sortable: true
-				},
-				{
-					title: 'Action',
-					width: 120,
-					align: 'center',
-					render: (h, params) => {
-						return h('Button', {
-							on: {
-								click: () => {
-									this.customize(params.row.serialized)
-								}
-							}
-						}, 'Customize');
-					}
 				}
 			]
 		}
