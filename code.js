@@ -1355,6 +1355,7 @@ var shipList = Vue.component('ship-list', {
 					render: (h, params) => {
 						return h('Button', {
 							props: {
+								type: "primary",
 								size: "small"
 							},
 							on: {

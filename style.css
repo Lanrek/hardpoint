@@ -18,6 +18,18 @@
 	text-align: right;
 }
 
+/* Adjust primary button color. */
+.ivu-btn-primary {
+	background-color: #0d83c9;
+	border-color: #0d83c9;
+}
+
+.ivu-btn-primary:hover {
+	background-color: #27a7f1;
+	border-color: #27a7f1;
+}
+
+
 /* Group indicator through the magic of after selectors. */
 .group-indicator-label {
 	position: relative;
