@@ -118,6 +118,8 @@
 			<row :gutter="16">
 				<i-col span="24" class="title">
 					<h1>{{selectedCustomization.displayName}}</h1>
+					<p>Additional information available on the <a :href="wikiLink">Star Citizen wiki</a></p>
+					<p>Raw game data available from <a :href="scdbLink">StarCitizenDB</a></p>
 				</i-col>
 				<i-col span="17">
 					<collapse v-model="expandedSections">

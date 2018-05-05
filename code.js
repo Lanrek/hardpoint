@@ -45,6 +45,15 @@ class ShipId {
 		this.loadoutId = loadoutId;
 	}
 
+	get combinedId() {
+		let key = this.specificationId;
+		if (this.modificationId) {
+			key += "_" + this.modificationId;
+		}
+
+		return key;
+	}
+
 	serialize() {
 		return hashAndEncode(this.specificationId) + hashAndEncode(this.modificationId) + hashAndEncode(this.loadoutId);
 	}
@@ -1540,6 +1549,16 @@ var shipDetails = Vue.component('ship-details', {
 				history.replaceState(history.state, document.title, url.href);
 			},
 			deep: true
+		}
+	},
+	computed: {
+		scdbLink: function() {
+			const combined = this.selectedCustomization.shipId.combinedId;
+			return "http://starcitizendb.com/ships/" + combined.split("_")[0] + "/" + combined;
+		},
+		wikiLink: function() {
+			const combined = this.selectedCustomization.shipId.combinedId;
+			return "https://starcitizen.tools/" + combined;
 		}
 	},
 	methods: {
