@@ -42,16 +42,27 @@
 			<div class="layout">
 				<div class="header">
 				<row>
-					<i-col span="24">
-						<h1>Hardpoint</h1>
-					</i-col>
-				</row>
-				<row>
 					<i-col span="12">
-						<p>Star Citizen ship comparison and fitting tool</p>
-					</i-col>
-					<i-col span="12" class="right">
+						<h1>Hardpoint</h1>
 						<p>Game Data Version 3.1.0-739258</p>
+					</i-col>
+					<i-col span="12">
+						<i-menu mode="horizontal" theme="dark" @on-select="onNavigationSelect">
+							<menu-item name="comparison">
+								Ship Comparison
+							</menu-item>
+							<submenu name="new-loadout">
+								<template slot="title">
+									New Loadout
+								</template>
+								<menu-item
+									v-for="customization in shipCustomizations"
+									:key="customization.serialize()"
+									:name="customization.serialize()">
+									{{customization.displayName}}
+								</menu-item>
+							</submenu>
+						</i-menu>
 					</i-col>
 				</row>
 				</div>
@@ -107,7 +118,6 @@
 			<row :gutter="16">
 				<i-col span="24" class="title">
 					<h1>{{selectedCustomization.displayName}}</h1>
-					<p>Return to the <router-link :to="{name: 'list'}">comparison view</router-link> to select a different ship</p>
 				</i-col>
 				<i-col span="17">
 					<collapse v-model="expandedSections">

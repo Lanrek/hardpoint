@@ -1442,25 +1442,8 @@ var shipList = Vue.component('ship-list', {
 		}
 	},
 	computed: {
-		shipCustomizations: function() {
-			const unflattened = Object.values(shipSpecifications).map(n => n.getModificationLoadouts());
-			const flattened = unflattened.reduce((total, n) => total.concat(n), []);
-
-			// TODO This filtering mechanism is terrible.
-
-			const npcModifications = ["Pirate", "S42", "SQ42", "Dead", "CalMason", "Weak"];
-			let filtered = flattened.filter(x => !x.modificationId || !npcModifications.some(n => x.modificationId.includes(n)));
-
-			const npcSpecifications = ["Turret", "Old"];
-			filtered = filtered.filter(x => !npcSpecifications.some(n => x.specificationId.includes(n)));
-
-			const customizations = filtered.map(n => new ShipCustomization(n));
-
-			const npcDisplayNames = ["XIAN", "VNCL", "Vanduul Glaive"];
-			return customizations.filter(x => !npcDisplayNames.some(n => x.displayName.includes(n)));
-		},
 		shipAttributes: function() {
-			return this.shipCustomizations.map(c => {
+			return this.$root.shipCustomizations.map(c => {
 				const attributes = c.getAttributes();
 				let reduced = attributes.reduce((total, a) => {
 					total[a.name] = a.value;
@@ -1482,7 +1465,7 @@ var shipList = Vue.component('ship-list', {
 		},
 		getTableHeight() {
 			// TODO This is a terribly sad hack, but it's good enough for now.
-			return window.innerHeight - 144;
+			return window.innerHeight - 130;
 		},
 		onResize(event) {
 			this.tableHeight = this.getTableHeight();
@@ -1620,5 +1603,35 @@ router.afterEach((to, from) => {
 
 var app = new Vue({
 	router,
-	el: '#app'
+	el: '#app',
+	computed: {
+		shipCustomizations: function() {
+			const unflattened = Object.values(shipSpecifications).map(n => n.getModificationLoadouts());
+			const flattened = unflattened.reduce((total, n) => total.concat(n), []);
+
+			// TODO This filtering mechanism is terrible.
+
+			const npcModifications = ["Pirate", "S42", "SQ42", "Dead", "CalMason", "Weak"];
+			let filtered = flattened.filter(x => !x.modificationId || !npcModifications.some(n => x.modificationId.includes(n)));
+
+			const npcSpecifications = ["Turret", "Old"];
+			filtered = filtered.filter(x => !npcSpecifications.some(n => x.specificationId.includes(n)));
+
+			const customizations = filtered.map(n => new ShipCustomization(n));
+
+			const npcDisplayNames = ["XIAN", "VNCL", "Vanduul Glaive"];
+			return customizations.filter(x => !npcDisplayNames.some(n => x.displayName.includes(n)));
+		}
+	},
+	methods: {
+		onNavigationSelect: function(name) {
+			if (name == "comparison") {
+				this.$router.push({name: "list"});
+			}
+			else {
+				console.log(name)
+				this.$router.push({ name: 'customize', params: { serialized: name }});
+			}
+		}
+	}
 }).$mount('#app');

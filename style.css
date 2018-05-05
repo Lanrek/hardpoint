@@ -97,6 +97,18 @@
 }
 
 /* Main layout specification. */
+.ivu-menu-horizontal > .ivu-menu-item {
+	float: right;
+}
+
+.ivu-menu-horizontal > .ivu-menu-submenu {
+	float: right;
+}
+
+.ivu-menu-dark.ivu-menu-horizontal .ivu-menu-item-active {
+	color: rgba(255,255,255,.7);
+}
+
 .layout {
 	border: 1px solid #d7dde4;
 	background: #f5f7f9;
@@ -108,17 +120,17 @@
 
 .layout .header {
 	background-color: rgb(73, 80, 96);
-	padding: 8px 16px 8px 16px;
+	padding: 0px 16px 0px 16px;
 	color: white;
 	line-height: normal;
 }
 
 .layout .header h1 {
-	padding-bottom: 8px;
+	line-height: 40px;
 }
 
 .layout .header p {
-	padding-bottom: 8px;
+	padding-bottom: 6px;
 }
 
 .layout .content {
