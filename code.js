@@ -1443,7 +1443,21 @@ var shipList = Vue.component('ship-list', {
 	},
 	computed: {
 		shipCustomizations: function() {
-			return this.$root.shipIds.map(n => new ShipCustomization(n));
+			const unflattened = Object.values(shipSpecifications).map(n => n.getModificationLoadouts());
+			const flattened = unflattened.reduce((total, n) => total.concat(n), []);
+
+			// TODO This filtering mechanism is terrible.
+
+			const npcModifications = ["Pirate", "S42", "SQ42", "Dead", "CalMason", "Weak"];
+			let filtered = flattened.filter(x => !x.modificationId || !npcModifications.some(n => x.modificationId.includes(n)));
+
+			const npcSpecifications = ["Turret", "Old"];
+			filtered = filtered.filter(x => !npcSpecifications.some(n => x.specificationId.includes(n)));
+
+			const customizations = filtered.map(n => new ShipCustomization(n));
+
+			const npcDisplayNames = ["XIAN", "VNCL", "Vanduul Glaive"];
+			return customizations.filter(x => !npcDisplayNames.some(n => x.displayName.includes(n)));
 		},
 		shipAttributes: function() {
 			return this.shipCustomizations.map(c => {
@@ -1606,19 +1620,5 @@ router.afterEach((to, from) => {
 
 var app = new Vue({
 	router,
-	el: '#app',
-	computed: {
-		shipIds: function () {
-			const unflattened = Object.values(shipSpecifications).map(n => n.getModificationLoadouts());
-			const flattened = unflattened.reduce((total, n) => total.concat(n), []);
-
-			const npcModifications = ["Pirate", "S42", "SQ42", "Dead", "CalMason", "Weak"];
-			let filtered = flattened.filter(x => !x.modificationId || !npcModifications.some(n => x.modificationId.includes(n)));
-
-			const npcSpecifications = ["Turret", "Old"];
-			filtered = filtered.filter(x => !npcSpecifications.some(n => x.specificationId.includes(n)));
-
-			return filtered;
-		}
-	}
+	el: '#app'
 }).$mount('#app');
