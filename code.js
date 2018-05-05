@@ -151,11 +151,6 @@ class ShipSpecification {
 			{
 				name: "Afterburner Speed",
 				category: "Maneuverability",
-				value: Number(this._data["ifcs"]["@ABSCM"]) || 0
-			},
-			{
-				name: "Cruise Speed",
-				category: "Maneuverability",
 				value: Number(this._data["ifcs"]["@CruiseSpeed"]) || 0
 			},
 			{
@@ -1385,12 +1380,6 @@ var shipList = Vue.component('ship-list', {
 					key: "Afterburner Speed",
 					sortable: true,
 					minWidth: 100
-				},
-				{
-					title: "Cruise",
-					key: "Cruise Speed",
-					sortable: true,
-					minWidth: 70
 				},
 				{
 					title: "HP",
