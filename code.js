@@ -118,9 +118,36 @@ class ShipSpecification {
 		return Object.keys(this._data["Modifications"] || {});
 	}
 
+	getCombinedId(modificationId) {
+		let key = this._data["@name"];
+		if (modificationId) {
+			key += "_" + modificationId;
+		}
+
+		return key;
+	}
+
 	getDisplayName(modificationId) {
-		// This looks like a complete mess...
-		return undefined;
+		// The underlying data here is rather unpleasant, but this implementation is verified against the fleet manager
+		// screen in-game. Particularly the Mustang line, where the Alpha has a "CNOU" prefix and the others "C.O.".
+		// Priority is given to the vehicle name in the localization file, but if that's not present it falls back to
+		// the display name on the ship itself... with a patching mechanism for modifications.
+		let displayName = localizationVehicles[this.getCombinedId(modificationId)];
+
+		if (!displayName) {
+			displayName = this._data["@displayname"];
+			if (modificationId) {
+				const elems = this._data["Modifications"][modificationId]["Elems"];
+				if (elems) {
+					const replacement = elems.find(e => e["@idRef"] == this._data["@id"] && e["@name"] == "displayname");
+					if (replacement) {
+						displayName = replacement["@value"];
+					}
+				}
+			}
+		}
+
+		return displayName;
 	}
 
 	getItemPorts(modificationId) {
