@@ -1573,6 +1573,10 @@ const router = new VueRouter({
 	]
 });
 
+router.afterEach((to, from) => {
+	gtag('config', gaTrackingId, {'page_path': to.path});
+});
+
 var app = new Vue({
 	router,
 	el: '#app',
