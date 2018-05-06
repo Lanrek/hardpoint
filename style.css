@@ -1,6 +1,19 @@
+:root {
+	--iview-primary: #2d8cf0;
+	--iview-title: #1c2438;
+	--iview-content: #495060;
+	--iview-background: #f8f8f9;
+
+	--title-text: rgba(255,255,255,.7);
+}
+
 .ship-list-controls {
 	height: 32px;
 	margin-bottom: 16px;
+}
+
+.ship-list-controls .ivu-input {
+	background-color: var(--iview-background);
 }
 
 .summary-value {
@@ -22,18 +35,6 @@
 .right {
 	text-align: right;
 }
-
-/* Adjust primary button color. */
-.ivu-btn-primary {
-	background-color: #0d83c9;
-	border-color: #0d83c9;
-}
-
-.ivu-btn-primary:hover {
-	background-color: #27a7f1;
-	border-color: #27a7f1;
-}
-
 
 /* Group indicator through the magic of after selectors. */
 .group-indicator-label {
@@ -62,7 +63,7 @@
 	left: 50%;
 	border-width: 2px 0px 2px 2px;
 	border-style: solid;
-	border-color: #0d83c9;
+	border-color: var(--iview-primary);
 }
 
 /* Spacing between component selectors and item port groups. */
@@ -111,7 +112,11 @@
 }
 
 .ivu-menu-dark.ivu-menu-horizontal .ivu-menu-item-active {
-	color: rgba(255,255,255,.7);
+	color: var(--title-text);
+}
+
+.ivu-menu-dark {
+	background-color: var(--iview-title);
 }
 
 .centered-narrow {
@@ -123,18 +128,18 @@
 
 .header {
 	height: 60px;
-	background-color: rgb(73, 80, 96);
+	background-color: var(--iview-title);
 	line-height: normal;
 	padding: 0px 16px 0px 16px;
 }
 
 .header h1 {
-	color: #f0f0f0;
+	color: var(--iview-background);
 	line-height: 40px;
 }
 
 .header p {
-	color: rgba(255,255,255,.7);
+	color: var(--title-text);
 	padding-bottom: 6px;
 }
 
@@ -148,25 +153,25 @@
 
 .footer {
 	height: 52px;
-	background-color: rgb(73, 80, 96);
-	color: rgba(255,255,255,.7);
+	background-color: var(--iview-title);
+	color: var(--title-text);
 	text-align: center;
 	padding: 8px 16px 8px 16px;
 }
 
 .footer a {
-	color: #f0f0f0;
+	color: var(--iview-background);
 }
 
 /* Color the section headers differently from the buttons. */
 .ivu-collapse-header {
-	background-color: #0d83c9;
+	background-color: var(--iview-content);
 	color: white !important;
 	font-weight: bold;
 }
 
 .ivu-table th {
-	background-color: #0d83c9;
+	background-color: var(--iview-content);
 	color: white !important;
 }
 
@@ -211,9 +216,9 @@
 }
 
 .flip-icon > i {
-    -webkit-transform: rotate(180deg);
-    -ms-transform: rotate(180deg);
-    transform: rotate(180deg);
+	-webkit-transform: rotate(180deg);
+	-ms-transform: rotate(180deg);
+	transform: rotate(180deg);
 }
 
 /* Add scrollbars back to dropdowns. */
