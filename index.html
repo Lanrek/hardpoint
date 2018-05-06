@@ -20,6 +20,8 @@
 		<meta name="keywords" content="star citizen,sc,cig,ship,vehicle,spaceship,loadout,fitting,equipment,gear,items,tool,planner,app,theory,comparison" />
 
 		<script src="//unpkg.com/lodash"></script>
+		<script src="//unpkg.com/clipboard@2.0.0/dist/clipboard.min.js"></script>
+
 
 		<link rel="stylesheet" type="text/css" href="//unpkg.com/iview/dist/styles/iview.css">
 
@@ -86,14 +88,12 @@
 
 		<template id="ship-list">
 			<div class="ship-list">
-				<div class="ship-list-controls">
-					<row>
-						<i-col span="8">
-							<i-input placeholder="Search" clearable v-model="searchInput"></i-input>
-						</i-col>
-					</row>
-				</div>
-				<row>
+				<row class="spaced-row ship-list-controls">
+					<i-col span="8">
+						<i-input placeholder="Search" clearable v-model="searchInput"></i-input>
+					</i-col>
+				</row>
+				<row class="spaced-row">
 					<i-col span="24">
 						<i-table
 							:columns="attributeColumns"
@@ -133,59 +133,65 @@
 		</template>
 
 		<template id="ship-details">
-			<row :gutter="16">
-				<i-col span="24">
-					<div class="title">
+			<div class="ship-details">
+				<row class="spaced-row">
+					<i-col span="14">
 						<h1>{{selectedCustomization.displayName}}</h1>
+						<br />
+						<p>Specifications for this ship are based on <a :href="scdbLink">current game data</a> not future plans</p>
 						<p>Additional information available on the <a :href="wikiLink">Star Citizen wiki</a></p>
-						<p>Raw game data available from <a :href="scdbLink">StarCitizenDB</a></p>
-					</div>
-				</i-col>
-				<i-col span="17">
-					<collapse v-model="expandedSections">
-						<panel v-for="sectionName in sectionNames" :key="sectionName" :name="sectionName">
-							{{sectionName}}
-							<div slot="content">
-								<item-port-group
-									v-for="group in getSectionBindingGroups(sectionName)"
-									:key="JSON.stringify(selectedCustomization.shipId) + JSON.stringify(group.memberPortNames)"
-									:customization="selectedCustomization"
-									:group-name="group.name">
-									<template slot-scope="parent">
-										<div class="component-and-children-selector">
-											<component-selector
-												:customization="selectedCustomization"
-												:bindings="parent.targetBindings">
-											</component-selector>
-											<item-port-group
-												v-for="childGroup in getChildBindingGroups(parent.prototypeBinding)"
-												:key="JSON.stringify(selectedCustomization.shipId) +
-													JSON.stringify(parent.prototypeBinding.selectedComponent) +
-													JSON.stringify(parent.targetBindings.map(b => b.port.name)) +
-													JSON.stringify(childGroup.memberPortNames)"
-												:customization="selectedCustomization"
-												:group-name="childGroup.name"
-												:parent-bindings="parent.targetBindings">
-												<template slot-scope="child">
-													<component-selector
-														:customization="selectedCustomization"
-														:bindings="child.targetBindings">
-													</component-selector>
-												</template>
-											</item-port-group>
-										</div>
-									</template>
-								</item-port-group>
-							</div>
-						</panel>
-					</collapse>
-				</i-col>
-				<i-col span="7">
-					<i-table :columns="damageColumns" :data="selectedCustomization.getAttributes('Damage')"></i-table>
-					<i-table :columns="maneuverabilityColumns" :data="selectedCustomization.getAttributes('Maneuverability')"></i-table>
-					<i-table :columns="survivabilityColumns" :data="selectedCustomization.getAttributes('Survivability')"></i-table>
-				</i-col>
-			</row>
+					</i-col>
+					<i-col class="right" span="10">
+						<i-button class="clipboard-button" type="primary">Copy Shareable Link</i-button>
+					</i-col>
+				</row>
+				<row class="spaced-row" :gutter="16">
+					<i-col span="17">
+						<collapse v-model="expandedSections">
+							<panel v-for="sectionName in sectionNames" :key="sectionName" :name="sectionName">
+								{{sectionName}}
+								<div slot="content">
+									<item-port-group
+										v-for="group in getSectionBindingGroups(sectionName)"
+										:key="JSON.stringify(selectedCustomization.shipId) + JSON.stringify(group.memberPortNames)"
+										:customization="selectedCustomization"
+										:group-name="group.name">
+										<template slot-scope="parent">
+											<div class="component-and-children-selector">
+												<component-selector
+													:customization="selectedCustomization"
+													:bindings="parent.targetBindings">
+												</component-selector>
+												<item-port-group
+													v-for="childGroup in getChildBindingGroups(parent.prototypeBinding)"
+													:key="JSON.stringify(selectedCustomization.shipId) +
+														JSON.stringify(parent.prototypeBinding.selectedComponent) +
+														JSON.stringify(parent.targetBindings.map(b => b.port.name)) +
+														JSON.stringify(childGroup.memberPortNames)"
+													:customization="selectedCustomization"
+													:group-name="childGroup.name"
+													:parent-bindings="parent.targetBindings">
+													<template slot-scope="child">
+														<component-selector
+															:customization="selectedCustomization"
+															:bindings="child.targetBindings">
+														</component-selector>
+													</template>
+												</item-port-group>
+											</div>
+										</template>
+									</item-port-group>
+								</div>
+							</panel>
+						</collapse>
+					</i-col>
+					<i-col span="7">
+						<i-table :columns="damageColumns" :data="selectedCustomization.getAttributes('Damage')"></i-table>
+						<i-table :columns="maneuverabilityColumns" :data="selectedCustomization.getAttributes('Maneuverability')"></i-table>
+						<i-table :columns="survivabilityColumns" :data="selectedCustomization.getAttributes('Survivability')"></i-table>
+					</i-col>
+				</row>
+			</div>
 		</template>
 
 		<template id="component-display">

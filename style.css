@@ -7,9 +7,12 @@
 	--title-text: rgba(255,255,255,.7);
 }
 
+.spaced-row + .spaced-row {
+	padding-top: 16px;
+}
+
 .ship-list-controls {
 	height: 32px;
-	margin-bottom: 16px;
 }
 
 .ship-list-controls .ivu-input {
@@ -24,11 +27,6 @@
 .nav-button {
 	text-align: center;
 	width: 100%;
-	margin-bottom: 16px;
-}
-
-.title {
-	text-align: center;
 	margin-bottom: 16px;
 }
 

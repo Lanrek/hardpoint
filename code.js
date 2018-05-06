@@ -1,3 +1,9 @@
+var copyShareableLink = new ClipboardJS(".clipboard-button", {
+  text: function() {
+    return window.location.href;
+  }
+});
+
 var hashString = function(str) {
 	let hash = 0;
 	if (!str) {
