@@ -178,7 +178,19 @@ class ShipSpecification {
 	}
 
 	getAttributes(modificationId) {
+		const ports = this.getItemPorts(modificationId);
+		const seats = ports.filter(p => p.matchesType("Seat"));
+		const crewSeats = seats.filter(s =>
+			_.get(s._data, "ControllerDef.UserDef.Observerables.Observerable") ||
+			_.get(s._data, "ControllerDef[0].UserDef.Observerables.Observerable"));
+		const mannedTurrets = ports.filter(p => p.matchesType("TurretBase", "MannedTurret"));
+
 		return [
+			{
+				name: "Crew",
+				category: "Description",
+				value: crewSeats.length + mannedTurrets.length
+			},
 			{
 				name: "Normal Speed",
 				category: "Maneuverability",
@@ -209,6 +221,11 @@ class ShipSpecification {
 		let result = [];
 		while (unsearched.length > 0) {
 			const potential = unsearched.pop();
+
+			// TODO Also need to look at the Elems of modifications for overrides!
+			if (Boolean(Number(potential["@skipPart"]))) {
+				continue;
+			}
 
 			if (!className || potential["@class"] == className) {
 				result.push(potential);
@@ -1148,6 +1165,11 @@ class ShipCustomization {
 
 		attributes = attributes.concat([
 			{
+				name: "Name",
+				category: "Description",
+				value: this.displayName
+			},
+			{
 				name: "Total Shields",
 				category: "Survivability",
 				value: Math.round(this._getAllAttachedComponents().reduce((total, x) => total + x.shieldCapacity, 0))
@@ -1420,12 +1442,18 @@ var shipList = Vue.component('ship-list', {
 					}
 				},
 				{
-					title: "Vehicle",
-					key: "displayName",
+					title: "Name",
+					key: "Name",
 					sortable: true,
 					fixed: "left",
 					minWidth: 200,
 					ellipsis: true
+				},
+				{
+					title: "Crew",
+					key: "Crew",
+					sortable: true,
+					minWidth: 65,
 				},
 				{
 					title: "SCM",
@@ -1480,9 +1508,6 @@ var shipList = Vue.component('ship-list', {
 					total[a.name] = a.value;
 					return total;
 				}, {});
-
-				// Displayed as the row name.
-				reduced.displayName = c.displayName;
 
 				// Used for navigation to the customization page.
 				reduced.serialized = c.serialize();
