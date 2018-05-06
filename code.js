@@ -1496,7 +1496,10 @@ var shipList = Vue.component('ship-list', {
 		},
 		getTableHeight() {
 			// TODO This is a terribly sad hack, but it's good enough for now.
-			return window.innerHeight - 130;
+			const headerHeight = 60;
+			const footerHeight = 52;
+			const contentPadding = 16;
+			return window.innerHeight - (headerHeight + footerHeight + contentPadding * 2);
 		},
 		onResize(event) {
 			this.tableHeight = this.getTableHeight();

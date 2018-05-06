@@ -39,38 +39,45 @@
 	</head>
 	<body>
 		<div id="app">
-			<div class="layout">
+			<div class="not-footer">
 				<div class="header">
-				<row>
-					<i-col span="12">
-						<h1>Hardpoint</h1>
-						<p>Game Data Version 3.1.0-739258</p>
-					</i-col>
-					<i-col span="12">
-						<i-menu mode="horizontal" theme="dark" @on-select="onNavigationSelect">
-							<menu-item name="comparison">
-								Ship Comparison
-							</menu-item>
-							<submenu name="new-loadout">
-								<template slot="title">
-									New Loadout
-								</template>
-								<menu-item
-									v-for="customization in shipCustomizations"
-									:key="customization.serialize()"
-									:name="customization.serialize()">
-									{{customization.displayName}}
-								</menu-item>
-							</submenu>
-						</i-menu>
-					</i-col>
-				</row>
+					<div class="centered-narrow">
+						<row>
+							<i-col span="12">
+								<h1>Hardpoint</h1>
+								<p>Game Data Version 3.1.0-739258</p>
+							</i-col>
+							<i-col span="12">
+								<i-menu mode="horizontal" theme="dark" @on-select="onNavigationSelect">
+									<menu-item name="comparison">
+										Ship Comparison
+									</menu-item>
+									<submenu name="new-loadout">
+										<template slot="title">
+											New Loadout
+										</template>
+										<menu-item
+											v-for="customization in shipCustomizations"
+											:key="customization.serialize()"
+											:name="customization.serialize()">
+											{{customization.displayName}}
+										</menu-item>
+									</submenu>
+								</i-menu>
+							</i-col>
+						</row>
+					</div>
 				</div>
 				<div class="content">
-					<router-view></router-view>
+					<div class="centered-narrow">
+						<router-view></router-view>
+					</div>
 				</div>
-				<div class="footer">
-					<p>Thanks to <a href="http://starcitizendb.com/">StarCitizenDB</a> for the data!</p>
+			</div>
+			<div class="footer">
+				<div class="centered-narrow">
+					<p>Star Citizen intellectual property, content and trademarks are owned by Cloud Imperium Games Corporation and its subsidiaries.</p>
+					<p>Thanks to <a href="http://starcitizendb.com/">StarCitizenDB</a> for the data and <a href="https://github.com/">GitHub</a> for the hosting!</p>
 				</div>
 			</div>
 		</div>

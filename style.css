@@ -109,37 +109,47 @@
 	color: rgba(255,255,255,.7);
 }
 
-.layout {
-	border: 1px solid #d7dde4;
-	background: #f5f7f9;
-	border-radius: 4px;
+.centered-narrow {
 	max-width: 1200px;
 	margin-left: auto;
 	margin-right: auto;
 }
 
-.layout .header {
+.header {
+	height: 60px;
 	background-color: rgb(73, 80, 96);
-	padding: 0px 16px 0px 16px;
-	color: white;
 	line-height: normal;
+	padding: 0px 16px 0px 16px;
 }
 
-.layout .header h1 {
+.header h1 {
+	color: #f0f0f0;
 	line-height: 40px;
 }
 
-.layout .header p {
+.header p {
+	color: rgba(255,255,255,.7);
 	padding-bottom: 6px;
 }
 
-.layout .content {
+.content {
 	padding: 16px;
 }
 
-.layout .footer {
+.not-footer {
+	min-height: calc(100vh - 52px);
+}
+
+.footer {
+	height: 52px;
+	background-color: rgb(73, 80, 96);
+	color: rgba(255,255,255,.7);
 	text-align: center;
 	padding: 8px 16px 8px 16px;
+}
+
+.footer a {
+	color: #f0f0f0;
 }
 
 /* Color the section headers differently from the buttons. */
