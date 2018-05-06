@@ -1231,6 +1231,28 @@ for (const entry of localizationStrings) {
 }
 
 
+// Immutable array of customizations for all the stock ships.
+// Needs to be global so that it can be referenced from the router on initial page load.
+const makeDefaultShipCustomizations = function() {
+	const unflattened = Object.values(shipSpecifications).map(n => n.getModificationLoadouts());
+	const flattened = unflattened.reduce((total, n) => total.concat(n), []);
+
+	// TODO This filtering mechanism is terrible.
+
+	const npcModifications = ["Pirate", "S42", "SQ42", "Dead", "CalMason", "Weak"];
+	let filtered = flattened.filter(x => !x.modificationId || !npcModifications.some(n => x.modificationId.includes(n)));
+
+	const npcSpecifications = ["Turret", "Old"];
+	filtered = filtered.filter(x => !npcSpecifications.some(n => x.specificationId.includes(n)));
+
+	const customizations = filtered.map(n => new ShipCustomization(n));
+
+	const npcDisplayNames = ["XIAN", "VNCL", "Vanduul Glaive"];
+	return customizations.filter(x => !npcDisplayNames.some(n => x.displayName.includes(n)));
+};
+var defaultShipCustomizations = makeDefaultShipCustomizations();
+
+
 // Represents a group on potentially multiple parents. If there are all multiple parents, they are assumed
 // to be identical ports with identical components. If parents is undefined, the group is on the ship.
 var itemPortGroup = Vue.component('item-port-group', {
@@ -1452,7 +1474,7 @@ var shipList = Vue.component('ship-list', {
 	},
 	computed: {
 		shipAttributes: function() {
-			return this.$root.shipCustomizations.map(c => {
+			return defaultShipCustomizations.map(c => {
 				const attributes = c.getAttributes();
 				let reduced = attributes.reduce((total, a) => {
 					total[a.name] = a.value;
@@ -1610,6 +1632,19 @@ const router = new VueRouter({
 			component: shipDetails
 		},
 		{
+			// For inbound links from external sites to have a coherent URL.
+			path: '/ships/:combinedId',
+			redirect: to => {
+				const customization = defaultShipCustomizations.find(c => c.shipId.combinedId == to.params.combinedId);
+				if (customization) {
+					return {name: 'customize', params: {serialized: customization.serialize()}};
+
+				}
+
+				return {name: "list"};
+			}
+		},
+		{
 			path: "*",
 			component: shipList
 		}
@@ -1625,21 +1660,7 @@ var app = new Vue({
 	el: '#app',
 	computed: {
 		shipCustomizations: function() {
-			const unflattened = Object.values(shipSpecifications).map(n => n.getModificationLoadouts());
-			const flattened = unflattened.reduce((total, n) => total.concat(n), []);
-
-			// TODO This filtering mechanism is terrible.
-
-			const npcModifications = ["Pirate", "S42", "SQ42", "Dead", "CalMason", "Weak"];
-			let filtered = flattened.filter(x => !x.modificationId || !npcModifications.some(n => x.modificationId.includes(n)));
-
-			const npcSpecifications = ["Turret", "Old"];
-			filtered = filtered.filter(x => !npcSpecifications.some(n => x.specificationId.includes(n)));
-
-			const customizations = filtered.map(n => new ShipCustomization(n));
-
-			const npcDisplayNames = ["XIAN", "VNCL", "Vanduul Glaive"];
-			return customizations.filter(x => !npcDisplayNames.some(n => x.displayName.includes(n)));
+			return defaultShipCustomizations;
 		}
 	},
 	methods: {
@@ -1648,8 +1669,7 @@ var app = new Vue({
 				this.$router.push({name: "list"});
 			}
 			else {
-				console.log(name)
-				this.$router.push({ name: 'customize', params: { serialized: name }});
+				this.$router.push({name: 'customize', params: {serialized: name}});
 			}
 		}
 	}
