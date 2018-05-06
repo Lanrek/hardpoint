@@ -1420,6 +1420,7 @@ var shipList = Vue.component('ship-list', {
 	template: '#ship-list',
 	data: function() {
 		return {
+			searchInput: "",
 			tableHeight: this.getTableHeight(),
 			attributeColumns: [
 				{
@@ -1502,7 +1503,9 @@ var shipList = Vue.component('ship-list', {
 	},
 	computed: {
 		shipAttributes: function() {
-			return defaultShipCustomizations.map(c => {
+			return defaultShipCustomizations.filter(c => {
+				return c.displayName.toLowerCase().includes(this.searchInput.toLowerCase());
+			}).map(c => {
 				const attributes = c.getAttributes();
 				let reduced = attributes.reduce((total, a) => {
 					total[a.name] = a.value;
@@ -1524,7 +1527,8 @@ var shipList = Vue.component('ship-list', {
 			const headerHeight = 60;
 			const footerHeight = 52;
 			const contentPadding = 16;
-			return window.innerHeight - (headerHeight + footerHeight + contentPadding * 2);
+			const controlsHeight = 32;
+			return window.innerHeight - (headerHeight + footerHeight + controlsHeight + contentPadding * 3);
 		},
 		onResize(event) {
 			this.tableHeight = this.getTableHeight();

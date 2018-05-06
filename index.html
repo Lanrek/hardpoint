@@ -85,17 +85,26 @@
 		</div>
 
 		<template id="ship-list">
-			<row>
-				<i-col span="24">
-					<i-table
-						:columns="attributeColumns"
-						:data="shipAttributes"
-						:height="tableHeight"
-						highlight-row
-						stripe>
-					</i-table>
-				</i-col>
-			</row>
+			<div class="ship-list">
+				<div class="ship-list-controls">
+					<row>
+						<i-col span="8">
+							<i-input placeholder="Search" clearable v-model="searchInput"></i-input>
+						</i-col>
+					</row>
+				</div>
+				<row>
+					<i-col span="24">
+						<i-table
+							:columns="attributeColumns"
+							:data="shipAttributes"
+							:height="tableHeight"
+							highlight-row
+							stripe>
+						</i-table>
+					</i-col>
+				</row>
+			</div>
 		</template>
 
 		<template id="item-port-group">

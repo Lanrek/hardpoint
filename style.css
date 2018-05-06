@@ -1,3 +1,8 @@
+.ship-list-controls {
+	height: 32px;
+	margin-bottom: 16px;
+}
+
 .summary-value {
 	color: #B10DC9;
 	font-weight: bolder;
