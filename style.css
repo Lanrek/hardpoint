@@ -35,6 +35,16 @@
 	text-align: right;
 }
 
+/* Make tooltips from table headers render nicely. */
+.ivu-table th .ivu-tooltip-rel {
+	padding-top:8px;
+	padding-bottom:8px;
+}
+
+.ivu-tooltip-inner {
+	white-space: normal;
+}
+
 /* Group indicator through the magic of after selectors. */
 .group-indicator-label {
 	position: relative;

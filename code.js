@@ -209,26 +209,31 @@ class ShipSpecification {
 			{
 				name: "Size Category",
 				category: "Description",
+				description: "Based on physical dimensions and mass",
 				value: sizeCategory
 			},
 			{
 				name: "Crew",
 				category: "Description",
+				description: "Seats with controls plus manned turrets",
 				value: crewSeats.length + mannedTurrets.length
 			},
 			{
 				name: "Normal Speed",
 				category: "Maneuverability",
+				description: "Maximum speed in normal flight",
 				value: scmVelocity || 0
 			},
 			{
 				name: "Afterburner Speed",
 				category: "Maneuverability",
+				description: "Maximum speed with afterburner engaged",
 				value: Number(this._data["ifcs"]["@CruiseSpeed"]) || 0
 			},
 			{
 				name: "Total Hitpoints",
 				category: "Survivability",
+				description: "Total hitpoints of all ship parts",
 				value: this._findParts(modificationId).reduce((total, x) => total + Number(x["@damageMax"] || 0), 0)
 			}
 		];
@@ -1197,20 +1202,24 @@ class ShipCustomization {
 			{
 				name: "Total Shields",
 				category: "Survivability",
+				description: "Total capacity of all shield generators",
 				value: Math.round(this._getAllAttachedComponents().reduce((total, x) => total + x.shieldCapacity, 0))
 			},
 			{
 				name: "Total Burst DPS",
 				category: "Damage",
+				description: "Total gun DPS without considering heat, power, or ammo",
 				value: Math.round(this._getAllAttachedComponents().reduce((total, x) => total + x.gunBurstDps.total, 0))
 			},
 			{
 				name: "Total Sustained DPS",
+				description: "Total gun DPS that can be sustained indefinitely",
 				category: "Damage",
 				value: Math.round(this._getAllAttachedComponents().reduce((total, x) => total + x.gunSustainedDps.total, 0))
 			},
 			{
 				name: "Total Missile Damage",
+				description: "Total potential damage of all missiles",
 				category: "Damage",
 				value: Math.round(this._getAllAttachedComponents().reduce((total, x) => total + x.missileDamage.total, 0))
 			}
@@ -1489,6 +1498,7 @@ var shipList = Vue.component('ship-list', {
 					sortMethod: (a, b, type) => {
 						return (sizeCategoryOrder.indexOf(a) > sizeCategoryOrder.indexOf(b) ? 1 : -1) * (type == "asc" ? 1 : -1);
 					},
+					renderHeader: this.renderSortableHeaderWithTooltip,
 					filters: sizeCategoryOrder.map(s => { return {label: s, value: s}}),
 					filterMethod: (value, row) => row["Size"] == value,
 					minWidth: 75
@@ -1497,48 +1507,56 @@ var shipList = Vue.component('ship-list', {
 					title: "Crew",
 					key: "Crew",
 					sortable: true,
+					renderHeader: this.renderSortableHeaderWithTooltip,
 					minWidth: 65
 				},
 				{
 					title: "SCM",
 					key: "Normal Speed",
 					sortable: true,
+					renderHeader: this.renderSortableHeaderWithTooltip,
 					minWidth: 60
 				},
 				{
 					title: "Afterburner",
 					key: "Afterburner Speed",
 					sortable: true,
+					renderHeader: this.renderSortableHeaderWithTooltip,
 					minWidth: 100
 				},
 				{
 					title: "HP",
 					key: "Total Hitpoints",
 					sortable: true,
+					renderHeader: this.renderSortableHeaderWithTooltip,
 					minWidth: 60
 				},
 				{
 					title: "Shields",
 					key: "Total Shields",
 					sortable: true,
+					renderHeader: this.renderSortableHeaderWithTooltip,
 					minWidth: 80
 				},
 				{
 					title: "DPS",
 					key: "Total Sustained DPS",
 					sortable: true,
+					renderHeader: this.renderSortableHeaderWithTooltip,
 					minWidth: 60
 				},
 				{
 					title: "Burst DPS",
 					key: "Total Burst DPS",
 					sortable: true,
+					renderHeader: this.renderSortableHeaderWithTooltip,
 					minWidth: 95
 				},
 				{
 					title: "Missiles",
 					key: "Total Missile Damage",
 					sortable: true,
+					renderHeader: this.renderSortableHeaderWithTooltip,
 					minWidth: 80
 				}
 			]
@@ -1559,6 +1577,12 @@ var shipList = Vue.component('ship-list', {
 				reduced.serialized = c.serialize();
 				return reduced;
 			});
+		},
+		shipAttributeDescriptions: function() {
+			return defaultShipCustomizations[0].getAttributes().reduce((total, a) => {
+				total[a.name] = a.description;
+				return total;
+			}, {});
 		}
 	},
 	methods: {
@@ -1575,6 +1599,30 @@ var shipList = Vue.component('ship-list', {
 		},
 		onResize(event) {
 			this.tableHeight = this.getTableHeight();
+		},
+		renderSortableHeaderWithTooltip(h, params) {
+			const tooltip = h(
+				"Tooltip", {
+					props: {
+						content: this.shipAttributeDescriptions[params.column.key],
+						placement: "top",
+						transfer: true
+					}
+				},
+				params.column.title);
+
+			return h(
+				"span", {
+					on: {
+						click: () => {
+							const table = this.$refs.table;
+							const header = table.$children[0];
+							header.handleSortByHead(params.index);
+						}
+					},
+					class: "ivu-table-cell-sort"
+				},
+				[tooltip]);
 		}
 	},
 	mounted() {
