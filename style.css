@@ -1,5 +1,6 @@
 :root {
 	--iview-primary: #2d8cf0;
+	--iview-primary-light: #5cadff;
 	--iview-title: #1c2438;
 	--iview-content: #495060;
 	--iview-background: #f8f8f9;
@@ -173,8 +174,9 @@
 	color: white !important;
 }
 
+.ivu-table-filter i.on,
 .ivu-table-sort i.on {
-	color: white;
+	color: var(--iview-primary-light);
 }
 
 /* Drop the padding significantly to allow more columns. */

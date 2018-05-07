@@ -184,6 +184,8 @@ class ShipSpecification {
 	}
 
 	getAttributes(modificationId) {
+		const scmVelocity = Number(this._data["ifcs"]["@SCMVelocity"]);
+
 		const ports = this.getItemPorts(modificationId);
 		const seats = ports.filter(p => p.matchesType("Seat"));
 		const crewSeats = seats.filter(s =>
@@ -191,7 +193,24 @@ class ShipSpecification {
 			_.get(s._data, "ControllerDef[0].UserDef.Observerables.Observerable"));
 		const mannedTurrets = ports.filter(p => p.matchesType("TurretBase", "MannedTurret"));
 
+		const size = Number(this._data["@size"]);
+		let sizeCategory = "Small";
+		if (!scmVelocity) {
+			sizeCategory = "Ground";
+		}
+		else if (size >= 4) {
+			sizeCategory = "Large";
+		}
+		else if (size >= 3) {
+			sizeCategory = "Medium";
+		}
+
 		return [
+			{
+				name: "Size Category",
+				category: "Description",
+				value: sizeCategory
+			},
 			{
 				name: "Crew",
 				category: "Description",
@@ -200,7 +219,7 @@ class ShipSpecification {
 			{
 				name: "Normal Speed",
 				category: "Maneuverability",
-				value: Number(this._data["ifcs"]["@SCMVelocity"]) || 0
+				value: scmVelocity || 0
 			},
 			{
 				name: "Afterburner Speed",
@@ -1197,6 +1216,11 @@ class ShipCustomization {
 			}
 		]);
 
+		const overrides = shipAttributeOverrides[this.shipId.combinedId];
+		if (overrides) {
+			Object.keys(overrides).forEach(k => attributes.find(a => a.name == k).value = overrides[k]);
+		}
+
 		if (category) {
 			attributes = attributes.filter(n => n.category == category);
 		}
@@ -1422,6 +1446,8 @@ var componentSelector = Vue.component('component-selector', {
 	}
 });
 
+var sizeCategoryOrder = ["Ground", "Small", "Medium", "Large", "Capital"];
+
 var shipList = Vue.component('ship-list', {
 	template: '#ship-list',
 	data: function() {
@@ -1457,10 +1483,21 @@ var shipList = Vue.component('ship-list', {
 					ellipsis: true
 				},
 				{
+					title: "Size",
+					key: "Size Category",
+					sortable: true,
+					sortMethod: (a, b, type) => {
+						return (sizeCategoryOrder.indexOf(a) > sizeCategoryOrder.indexOf(b) ? 1 : -1) * (type == "asc" ? 1 : -1);
+					},
+					filters: sizeCategoryOrder.map(s => { return {label: s, value: s}}),
+					filterMethod: (value, row) => row["Size"] == value,
+					minWidth: 75
+				},
+				{
 					title: "Crew",
 					key: "Crew",
 					sortable: true,
-					minWidth: 65,
+					minWidth: 65
 				},
 				{
 					title: "SCM",
