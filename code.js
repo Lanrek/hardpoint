@@ -1500,7 +1500,7 @@ var shipList = Vue.component('ship-list', {
 					},
 					renderHeader: this.renderSortableHeaderWithTooltip,
 					filters: sizeCategoryOrder.map(s => { return {label: s, value: s}}),
-					filterMethod: (value, row) => row["Size"] == value,
+					filterMethod: (value, row) => row["Size Category"] == value,
 					minWidth: 75
 				},
 				{
