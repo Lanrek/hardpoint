@@ -1539,10 +1539,10 @@ var shipList = Vue.component('ship-list', {
 			compareDisabled: true,
 			attributeColumns: [
 				{
-					title: 'Action',
+					title: " ",
 					fixed: "left",
-					minWidth: 90,
-					align: 'center',
+					minWidth: 55,
+					align: "center",
 					render: (h, params) => {
 						return h('Button', {
 							props: {
@@ -1554,7 +1554,7 @@ var shipList = Vue.component('ship-list', {
 									this.customize(params.row.serialized)
 								}
 							}
-						}, 'Customize');
+						}, "Edit");
 					}
 				},
 				{
