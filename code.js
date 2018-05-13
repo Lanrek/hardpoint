@@ -563,6 +563,26 @@ class SpaceshipComponent {
 		return 0;
 	}
 
+	get quantumFuel() {
+		return 0;
+	}
+
+	get quantumRange() {
+		return 0;
+	}
+
+	get quantumEfficiency() {
+		return 0;
+	}
+
+	get quantumCooldown() {
+		return 0;
+	}
+
+	get quantumSpeed() {
+		return 0;
+	}
+
 	get summary() {
 		if (this.type == "WeaponGun") {
 			let damage = "{gunAlpha.total}";
@@ -701,6 +721,33 @@ class DataforgeComponent {
 		return 0;
 	}
 
+	get quantumFuel() {
+		if (this.type == "QuantumFuelTank") {
+			return Number(_.get(this._data, "Components.SCItemFuelTankParams.@capacity", 0));
+		}
+
+		return 0;
+	}
+
+	get quantumRange() {
+		// Underlying unit appears to be kilometers; convert to gigameters.
+		return Number(_.get(this._data, "Components.SCItemQuantumDriveParams.@jumpRange", 0)) / 1000000;
+	}
+
+	get quantumEfficiency() {
+		// Underlying unit appears to be fuel used per 1000km travelled.
+		return Number(_.get(this._data, "Components.SCItemQuantumDriveParams.@quantumFuelRequirement", 0));
+	}
+
+	get quantumCooldown() {
+		return Number(_.get(this._data, "Components.SCItemQuantumDriveParams.params.@cooldownTime", 0));
+	}
+
+	get quantumSpeed() {
+		// Underlying unit appears to be m/sec; convert to megameters/sec.
+		return Number(_.get(this._data, "Components.SCItemQuantumDriveParams.params.@driveSpeed", 0)) / 1000000;
+	}
+
 	get summary() {
 		if (this.type == "Turret" || this.type == "TurretBase") {
 			if (this.itemPorts[0]) {
@@ -716,6 +763,13 @@ class DataforgeComponent {
 			return new SummaryText([
 				"{shieldCapacity} shield capacity",
 				"{shieldRegeneration}/sec regeneration with a {shieldDownDelay} sec delay after dropping"], this);
+		}
+
+		if (this.type == "QuantumDrive") {
+			return new SummaryText([
+				"{quantumRange} gigameter jump distance at {quantumSpeed} megameters/sec",
+				"Consumes {quantumEfficiency} fuel per megameter",
+				"{quantumCooldown} second cooldown"], this);
 		}
 
 		return new SummaryText();
@@ -768,7 +822,8 @@ class BaseItemPort {
 			}
 
 			// Match all subtypes when looking for interesting types.
-			if (subtype != undefined) {
+			// TODO The explicit "UNDEFINED" is for quantum drives; confirm with testing.
+			if (subtype != undefined && subtype != "UNDEFINED") {
 				// It looks like subtypes are ports constraining what components can fit,
 				// the subtypes on components aren't constraints just informative.
 				// TODO Or maybe I'm just missing a lot of implicit defaults and rules?
@@ -1191,6 +1246,9 @@ class ShipCustomization {
 	}
 
 	getAttributes(category=undefined) {
+		const quantumFuel = this._getAllAttachedComponents().reduce((total, x) => total + x.quantumFuel, 0);
+		const quantumEfficiency = this._getAllAttachedComponents().reduce((total, x) => total + x.quantumEfficiency, 0);
+
 		let attributes = this._specification.getAttributes(this.shipId.modificationId);
 
 		attributes = attributes.concat([
@@ -1222,6 +1280,24 @@ class ShipCustomization {
 				description: "Total potential damage of all missiles",
 				category: "Damage",
 				value: Math.round(this._getAllAttachedComponents().reduce((total, x) => total + x.missileDamage.total, 0))
+			},
+			{
+				name: "Quantum Speed",
+				description: "Max quantum travel speed in megameters/sec",
+				category: "Travel",
+				value: _.round(this._getAllAttachedComponents().reduce((total, x) => total + x.quantumSpeed, 0), 2)
+			},
+			{
+				name: "Quantum Fuel",
+				description: "Total capacity of all quantum fuel tanks",
+				category: "Travel",
+				value: Math.round(quantumFuel)
+			},
+			{
+				name: "Quantum Range",
+				description: "Megameters of quantum travel range based on fuel capacity",
+				category: "Travel",
+				value: Math.round(quantumFuel / quantumEfficiency) || 0
 			}
 		]);
 
@@ -1558,6 +1634,20 @@ var shipList = Vue.component('ship-list', {
 					sortable: true,
 					renderHeader: this.renderSortableHeaderWithTooltip,
 					minWidth: 80
+				},
+				{
+					title: "Qntm Speed",
+					key: "Quantum Speed",
+					sortable: true,
+					renderHeader: this.renderSortableHeaderWithTooltip,
+					minWidth: 105
+				},
+				{
+					title: "Qntm Range",
+					key: "Quantum Range",
+					sortable: true,
+					renderHeader: this.renderSortableHeaderWithTooltip,
+					minWidth: 105
 				}
 			]
 		}
@@ -1644,9 +1734,9 @@ var shipDetails = Vue.component('ship-details', {
 			expandedSections: ["Guns", "Missiles"],
 			// Also defines the section precedence order; lowest precedence is first.
 			sectionDefinitions: {
-				"Guns": ['WeaponGun', 'Turret', 'TurretBase'],
-				"Missiles": ['WeaponMissile'],
-				"Systems": ['Cooler', 'Shield', 'PowerPlant']
+				"Guns": ["WeaponGun", "Turret", "TurretBase"],
+				"Missiles": ["WeaponMissile"],
+				"Systems": ["Cooler", "Shield", "PowerPlant", "QuantumDrive"]
 			},
 
 			damageColumns: [
@@ -1674,6 +1764,17 @@ var shipDetails = Vue.component('ship-details', {
 			survivabilityColumns: [
 				{
 					title: "Survivability",
+					key: "name"
+				},
+				{
+					title: " ",
+					key: "value",
+					width: 60
+				}
+			],
+			travelColumns: [
+				{
+					title: "Travel",
 					key: "name"
 				},
 				{
