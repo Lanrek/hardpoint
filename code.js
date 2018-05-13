@@ -1214,7 +1214,17 @@ class ShipCustomization {
 	}
 
 	get displayName() {
-		return this._specification.getDisplayName(this.shipId.modificationId) || this.shipId.loadoutId;
+		return this._specification.getDisplayName(this.shipId.modificationId) || this.shipId.combinedId;
+	}
+
+	get manufacturer() {
+		const split = this.displayName.split(/[ _]/);
+		return split[0].trim();
+	}
+
+	get shortName() {
+		const split = this.displayName.split(/[ _]/);
+		return split.slice(1).join(" ").trim();
 	}
 
 	// Abstracted because ship modifications will probably have their own tags eventually.
@@ -1232,7 +1242,12 @@ class ShipCustomization {
 			{
 				name: "Name",
 				category: "Description",
-				value: this.displayName
+				value: this.shortName
+			},
+			{
+				name: "Manufacturer",
+				category: "Description",
+				value: this.manufacturer
 			},
 			{
 				name: "Total Shields",
@@ -1358,6 +1373,9 @@ const makeDefaultShipCustomizations = function() {
 
 	const npcSpecifications = ["Turret", "Old"];
 	filtered = filtered.filter(x => !npcSpecifications.some(n => x.specificationId.includes(n)));
+
+	const unfinishedSpecifications = ["Lightning", "Hull_C", "Cydnus", "Bengal", "Javelin"];
+	filtered = filtered.filter(x => !unfinishedSpecifications.some(u => x.specificationId.includes(u)));
 
 	const customizations = filtered.map(n => new ShipCustomization(n));
 
@@ -1540,17 +1558,26 @@ var shipList = Vue.component('ship-list', {
 					}
 				},
 				{
+					title: "Mnfr",
+					key: "Manufacturer",
+					filters: this.getAttributeFilter("Manufacturer"),
+					filterMethod: (value, row) => row["Manufacturer"] == value,
+					fixed: "left",
+					minWidth: 60,
+					ellipsis: true
+				},
+				{
 					title: "Name",
 					key: "Name",
 					sortable: true,
 					fixed: "left",
-					minWidth: 200,
+					minWidth: 155,
 					ellipsis: true
 				},
 				{
 					title: " ",
 					fixed: "left",
-					width: 36,
+					width: 30,
 					align: "center",
 					render: (h, params) => {
 						return h("Checkbox", {
@@ -1708,6 +1735,11 @@ var shipList = Vue.component('ship-list', {
 		},
 		onCompareSelected(event) {
 			this.comparing = !this.comparing;
+		},
+		getAttributeFilter(key) {
+			const unique = [...new Set(defaultShipCustomizations.map(c => c.getAttributes().find(e => e.name == key).value))];
+			return unique.sort().map(x => {
+				return {label: x, value: x}});
 		},
 		renderSortableHeaderWithTooltip(h, params) {
 			const tooltip = h(
