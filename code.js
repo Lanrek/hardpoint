@@ -1516,6 +1516,8 @@ var shipList = Vue.component('ship-list', {
 		return {
 			searchInput: "",
 			tableHeight: this.getTableHeight(),
+			selected: new Set(),
+			comparing: false,
 			attributeColumns: [
 				{
 					title: 'Action',
@@ -1543,6 +1545,32 @@ var shipList = Vue.component('ship-list', {
 					fixed: "left",
 					minWidth: 200,
 					ellipsis: true
+				},
+				{
+					title: " ",
+					fixed: "left",
+					width: 36,
+					align: "center",
+					render: (h, params) => {
+						return h("Checkbox", {
+							props: {
+								value: this.selected.has(params.row.key),
+								disabled: this.comparing
+							},
+							on: {
+								input: (value) => {
+									if (value) {
+										this.selected.add(params.row.key);
+									}
+									else {
+										this.selected.delete(params.row.key);
+									}
+
+									this.$emit("input", value)
+								}
+							}
+						});
+					}
 				},
 				{
 					title: "Size",
@@ -1642,7 +1670,14 @@ var shipList = Vue.component('ship-list', {
 
 				// Used for navigation to the customization page.
 				reduced.serialized = c.serialize();
+
+				// Used for uniquely identifying rows to select.
+				// TODO This will need to incorporate loadout name.
+				reduced.key = reduced.serialized;
+
 				return reduced;
+			}).filter(c => {
+				return !this.comparing || this.selected.has(c.key);
 			});
 		},
 		shipAttributeDescriptions: function() {
@@ -1666,6 +1701,9 @@ var shipList = Vue.component('ship-list', {
 		},
 		onResize(event) {
 			this.tableHeight = this.getTableHeight();
+		},
+		onCompareSelected(event) {
+			this.comparing = !this.comparing;
 		},
 		renderSortableHeaderWithTooltip(h, params) {
 			const tooltip = h(

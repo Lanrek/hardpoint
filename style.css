@@ -8,6 +8,10 @@
 	--title-text: rgba(255,255,255,.7);
 }
 
+.ivu-checkbox-wrapper {
+	margin-right: 0px;
+}
+
 .spaced-row + .spaced-row {
 	padding-top: 16px;
 }
