@@ -358,18 +358,7 @@ class SummaryText {
 
 	render() {
 		let getValue = key => {
-			const split = key.split(".");
-
-			let value = this.values;
-			split.forEach(n => {
-				if (n.startsWith("[")) {
-					const index = Number(n.slice(1, -1));
-					value = value[index];
-				}
-				else {
-					value = value[n]
-				}
-			});
+			let value = _.get(this.values, key);
 
 			if (value.toFixed) {
 				// Round to two places and then drop any trailing 0s.
@@ -695,30 +684,18 @@ class DataforgeComponent {
 	}
 
 	get shieldCapacity() {
-		const params = this._data["Components"]["SCItemShieldGeneratorParams"];
-		if (params) {
-			return Number(params["ShieldEmitterContributions"]["@MaxShieldHealth"]);
-		}
-
-		return 0;
+		return Number(_.get(this._data,
+			"Components.SCItemShieldGeneratorParams.ShieldEmitterContributions.@MaxShieldHealth", 0));
 	}
 
 	get shieldRegeneration() {
-		const params = this._data["Components"]["SCItemShieldGeneratorParams"];
-		if (params) {
-			return Number(params["ShieldEmitterContributions"]["@MaxShieldRegen"]);
-		}
-
-		return 0;
+		return Number(_.get(this._data,
+			"Components.SCItemShieldGeneratorParams.ShieldEmitterContributions.@MaxShieldRegen", 0));
 	}
 
 	get shieldDownDelay() {
-		const params = this._data["Components"]["SCItemShieldGeneratorParams"];
-		if (params) {
-			return Number(params["ShieldEmitterContributions"]["@DownedRegenDelay"]);
-		}
-
-		return 0;
+		return Number(_.get(this._data,
+			"Components.SCItemShieldGeneratorParams.ShieldEmitterContributions.@DownedRegenDelay", 0));
 	}
 
 	get quantumFuel() {
