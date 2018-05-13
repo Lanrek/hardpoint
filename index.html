@@ -94,7 +94,7 @@
 						<i-input placeholder="Search" clearable v-model="searchInput"></i-input>
 					</i-col>
 					<i-col span="16" class="right">
-						<i-button type="primary" @click="onCompareSelected">
+						<i-button type="primary" @click="onCompareSelected" :disabled="compareDisabled">
 							{{comparing ? "Show All" : "Compare Selected"}}
 						</i-button>
 					</i-col>

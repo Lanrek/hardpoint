@@ -1518,6 +1518,7 @@ var shipList = Vue.component('ship-list', {
 			tableHeight: this.getTableHeight(),
 			selected: new Set(),
 			comparing: false,
+			compareDisabled: true,
 			attributeColumns: [
 				{
 					title: 'Action',
@@ -1565,6 +1566,9 @@ var shipList = Vue.component('ship-list', {
 									else {
 										this.selected.delete(params.row.key);
 									}
+
+									// Binding to the size property doesn't work, so track it manually.
+									this.compareDisabled = this.selected.size == 0;
 
 									this.$emit("input", value)
 								}
