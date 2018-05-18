@@ -1,7 +1,9 @@
 var copyShareableLink = new ClipboardJS(".clipboard-button", {
-  text: function() {
-    return window.location.href;
-  }
+	text: function() {
+		let url = new URL(location.href);
+		url.hash = ["/customize"].concat(url.hash.split("/").slice(-1)).join("/");
+		return url.href;
+	}
 });
 
 var hashString = function(str) {
@@ -19,16 +21,19 @@ var hashString = function(str) {
 	return hash;
 };
 
-var hashAndEncode = function(str) {
-	 const hash = hashString(str);
-
-	 // Limit to 24 bits for nice alignment with four base64 characters.
-	 const unencoded =
-		String.fromCharCode((hash & 0xff0000) >> 16) +
-		String.fromCharCode((hash & 0xff00) >> 8) +
-		String.fromCharCode(hash & 0xff);
+ // Align to 24 bits for nice alignment with four base64 characters.
+var encodeInt24 = function(num) {
+	const unencoded =
+		String.fromCharCode((num & 0xff0000) >> 16) +
+		String.fromCharCode((num & 0xff00) >> 8) +
+		String.fromCharCode(num & 0xff);
 
 	return btoa(unencoded).replace(/\+/g, '-').replace(/\//g, '_');
+}
+
+var hashAndEncode = function(str) {
+	const hash = hashString(str);
+	return encodeInt24(hash);
 }
 
 // Limited to ints between 0 and 25.
@@ -1087,8 +1092,10 @@ class ItemBinding {
 }
 
 class ShipCustomization {
-	constructor(shipId) {
+	constructor(shipId, storageKey = null, name = null) {
 		this.shipId = shipId;
+		this.storageKey = storageKey;
+		this.name = name;
 
 		this.childBindings = {};
 		for (const shipPort of this._specification.getItemPorts(this.shipId.modificationId)) {
@@ -1151,10 +1158,10 @@ class ShipCustomization {
 		return str;
 	}
 
-	static deserialize(str) {
+	static deserialize(str, storageKey = null, name = null) {
 		const version = str.substr(0, 1);
 		const shipId = str.substr(1, 12);
-		let customization = new ShipCustomization(ShipId.deserialize(shipId));
+		let customization = new ShipCustomization(ShipId.deserialize(shipId), storageKey, name);
 
 		const findComponent = (hashedName) => {
 			// TODO Also restrict this to matching components, to reduce hash collision chance.
@@ -1213,17 +1220,17 @@ class ShipCustomization {
 		return customization;
 	}
 
-	get displayName() {
+	get shipDisplayName() {
 		return this._specification.getDisplayName(this.shipId.modificationId) || this.shipId.combinedId;
 	}
 
-	get manufacturer() {
-		const split = this.displayName.split(/[ _]/);
+	get shipManufacturer() {
+		const split = this.shipDisplayName.split(/[ _]/);
 		return split[0].trim();
 	}
 
-	get shortName() {
-		const split = this.displayName.split(/[ _]/);
+	get shipName() {
+		const split = this.shipDisplayName.split(/[ _]/);
 		return split.slice(1).join(" ").trim();
 	}
 
@@ -1240,14 +1247,19 @@ class ShipCustomization {
 
 		attributes = attributes.concat([
 			{
-				name: "Name",
+				name: "Loadout Name",
 				category: "Description",
-				value: this.shortName
+				value: this.name
+			},
+			{
+				name: "Ship Name",
+				category: "Description",
+				value: this.shipName
 			},
 			{
 				name: "Manufacturer",
 				category: "Description",
-				value: this.manufacturer
+				value: this.shipManufacturer
 			},
 			{
 				name: "Total Shields",
@@ -1380,9 +1392,55 @@ const makeDefaultShipCustomizations = function() {
 	const customizations = filtered.map(n => new ShipCustomization(n));
 
 	const npcDisplayNames = ["XIAN", "VNCL", "Vanduul Glaive"];
-	return customizations.filter(x => !npcDisplayNames.some(n => x.displayName.includes(n)));
+	return customizations.filter(x => !npcDisplayNames.some(n => x.shipDisplayName.includes(n)));
 };
 var defaultShipCustomizations = makeDefaultShipCustomizations();
+
+
+// Storage layer for customizations.
+class LoadoutStorage {
+	constructor() {
+		this._stored = {};
+
+		for (const key of Object.keys(localStorage)) {
+			try {
+				const value = localStorage.getItem(key);
+				const deserialized = JSON.parse(value);
+				this._stored[key] = ShipCustomization.deserialize(deserialized.value, key, deserialized.name);
+			}
+			catch (ex) {
+				console.warn(ex);
+				console.warn("Unable to load saved loadout " + key);
+			}
+		}
+	}
+
+	get all() {
+		return Object.values(this._stored);
+	}
+
+	get(key) {
+		return this._stored[key];
+	}
+
+	set(customization, value = undefined) {
+		if (!value) {
+			value = customization.serialize();
+		}
+
+		this._stored[customization.storageKey] = customization;
+		const serialized = JSON.stringify({name: customization.name, value: value});
+
+		try {
+			localStorage.setItem(customization.storageKey, serialized);
+		}
+		catch (ex) {
+			console.warn(ex);
+			console.warn("Unable to save loadout " + customization.storageKey);
+		}
+	}
+}
+var loadoutStorage = new LoadoutStorage();
 
 
 // Represents a group on potentially multiple parents. If there are all multiple parents, they are assumed
@@ -1551,7 +1609,7 @@ var shipList = Vue.component('ship-list', {
 							},
 							on: {
 								click: () => {
-									this.customize(params.row.serialized)
+									this.customize(params.row.serialized, params.row.storageKey)
 								}
 							}
 						}, "Edit");
@@ -1567,11 +1625,19 @@ var shipList = Vue.component('ship-list', {
 					ellipsis: true
 				},
 				{
-					title: "Name",
-					key: "Name",
+					title: "Ship",
+					key: "Ship Name",
 					sortable: true,
 					fixed: "left",
 					minWidth: 155,
+					ellipsis: true
+				},
+				{
+					title: "Loadout",
+					key: "Loadout Name",
+					sortable: true,
+					fixed: "left",
+					minWidth: 115,
 					ellipsis: true
 				},
 				{
@@ -1582,16 +1648,16 @@ var shipList = Vue.component('ship-list', {
 					render: (h, params) => {
 						return h("Checkbox", {
 							props: {
-								value: this.selected.has(params.row.key),
+								value: this.selected.has(params.row.selectionKey),
 								disabled: this.comparing
 							},
 							on: {
 								input: (value) => {
 									if (value) {
-										this.selected.add(params.row.key);
+										this.selected.add(params.row.selectionKey);
 									}
 									else {
-										this.selected.delete(params.row.key);
+										this.selected.delete(params.row.selectionKey);
 									}
 
 									// Binding to the size property doesn't work, so track it manually.
@@ -1690,8 +1756,9 @@ var shipList = Vue.component('ship-list', {
 	},
 	computed: {
 		shipAttributes: function() {
-			return defaultShipCustomizations.filter(c => {
-				return c.displayName.toLowerCase().includes(this.searchInput.toLowerCase());
+			return loadoutStorage.all.concat(defaultShipCustomizations).filter(c => {
+				const searchable = (c.shipDisplayName + " " + c.name).toLowerCase();
+				return searchable.includes(this.searchInput.toLowerCase());
 			}).map(c => {
 				const attributes = c.getAttributes();
 				let reduced = attributes.reduce((total, a) => {
@@ -1702,13 +1769,15 @@ var shipList = Vue.component('ship-list', {
 				// Used for navigation to the customization page.
 				reduced.serialized = c.serialize();
 
+				// Used for linking to saved loadouts.
+				reduced.storageKey = c.storageKey;
+
 				// Used for uniquely identifying rows to select.
-				// TODO This will need to incorporate loadout name.
-				reduced.key = reduced.serialized;
+				reduced.selectionKey = reduced.serialized + reduced.storageKey;
 
 				return reduced;
 			}).filter(c => {
-				return !this.comparing || this.selected.has(c.key);
+				return !this.comparing || this.selected.has(c.selectionKey);
 			});
 		},
 		shipAttributeDescriptions: function() {
@@ -1719,8 +1788,13 @@ var shipList = Vue.component('ship-list', {
 		}
 	},
 	methods: {
-		customize(serialized) {
-			this.$router.push({ name: 'customize', params: { serialized: serialized }});
+		customize(serialized, storageKey = undefined) {
+			if (storageKey) {
+				this.$router.push({ name: "loadout", params: {storageKey: storageKey, serialized: serialized}});
+			}
+			else {
+				this.$router.push({ name: "customize", params: {serialized: serialized}});
+			}
 		},
 		getTableHeight() {
 			// TODO This is a terribly sad hack, but it's good enough for now.
@@ -1778,6 +1852,9 @@ var shipDetails = Vue.component('ship-details', {
 	template: '#ship-details',
 	data: function() {
 		return {
+			showModal: false,
+			loadoutName: "",
+
 			selectedCustomization: {},
 
 			// Also defines the section display order.
@@ -1840,10 +1917,14 @@ var shipDetails = Vue.component('ship-details', {
 		selectedCustomization: {
 			handler: function(val) {
 				const serialized = val.serialize();
-				let url = new URL(location.href);
-				url.hash = "/customize/" + serialized;
 
+				let url = new URL(location.href);
+				url.hash = url.hash.split("/").slice(0, -1).concat(serialized).join("/");
 				history.replaceState(history.state, document.title, url.href);
+
+				if (val.storageKey) {
+					loadoutStorage.set(val, serialized);
+				}
 			},
 			deep: true
 		}
@@ -1856,6 +1937,16 @@ var shipDetails = Vue.component('ship-details', {
 		wikiLink: function() {
 			const combined = this.selectedCustomization.shipId.combinedId;
 			return "https://starcitizen.tools/" + combined;
+		},
+		modalAction: function() {
+			if (this.selectedCustomization.storageKey) {
+				return "Rename";
+			}
+
+			return "Save";
+		},
+		modalTitle: function() {
+			return this.modalAction + " Loadout";
 		}
 	},
 	methods: {
@@ -1881,15 +1972,46 @@ var shipDetails = Vue.component('ship-details', {
 			// Hide AmmoBox item ports until they're worth customizing.
 			return childGroups.filter(g => !g.members[0].port.matchesType("AmmoBox"));
 		},
-	},
+		onOpenModal: function(event) {
+			this.showModal = true;
+			this.loadoutName = this.selectedCustomization.name || "Custom";
+		},
+		onCancelModal: function(event) {
+			this.showModal = false;
+		},
+		onConfirmModal: function(event) {
+			this.showModal = false;
 
-	// TODO These hooks feel janky -- there should be a better way make the selection reactive.
-	created() {
-		this.selectedCustomization = ShipCustomization.deserialize(this.$route.params.serialized);
+			if (!this.selectedCustomization.storageKey) {
+				const key = encodeInt24(_.random(0, 2 ** 24)) + encodeInt24(_.random(0, 2 ** 24));
+				this.selectedCustomization.storageKey = key;
+			}
+
+			this.selectedCustomization.name = this.loadoutName;
+			loadoutStorage.set(this.selectedCustomization);
+
+			// Update URL now that the loadout is saved.
+			let url = new URL(location.href);
+			url.hash = ["/loadouts", this.selectedCustomization.storageKey].concat(url.hash.split("/").slice(-1)).join("/");
+			history.replaceState(history.state, document.title, url.href);
+		}
 	},
-	beforeRouteUpdate(to, from, next) {
-		this.selectedCustomization = ShipCustomization.deserialize(to.params.serialized);
-		next();
+	created() {
+		const storageKey = this.$route.params.storageKey;
+		const serialized = this.$route.params.serialized;
+
+		const retrieved = loadoutStorage.get(storageKey);
+		if (storageKey && retrieved) {
+			this.selectedCustomization = ShipCustomization.deserialize(serialized, storageKey, retrieved.name);
+		}
+		else {
+			this.selectedCustomization = ShipCustomization.deserialize(serialized);
+
+			// Update URL for the case when the saved loadout didn't exist on this browser.
+			let url = new URL(location.href);
+			url.hash = ["/customize"].concat(url.hash.split("/").slice(-1)).join("/");
+			history.replaceState(history.state, document.title, url.href);
+		}
 	}
 });
 
@@ -1898,21 +2020,26 @@ const router = new VueRouter({
 	routes: [
 		{
 			name: "list",
-			path: '/',
+			path: "/",
 			component: shipList
 		},
 		{
+			name: "loadout",
+			path: "/loadouts/:storageKey/:serialized",
+			component: shipDetails
+		},
+		{
 			name: "customize",
-			path: '/customize/:serialized',
+			path: "/customize/:serialized",
 			component: shipDetails
 		},
 		{
 			// For inbound links from external sites to have a coherent URL.
-			path: '/ships/:combinedId',
+			path: "/ships/:combinedId",
 			redirect: to => {
 				const customization = defaultShipCustomizations.find(c => c.shipId.combinedId == to.params.combinedId);
 				if (customization) {
-					return {name: 'customize', params: {serialized: customization.serialize()}};
+					return {name: "customize", params: {serialized: customization.serialize()}};
 
 				}
 

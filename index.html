@@ -65,7 +65,7 @@
 											v-for="customization in shipCustomizations"
 											:key="customization.serialize()"
 											:name="customization.serialize()">
-											{{customization.displayName}}
+											{{customization.shipDisplayName}}
 										</menu-item>
 									</submenu>
 								</i-menu>
@@ -75,7 +75,7 @@
 				</div>
 				<div class="content">
 					<div class="centered-narrow">
-						<router-view></router-view>
+						<router-view :key="$route.fullPath"></router-view>
 					</div>
 				</div>
 			</div>
@@ -143,13 +143,33 @@
 			<div class="ship-details">
 				<row class="spaced-row">
 					<i-col span="14">
-						<h1>{{selectedCustomization.displayName}}</h1>
+						<h1>
+							{{selectedCustomization.shipDisplayName}}
+							<span v-if="selectedCustomization.storageKey">/ {{selectedCustomization.name}}</span>
+						</h1>
 						<br />
 						<p>Specifications for this ship are based on <a :href="scdbLink">current game data</a> not future plans</p>
 						<p>Additional information available on the <a :href="wikiLink">Star Citizen wiki</a></p>
 					</i-col>
 					<i-col class="right" span="10">
-						<i-button class="clipboard-button" type="primary">Copy Shareable Link</i-button>
+						<i-button class="clipboard-button" type="primary">
+							Copy Shareable Link
+						</i-button><i-button type="primary" @click="onOpenModal">
+							{{modalTitle}}
+						</i-button>
+						<modal :title="modalTitle" v-model="showModal" :mask-closable="false">
+							<p>Loadout will be saved in browser local storage and won't be available elsewhere.</p>
+							<br />
+							<p><strong>Name</strong></p>
+							<i-input v-model="loadoutName"></i-input>
+							<div slot="footer">
+								<i-button size="large" @click="onCancelModal">
+									Cancel
+								</i-button><i-button type="primary" size="large" @click="onConfirmModal">
+									{{modalAction}}
+								</i-button>
+							</div>
+						</modal>
 					</i-col>
 				</row>
 				<row class="spaced-row" :gutter="16">

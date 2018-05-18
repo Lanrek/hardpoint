@@ -8,6 +8,14 @@
 	--title-text: rgba(255,255,255,.7);
 }
 
+.clipboard-button {
+	margin-right: 16px;
+}
+
+.ivu-modal-footer button + button {
+    margin-left: 16px;
+}
+
 .ivu-checkbox-wrapper {
 	margin-right: 0px;
 }
