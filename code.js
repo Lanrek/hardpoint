@@ -1636,6 +1636,11 @@ var shipList = Vue.component('ship-list', {
 					title: "Loadout",
 					key: "Loadout Name",
 					sortable: true,
+					sortMethod: (a, b, type) => {
+						return ((a || "") > (b || "") ? 1 : -1) * (type == "asc" ? 1 : -1);
+					},
+					filters: ["Stock", "Custom"].map(s => { return {label: s, value: s}}),
+					filterMethod: (value, row) => value == "Custom" ? row["Loadout Name"] : !row["Loadout Name"],
 					fixed: "left",
 					minWidth: 115,
 					ellipsis: true
