@@ -1,8 +1,12 @@
+var makeCustomizationUrl = function() {
+	let url = new URL(location.href);
+	url.hash = ["/customize"].concat(url.hash.split("/").slice(-1)).join("/");
+	return url;
+};
+
 var copyShareableLink = new ClipboardJS(".clipboard-button", {
 	text: function() {
-		let url = new URL(location.href);
-		url.hash = ["/customize"].concat(url.hash.split("/").slice(-1)).join("/");
-		return url.href;
+		return makeCustomizationUrl().href;
 	}
 });
 
@@ -1439,6 +1443,11 @@ class LoadoutStorage {
 			console.warn("Unable to save loadout " + customization.storageKey);
 		}
 	}
+
+	remove(key) {
+		delete this._stored[key];
+		localStorage.removeItem(key);
+	}
 }
 var loadoutStorage = new LoadoutStorage();
 
@@ -1999,6 +2008,14 @@ var shipDetails = Vue.component('ship-details', {
 			let url = new URL(location.href);
 			url.hash = ["/loadouts", this.selectedCustomization.storageKey].concat(url.hash.split("/").slice(-1)).join("/");
 			history.replaceState(history.state, document.title, url.href);
+		},
+		onClickDelete: function(event) {
+			loadoutStorage.remove(this.selectedCustomization.storageKey);
+			this.selectedCustomization.storageKey = undefined;
+			this.selectedCustomization.name = undefined;
+
+			// Update the URL back to the non-loadout version of the same customization.
+			history.replaceState(history.state, document.title, makeCustomizationUrl().href);
 		}
 	},
 	created() {
@@ -2013,9 +2030,7 @@ var shipDetails = Vue.component('ship-details', {
 			this.selectedCustomization = ShipCustomization.deserialize(serialized);
 
 			// Update URL for the case when the saved loadout didn't exist on this browser.
-			let url = new URL(location.href);
-			url.hash = ["/customize"].concat(url.hash.split("/").slice(-1)).join("/");
-			history.replaceState(history.state, document.title, url.href);
+			history.replaceState(history.state, document.title, makeCustomizationUrl().href);
 		}
 	}
 });

@@ -8,6 +8,16 @@
 	--title-text: rgba(255,255,255,.7);
 }
 
+.large-icon-button {
+	height: 32px;
+	font-size: 24px;
+	line-height: normal;
+	padding-top: 0px;
+	padding-bottom: 0px;
+	padding-left: 12px;
+	padding-right: 12px;
+}
+
 .horizontal-buttons button + button {
     margin-left: 16px;
 }

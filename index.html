@@ -157,6 +157,13 @@
 								Copy Shareable Link
 							</i-button><i-button type="primary" @click="onOpenModal">
 								{{modalTitle}}
+							</i-button><i-button
+								v-if="selectedCustomization.storageKey"
+								type="error"
+								icon="trash-b"
+								size="large"
+								class="large-icon-button"
+								@click="onClickDelete">
 							</i-button>
 						</div>
 						<modal :title="modalTitle" v-model="showModal" :mask-closable="false">
