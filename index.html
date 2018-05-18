@@ -151,18 +151,20 @@
 						<p>Specifications for this ship are based on <a :href="scdbLink">current game data</a> not future plans</p>
 						<p>Additional information available on the <a :href="wikiLink">Star Citizen wiki</a></p>
 					</i-col>
-					<i-col class="right" span="10">
-						<i-button class="clipboard-button" type="primary">
-							Copy Shareable Link
-						</i-button><i-button type="primary" @click="onOpenModal">
-							{{modalTitle}}
-						</i-button>
+					<i-col span="10">
+						<div class="horizontal-buttons right">
+							<i-button class="clipboard-button" type="primary">
+								Copy Shareable Link
+							</i-button><i-button type="primary" @click="onOpenModal">
+								{{modalTitle}}
+							</i-button>
+						</div>
 						<modal :title="modalTitle" v-model="showModal" :mask-closable="false">
 							<p>Loadout will be saved in browser local storage and won't be available elsewhere.</p>
 							<br />
 							<p><strong>Name</strong></p>
 							<i-input v-model="loadoutName"></i-input>
-							<div slot="footer">
+							<div slot="footer" class="horizontal-buttons">
 								<i-button size="large" @click="onCancelModal">
 									Cancel
 								</i-button><i-button type="primary" size="large" @click="onConfirmModal">
