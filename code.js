@@ -193,7 +193,15 @@ class ShipSpecification {
 	}
 
 	getAttributes(modificationId) {
-		const scmVelocity = Number(this._data["ifcs"]["@SCMVelocity"]);
+		let ifcsData = undefined;
+		if (modificationId) {
+			ifcsData = this._data["Modifications"][modificationId]["ifcs"];
+		}
+		if (!ifcsData) {
+			ifcsData = this._data["ifcs"];
+		}
+
+		const scmVelocity = Number(ifcsData["@SCMVelocity"]);
 
 		const ports = this.getItemPorts(modificationId);
 		const seats = ports.filter(p => p.matchesType("Seat"));
@@ -237,7 +245,7 @@ class ShipSpecification {
 				name: "Afterburner Speed",
 				category: "Maneuverability",
 				description: "Maximum speed with afterburner engaged",
-				value: Number(this._data["ifcs"]["@CruiseSpeed"]) || 0
+				value: Number(ifcsData["@CruiseSpeed"]) || 0
 			},
 			{
 				name: "Total Hitpoints",
