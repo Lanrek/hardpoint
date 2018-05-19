@@ -258,8 +258,10 @@ class ShipSpecification {
 
 	_findParts(modificationId, className = undefined) {
 		let unsearched = [this._data["Parts"]["Part"]];
+		let elems = undefined;
 		if (modificationId) {
 			const modification = this._data["Modifications"][modificationId];
+			elems = modification["Elems"];
 			if (modification["mod"] && modification["mod"]["Parts"]) {
 				unsearched = [modification["mod"]["Parts"]["Part"]];
 			}
@@ -267,9 +269,27 @@ class ShipSpecification {
 
 		let result = [];
 		while (unsearched.length > 0) {
-			const potential = unsearched.pop();
+			let potential = unsearched.pop();
+			let id = _.get(potential, potential["@class"] + ".@id");
+			if (!id) {
+				id = potential["@id"];
+			}
 
-			// TODO Also need to look at the Elems of modifications for overrides!
+			// TODO Need a more general mechanism to handle Elems; doing it on every access is brittle.
+			if (elems && id) {
+				const overrides = elems.filter(e => e["@idRef"] == id);
+				if (overrides.length > 0) {
+					// TODO Deep copying will be rather expensive if this part is high in the hierarchy.
+					potential = _.cloneDeep(potential);
+					let container = potential[potential["@class"]];
+					if (!container) {
+						container = potential;
+					}
+
+					overrides.forEach(x => container["@" + x["@name"]] = x["@value"]);
+				}
+			}
+
 			if (Boolean(Number(potential["@skipPart"]))) {
 				continue;
 			}
