@@ -389,7 +389,7 @@ class SummaryText {
 		this.values = values;
 
 		if (!this.patterns) {
-			this.patterns = ["Boring"];
+			this.patterns = ["No further information available"];
 		}
 	}
 
