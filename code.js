@@ -1669,7 +1669,7 @@ var shipList = Vue.component('ship-list', {
 					minWidth: 155,
 					ellipsis: true
 				},
-				{
+				this.addDefaultLoadoutFilter({
 					title: "Loadout",
 					key: "Loadout Name",
 					sortable: true,
@@ -1681,7 +1681,7 @@ var shipList = Vue.component('ship-list', {
 					fixed: "left",
 					minWidth: 115,
 					ellipsis: true
-				},
+				}),
 				{
 					title: " ",
 					fixed: "left",
@@ -1856,6 +1856,15 @@ var shipList = Vue.component('ship-list', {
 			const unique = [...new Set(defaultShipCustomizations.map(c => c.getAttributes().find(e => e.name == key).value))];
 			return unique.sort().map(x => {
 				return {label: x, value: x}});
+		},
+		addDefaultLoadoutFilter: function(column) {
+			// This dance is necessary because having the key present even if undefined makes the filter icon blue.
+
+			if (this.$route.name == "saved") {
+				column.filteredValue = ["Custom"];
+			}
+
+			return column;
 		},
 		renderSortableHeaderWithTooltip(h, params) {
 			const tooltip = h(
@@ -2072,6 +2081,11 @@ const router = new VueRouter({
 			component: shipList
 		},
 		{
+			name: "saved",
+			path: "/loadouts",
+			component: shipList
+		},
+		{
 			name: "loadout",
 			path: "/loadouts/:storageKey/:serialized",
 			component: shipDetails
@@ -2117,6 +2131,9 @@ var app = new Vue({
 		onNavigationSelect: function(name) {
 			if (name == "comparison") {
 				this.$router.push({name: "list"});
+			}
+			else if (name == "saved") {
+				this.$router.push({name: "saved"});
 			}
 			else {
 				this.$router.push({name: 'customize', params: {serialized: name}});
