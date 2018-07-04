@@ -93,6 +93,6 @@ def download_directory(url, target):
                 chunk = response.read(buffer_size)
 
 
-snapshot_name = "3.1.0-739258"
+snapshot_name = "3.2.0-792285"
 snapshot_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "snapshots", snapshot_name))
 download_directory("http://starcitizendb.com/api/", snapshot_path)

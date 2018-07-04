@@ -61,12 +61,7 @@ class ShipId {
 	}
 
 	get combinedId() {
-		let key = this.specificationId;
-		if (this.modificationId) {
-			key += "_" + this.modificationId;
-		}
-
-		return key;
+		return ShipId._makeCombinedId(this.specificationId, this.modificationId);
 	}
 
 	serialize() {
@@ -89,7 +84,7 @@ class ShipId {
 	static findLoadout(specificationId, modificationId) {
 		// This is crazy -- must be missing something about how loadouts are bound to ships.
 		let loadoutId;
-		const tryLoadoutId = id => {
+		const coalesceLoadoutId = id => {
 			if (!loadoutId) {
 				if (shipLoadouts[id]) {
 					loadoutId = id;
@@ -97,27 +92,40 @@ class ShipId {
 			}
 		}
 
+		const combinedId = ShipId._makeCombinedId(specificationId, modificationId);
+		if (combinedId in shipLoadoutOverrides) {
+			coalesceLoadoutId(shipLoadoutOverrides[combinedId]);
+		}
+
+		coalesceLoadoutId(combinedId);
+
 		const specificationData = shipSpecifications[specificationId]._data;
 		if (modificationId) {
-			tryLoadoutId(specificationId + "_" + modificationId);
-
 			const patchFile = specificationData["Modifications"][modificationId]["@patchFile"];
 			if (patchFile) {
 				const fileName = patchFile.split("/").pop();
-				tryLoadoutId(fileName + "_" + modificationId);
-				tryLoadoutId(fileName);
+				coalesceLoadoutId(fileName + "_" + modificationId);
+				coalesceLoadoutId(fileName);
 			}
 		}
 		else
 		{
-			tryLoadoutId(specificationId);
 			if (specificationData["@local"]) {
 				// The worst hack of this mess, but necessary for the Constellation Andromeda.
-				tryLoadoutId(specificationData["@local"].replace(/ /g, "_"));
+				coalesceLoadoutId(specificationData["@local"].replace(/ /g, "_"));
 			}
 		}
 
 		return new ShipId(specificationId, modificationId, loadoutId);
+	}
+
+	static _makeCombinedId(specificationId, modificationId) {
+		let key = specificationId;
+		if (modificationId) {
+			key += "_" + modificationId;
+		}
+
+		return key;
 	}
 }
 
@@ -450,99 +458,34 @@ class SpaceshipComponent {
 	}
 
 	get bulletSpeed() {
-		if (this.type == "WeaponGun") {
-			const ammo = this._data["ammo"];
-			if (!ammo) {
-				return 0;
-			}
-
-			return ammo["@speed"];
-		}
-
 		return 0;
 	}
 
 	get bulletDuration() {
-		if (this.type == "WeaponGun") {
-			const ammo = this._data["ammo"];
-			if (!ammo) {
-				return 0;
-			}
-
-			return ammo["@lifetime"];
-		}
-
 		return 0;
 	}
 
 	get bulletRange() {
-		return this.bulletSpeed * this.bulletDuration;
+		return 0;
 	}
 
 	get bulletCount() {
-		if (this.type == "WeaponGun") {
-			const shotgun = this._data["firemodes"]["shotgun"];
-			if (shotgun) {
-				return Number(shotgun["pellets"]) || 0;
-			}
-			return 1;
-		}
-
 		return 0;
 	}
 
 	get gunAlpha() {
-		if (this.type == "WeaponGun") {
-			const ammo = this._data["ammo"];
-			if (!ammo) {
-				return new DamageQuantity(0, 0, 0, 0);
-			}
-
-			const detonation = ammo["bullet"]["detonation"];
-			let damageInfo;
-			if (detonation) {
-				damageInfo = detonation["explosion"]["damage"]["DamageInfo"];
-			}
-			else {
-				damageInfo = ammo["bullet"]["damage"]["DamageInfo"];
-			}
-
-			return new DamageQuantity(
-				damageInfo["@DamageDistortion"],
-				damageInfo["@DamageEnergy"],
-				damageInfo["@DamagePhysical"],
-				damageInfo["@DamageThermal"]);
-		}
-
 		return new DamageQuantity(0, 0, 0, 0);
 	}
 
 	get gunFireRate() {
-		if (this.type == "WeaponGun") {
-			return Number(this._data["firemodes"]["fire"]["rate"]) || 0;
-		}
-
 		return 0;
 	}
 
 	get gunBurstDps() {
-		const scaled = this.gunAlpha.scale(this.bulletCount + this.gunFireRate / 60.0);
-		return scaled;
+		return new DamageQuantity(0, 0, 0, 0);
 	}
 
 	get gunSustainedDps() {
-		// TODO Actually calculate heat and energy limits based on ship equipment.
-		if (this.type == "WeaponGun") {
-			const derived = this._data["derived"];
-			const quantity = new DamageQuantity(
-				derived["dps_60s_dmg_dist"],
-				derived["dps_60s_dmg_enrg"],
-				derived["dps_60s_dmg_phys"],
-				derived["dps_60s_dmg_thrm"]);
-
-			return quantity;
-		}
-
 		return new DamageQuantity(0, 0, 0, 0);
 	}
 
@@ -610,18 +553,6 @@ class SpaceshipComponent {
 	}
 
 	get summary() {
-		if (this.type == "WeaponGun") {
-			let damage = "{gunAlpha.total}";
-			if (this.bulletCount > 1) {
-				damage += " X {bulletCount}";
-			}
-
-			return new SummaryText([
-				damage + " {gunAlpha.type} damage X {gunFireRate}rpm = {gunBurstDps.total}dps",
-				"{gunSustainedDps.total} sustained dps (limited by heat)",
-				"{bulletSpeed}m/s projectile speed X {bulletDuration}sec = {bulletRange}m range"], this);
-		}
-
 		if (this.type == "Ordinance") {
 			return new SummaryText([
 				"{missileDamage.total} {missileDamage.type} damage",
@@ -664,7 +595,7 @@ class DataforgeComponent {
 	}
 
 	get size() {
-		return this._data["@size"];
+		return Number(this._data["@size"]);
 	}
 
 	get requiredTags() {
@@ -677,34 +608,97 @@ class DataforgeComponent {
 	}
 
 	get bulletSpeed() {
+		if (this.type == "WeaponGun") {
+			const ammo = this._data["ammo"];
+			if (!ammo) {
+				return 0;
+			}
+
+			return ammo["@speed"];
+		}
+
 		return 0;
 	}
 
 	get bulletDuration() {
+		if (this.type == "WeaponGun") {
+			const ammo = this._data["ammo"];
+			if (!ammo) {
+				return 0;
+			}
+
+			return ammo["@lifetime"];
+		}
+
 		return 0;
 	}
 
 	get bulletRange() {
-		return 0;
+		return this.bulletSpeed * this.bulletDuration;
 	}
 
 	get bulletCount() {
+		if (this.type == "WeaponGun") {
+			const count = _.get(this._data, "Components.SCItemWeaponComponentParams.fire.projectileLaunchParams.@pelletCount");
+			return Number(count) || 1;
+		}
+
 		return 0;
 	}
 
 	get gunAlpha() {
+		if (this.type == "WeaponGun") {
+			const ammo = this._data["ammo"];
+			if (!ammo) {
+				return new DamageQuantity(0, 0, 0, 0);
+			}
+
+			const detonation = ammo["bullet"]["detonation"];
+			let damageInfo;
+			if (detonation) {
+				damageInfo = detonation["explosion"]["damage"]["DamageInfo"];
+			}
+			else {
+				damageInfo = ammo["bullet"]["damage"]["DamageInfo"];
+			}
+
+			return new DamageQuantity(
+				damageInfo["@DamageDistortion"],
+				damageInfo["@DamageEnergy"],
+				damageInfo["@DamagePhysical"],
+				damageInfo["@DamageThermal"]);
+		}
+
 		return new DamageQuantity(0, 0, 0, 0);
 	}
 
 	get gunFireRate() {
+		if (this.type == "WeaponGun") {
+			const rate = _.get(this._data, "Components.SCItemWeaponComponentParams.fire.@fireRate");
+			return Number(rate) || 1;
+		}
+
 		return 0;
 	}
 
 	get gunBurstDps() {
-		return new DamageQuantity(0, 0, 0, 0);
+		const scaled = this.gunAlpha.scale(this.bulletCount + this.gunFireRate / 60.0);
+		return scaled;
 	}
 
 	get gunSustainedDps() {
+		// TODO Actually calculate heat and energy limits based on ship equipment.
+		if (this.type == "WeaponGun") {
+			const derived = this._data["derived"];
+			const quantity = new DamageQuantity(
+				derived["dps_60s_dmg_dist"],
+				derived["dps_60s_dmg_enrg"],
+				derived["dps_60s_dmg_phys"],
+				derived["dps_60s_dmg_thrm"]);
+
+			return quantity;
+		}
+
 		return new DamageQuantity(0, 0, 0, 0);
 	}
 
@@ -722,17 +716,17 @@ class DataforgeComponent {
 
 	get shieldCapacity() {
 		return Number(_.get(this._data,
-			"Components.SCItemShieldGeneratorParams.ShieldEmitterContributions.@MaxShieldHealth", 0));
+			"Components.SCItemShieldGeneratorParams.@MaxShieldHealth", 0));
 	}
 
 	get shieldRegeneration() {
 		return Number(_.get(this._data,
-			"Components.SCItemShieldGeneratorParams.ShieldEmitterContributions.@MaxShieldRegen", 0));
+			"Components.SCItemShieldGeneratorParams.@MaxShieldRegen", 0));
 	}
 
 	get shieldDownDelay() {
 		return Number(_.get(this._data,
-			"Components.SCItemShieldGeneratorParams.ShieldEmitterContributions.@DownedRegenDelay", 0));
+			"Components.SCItemShieldGeneratorParams.@DownedRegenDelay", 0));
 	}
 
 	get quantumFuel() {
@@ -763,6 +757,18 @@ class DataforgeComponent {
 	}
 
 	get summary() {
+		if (this.type == "WeaponGun") {
+			let damage = "{gunAlpha.total}";
+			if (this.bulletCount > 1) {
+				damage += " X {bulletCount}";
+			}
+
+			return new SummaryText([
+				damage + " {gunAlpha.type} damage X {gunFireRate}rpm = {gunBurstDps.total}dps",
+				"{gunSustainedDps.total} sustained dps (limited by heat)",
+				"{bulletSpeed}m/s projectile speed X {bulletDuration}sec = {bulletRange}m range"], this);
+		}
+
 		if (this.type == "Turret" || this.type == "TurretBase") {
 			if (this.itemPorts[0]) {
 				return new SummaryText(["{itemPorts.length} size {itemPorts.[0].maxSize} item ports"], this);
@@ -790,22 +796,24 @@ class DataforgeComponent {
 	}
 
 	_findItemPorts() {
-		let ports = this._data["Components"]["SCItem"]["ItemPorts"];
+		const ports = this._data["Components"]["SCItem"]["ItemPorts"];
 		if (!ports) {
 			return [];
 		}
 
-		ports = ports["SItemPortCoreParams"]["Ports"];
-		if (!ports) {
+		let definitions = _.get(ports, "SItemPortCoreParams.Ports.SItemPortDef");
+		if (!definitions) {
 			return [];
 		}
 
-		ports = ports["SItemPortDef"];
-		if (!Array.isArray(ports)) {
-			ports = [ports];
+		if ("@__type" in definitions) {
+			definitions = [definitions];
+		}
+		else {
+			definitions = Object.values(definitions);
 		}
 
-		return ports.map(port => new DataforgeItemPort(port));
+		return definitions.map(x => new DataforgeItemPort(x));
 	}
 }
 
@@ -822,7 +830,9 @@ class ItemPortType {
 
 class BaseItemPort {
 	availableComponents(tags) {
-		return Object.keys(mergedComponents).filter(n => this.matchesComponent(tags, mergedComponents[n]));
+		let keys = Object.keys(mergedComponents);
+		keys = keys.filter(n => !n.includes("test_") && !n.includes("_Template"));
+		return keys.filter(n => this.matchesComponent(tags, mergedComponents[n]));
 	}
 
 	matchesType(type, subtype) {
@@ -857,11 +867,11 @@ class BaseItemPort {
 			return false;
 		}
 
-		if (this.minSize != undefined && component.size < this.minSize) {
+		if (this.minSize && component.size < this.minSize) {
 			return false;
 		}
 
-		if (this.maxSize != undefined && component.size > this.maxSize) {
+		if (this.maxSize && component.size > this.maxSize) {
 			return false;
 		}
 
@@ -890,11 +900,11 @@ class SpaceshipItemPort extends BaseItemPort {
 	}
 
 	get minSize() {
-		return this._data['@minsize'];
+		return Number(this._data['@minsize']);
 	}
 
 	get maxSize() {
-		return this._data['@maxsize'];
+		return Number(this._data['@maxsize']);
 	}
 
 	get tags() {
@@ -961,14 +971,17 @@ class DataforgeItemPort extends BaseItemPort {
 	}
 
 	get types() {
-		const subtypes = this._data["Types"]["SItemPortDefTypes"]["SubTypes"];
+		const definition = _.get(this._data, "Types.SItemPortDefTypes");
+		if (!definition) {
+			return [];
+		}
+
+		const subtypes = definition["SubTypes"];
 		if (subtypes) {
 			var subtype = subtypes["Enum"]["@value"];
 		}
 
-		const type = new ItemPortType(
-			this._data["Types"]["SItemPortDefTypes"]["@Type"],
-			subtype);
+		const type = new ItemPortType(definition["@Type"], subtype);
 		return [type];
 	}
 }
@@ -1386,9 +1399,14 @@ var mergedComponents = {}
 for (const key of Object.keys(dataforgeComponents)) {
 	mergedComponents[key] = new DataforgeComponent(dataforgeComponents[key]);
 }
+
+// Ordinance still seems to be sourced from the item 1.0 components. :(
 for (const key of Object.keys(spaceshipComponents)) {
 	if (!(key in mergedComponents)) {
-		mergedComponents[key] = new SpaceshipComponent(spaceshipComponents[key]);
+		const component = new SpaceshipComponent(spaceshipComponents[key]);
+		if (component.type == "Ordinance") {
+			mergedComponents[key] = component;
+		}
 	}
 }
 
@@ -1415,16 +1433,21 @@ const makeDefaultShipCustomizations = function() {
 	const npcModifications = ["Pirate", "S42", "SQ42", "Dead", "CalMason", "Weak"];
 	let filtered = flattened.filter(x => !x.modificationId || !npcModifications.some(n => x.modificationId.includes(n)));
 
-	const npcSpecifications = ["Turret", "Old"];
-	filtered = filtered.filter(x => !npcSpecifications.some(n => x.specificationId.includes(n)));
+	const nonsenseSpecifications = ["Turret", "Old", "AEGS_Avenger_Stalker"];
+	filtered = filtered.filter(x => !nonsenseSpecifications.some(n => x.specificationId.includes(n)));
 
 	const unfinishedSpecifications = ["Lightning", "Hull_C", "Cydnus", "Bengal", "Javelin"];
 	filtered = filtered.filter(x => !unfinishedSpecifications.some(u => x.specificationId.includes(u)));
 
-	const customizations = filtered.map(n => new ShipCustomization(n));
+	let customizations = filtered.map(n => new ShipCustomization(n));
+
+	const nonsenseCombinedIds = ["AEGS_Eclipse_Raven"];
+	customizations = customizations.filter(x => !nonsenseCombinedIds.some(n => x.shipId.combinedId.includes(n)));
 
 	const npcDisplayNames = ["XIAN", "VNCL", "Vanduul Glaive"];
-	return customizations.filter(x => !npcDisplayNames.some(n => x.shipDisplayName.includes(n)));
+	customizations = customizations.filter(x => !npcDisplayNames.some(n => x.shipDisplayName.includes(n)));
+
+	return customizations;
 };
 var defaultShipCustomizations = makeDefaultShipCustomizations();
 
@@ -2020,8 +2043,8 @@ var shipDetails = Vue.component('ship-details', {
 		getChildBindingGroups: function (prototypeBinding) {
 			const childGroups = prototypeBinding.childGroups;
 
-			// Hide AmmoBox item ports until they're worth customizing.
-			return childGroups.filter(g => !g.members[0].port.matchesType("AmmoBox"));
+			// Hide magazine slots until they're worth customizing; they're distinguished by lack of types.
+			return childGroups.filter(g => g.members[0].port.types.length);
 		},
 		onOpenModal: function(event) {
 			this.showModal = true;

@@ -21,3 +21,8 @@ var shipAttributeOverrides = {
 		"Size Category": "Medium"
 	}
 }
+
+var shipLoadoutOverrides = {
+	"AEGS_Avenger_Renegade": "AEGS_Avenger_Titan_Renegade",
+	"ANVL_Hornet_Wildfire": "ANVL_Hornet_F7C_Wildfire"
+}
