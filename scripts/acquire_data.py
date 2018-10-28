@@ -190,6 +190,7 @@ filters = {
 		"components.[].ammo.lifetime": None,
 		"components.[].ammo.areaDamage.damage": None,
 		"components.[].ammo.impactDamage.damage": None,
+		"components.[].maxAmmoCount": None,
 		"components.[].fireActions.[].name": None,
 		"components.[].fireActions.[].pelletCount": None,
 		"components.[].fireActions.[].fireRate": None,

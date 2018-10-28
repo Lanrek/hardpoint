@@ -322,7 +322,7 @@ class SummaryText {
 
 			if (value.toFixed) {
 				// Round to two places and then drop any trailing 0s.
-				value = +value.toFixed(2);
+				value = this._formatThousands(+value.toFixed(2));
 			}
 
 			return '<span class="summary-value">' + value + '</span>';
@@ -334,6 +334,11 @@ class SummaryText {
 		}).join("");
 
 		return '<span class="summary">' + expanded + '</span>';
+	}
+
+	_formatThousands(num) {
+		var values = num.toString().split(".");
+		return values[0].replace(/.(?=(?:.{3})+$)/g, "$&,") + ( values.length == 2 ? "." + values[1] : "" );
 	}
 }
 
@@ -416,6 +421,14 @@ class DataforgeComponent {
 		return this.gunBurstDps;
 	}
 
+	get gunMaximumAmmo() {
+		return _.get(this._components, "ammoContainer.maxAmmoCount", 0);
+	}
+
+	get gunMagazineDamage() {
+		return this.gunAlpha.scale(this.bulletCount * this.gunMaximumAmmo);
+	}
+
 	get missileDamage() {
 		const damageInfo = _.get(this._components, "missle.damage.damage", []);
 		const damageMap = _.keyBy(damageInfo, "damageType");
@@ -477,10 +490,16 @@ class DataforgeComponent {
 				damage += " X {bulletCount}";
 			}
 
-			return new SummaryText([
+			let summary = new SummaryText([
 				"{gunBurstDps.total} dps = " + damage + " {gunAlpha.type} damage X {gunFireRate} rpm",
 				"{gunSustainedDps.total} sustained dps (limited by heat)",
 				"{bulletRange} meter range = {bulletSpeed} m/s projectile speed X {bulletDuration} seconds"], this);
+
+			if (this.gunMaximumAmmo > 0) {
+				summary.patterns.push("{gunMaximumAmmo} rounds/magazine for potentiall {gunMagazineDamage.total} total damage");
+			}
+
+			return summary;
 		}
 
 		if (this.type == "Turret" || this.type == "TurretBase") {
@@ -509,7 +528,7 @@ class DataforgeComponent {
 		if (this.type == "Ordinance") {
 			return new SummaryText([
 				"{missileDamage.total} {missileDamage.type} damage",
-				"{missileGuidance} sensors with {missileRange}m tracking range"], this);
+				"{missileGuidance} sensors with {missileRange} meter tracking range"], this);
 		}
 
 		return new SummaryText();
