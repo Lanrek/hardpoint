@@ -1,3 +1,4 @@
+import argparse
 import json
 import os
 import urllib.parse
@@ -222,17 +223,24 @@ for filter_name, filter in filters.items():
 	for path in filter.keys():
 		filter_usage[make_filter_usage_key(filter_name, path)] = 0
 
-snapshot_name = "3.3.0-PTU.969870"
-snapshot_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "snapshots", snapshot_name))
+parser = argparse.ArgumentParser()
+parser.add_argument("--download", "-d", action="store_true")
+parser.add_argument("--merge", "-m", action="store_true")
+parser.add_argument("--snapshot", "-s", default="scratch")
+arguments = parser.parse_args()
+
+snapshot_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "snapshots", arguments.snapshot))
 vehicles_directory = os.path.join(snapshot_path, "vehicles")
 items_directory = os.path.join(snapshot_path, "items")
 
-#download_vehicles(vehicles_directory)
-#download_items(items_directory)
-#download_meta(os.path.join(snapshot_path, "meta.js"), "metaData")
+if arguments.download:
+	download_vehicles(vehicles_directory)
+	download_items(items_directory)
+	download_meta(os.path.join(snapshot_path, "meta.js"), "metaData")
 
-merge_directory(vehicles_directory, os.path.join(snapshot_path, "vehicles.js"), "vehicleData", "vehicle")
-merge_directory(items_directory, os.path.join(snapshot_path, "items.js"), "itemData", "item")
+if arguments.merge:
+	merge_directory(vehicles_directory, os.path.join(snapshot_path, "vehicles.js"), "vehicleData", "vehicle")
+	merge_directory(items_directory, os.path.join(snapshot_path, "items.js"), "itemData", "item")
 
-for key, value in filter_usage.items():
-	print("{:>6} {}".format(value, key))
+	for key, value in filter_usage.items():
+		print("{:>6} {}".format(value, key))
