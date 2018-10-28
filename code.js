@@ -478,9 +478,9 @@ class DataforgeComponent {
 			}
 
 			return new SummaryText([
-				damage + " {gunAlpha.type} damage X {gunFireRate}rpm = {gunBurstDps.total}dps",
+				"{gunBurstDps.total} dps = " + damage + " {gunAlpha.type} damage X {gunFireRate} rpm",
 				"{gunSustainedDps.total} sustained dps (limited by heat)",
-				"{bulletSpeed}m/s projectile speed X {bulletDuration}sec = {bulletRange}m range"], this);
+				"{bulletRange} meter range = {bulletSpeed} m/s projectile speed X {bulletDuration} seconds"], this);
 		}
 
 		if (this.type == "Turret" || this.type == "TurretBase") {
@@ -496,14 +496,14 @@ class DataforgeComponent {
 		if (this.type == "Shield") {
 			return new SummaryText([
 				"{shieldCapacity} shield capacity",
-				"{shieldRegeneration}/sec regeneration with a {shieldDownDelay} sec delay after dropping"], this);
+				"Regenerates {shieldRegeneration} capacity/second with a {shieldDownDelay} second delay after dropping"], this);
 		}
 
 		if (this.type == "QuantumDrive") {
 			return new SummaryText([
 				"{quantumRange} gigameter jump distance at {quantumSpeed} megameters/sec",
 				"Consumes {quantumEfficiency} fuel per megameter",
-				"{quantumCooldown} second cooldown"], this);
+				"{quantumCooldown} second cooldown after jumping"], this);
 		}
 
 		if (this.type == "Ordinance") {
