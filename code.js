@@ -425,6 +425,10 @@ class DataforgeComponent {
 		return _.get(this._components, "ammoContainer.maxAmmoCount", 0);
 	}
 
+	get gunMagazineDuration() {
+		return this.gunMaximumAmmo * 60.0 / this.gunFireRate;
+	}
+
 	get gunMagazineDamage() {
 		return this.gunAlpha.scale(this.bulletCount * this.gunMaximumAmmo);
 	}
@@ -496,7 +500,7 @@ class DataforgeComponent {
 				"{bulletRange} meter range = {bulletSpeed} m/s projectile speed X {bulletDuration} seconds"], this);
 
 			if (this.gunMaximumAmmo > 0) {
-				summary.patterns.push("{gunMaximumAmmo} rounds/magazine for potentiall {gunMagazineDamage.total} total damage");
+				summary.patterns.push("{gunMaximumAmmo} rounds empty in {gunMagazineDuration} seconds for potentially {gunMagazineDamage.total} damage");
 			}
 
 			return summary;
