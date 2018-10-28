@@ -52,6 +52,14 @@ var decodeSmallInt = function(str) {
 	return num - start.charCodeAt(0);
 }
 
+var nullifySentinel = function(str) {
+	if (str.startsWith("<=")) {
+		return null;
+	}
+
+	return str;
+}
+
 
 class ShipId {
 	constructor(specificationId, modificationId, loadoutId) {
@@ -73,50 +81,16 @@ class ShipId {
 		const hashedModificationId = str.substr(4, 4);
 		const hashedLoadoutId = str.substr(8, 4);
 
-		const specificationId = Object.keys(shipSpecifications).find(n => hashAndEncode(n) == hashedSpecificationId);
+		const shipIds = Object.values(allVehicles).map(n => n.shipId);
+		const specificationId = shipIds.find(
+			n => hashAndEncode(n.specificationId) == hashedSpecificationId).specificationId;
+		const modificationId = shipIds.find(
+			n => hashAndEncode(n.modificationId) == hashedModificationId).modificationId;;
 
 		return new ShipId(
 			specificationId,
-			shipSpecifications[specificationId].modificationIds.find(n => hashAndEncode(n) == hashedModificationId),
-			Object.keys(shipLoadouts).find(n => hashAndEncode(n) == hashedLoadoutId));
-	}
-
-	static findLoadout(specificationId, modificationId) {
-		// This is crazy -- must be missing something about how loadouts are bound to ships.
-		let loadoutId;
-		const coalesceLoadoutId = id => {
-			if (!loadoutId) {
-				if (shipLoadouts[id]) {
-					loadoutId = id;
-				}
-			}
-		}
-
-		const combinedId = ShipId._makeCombinedId(specificationId, modificationId);
-		if (combinedId in shipLoadoutOverrides) {
-			coalesceLoadoutId(shipLoadoutOverrides[combinedId]);
-		}
-
-		coalesceLoadoutId(combinedId);
-
-		const specificationData = shipSpecifications[specificationId]._data;
-		if (modificationId) {
-			const patchFile = specificationData["Modifications"][modificationId]["@patchFile"];
-			if (patchFile) {
-				const fileName = patchFile.split("/").pop();
-				coalesceLoadoutId(fileName + "_" + modificationId);
-				coalesceLoadoutId(fileName);
-			}
-		}
-		else
-		{
-			if (specificationData["@local"]) {
-				// The worst hack of this mess, but necessary for the Constellation Andromeda.
-				coalesceLoadoutId(specificationData["@local"].replace(/ /g, "_"));
-			}
-		}
-
-		return new ShipId(specificationId, modificationId, loadoutId);
+			modificationId,
+			undefined);
 	}
 
 	static _makeCombinedId(specificationId, modificationId) {
@@ -133,92 +107,41 @@ class ShipSpecification {
 	constructor(data) {
 		this._data = data;
 
-		this._itemPorts = this._findItemPorts(undefined);
-		this._modificationItemPorts = {};
-		this.modificationIds.forEach(n => this._modificationItemPorts[n] = this._findItemPorts(n));
+		this.itemPorts = this._findItemPorts();
+		this.defaultItems = this._makeDefaultItems();
 	}
 
 	get tags() {
-		if (this._data["@itemPortTags"]) {
-			return this._data["@itemPortTags"].split(" ");
-		}
-
-		return [];
+		return this._data["tags"];
 	}
 
-	get modificationIds() {
-		return Object.keys(this._data["Modifications"] || {});
+	get shipId() {
+		return new ShipId(
+			this._data["vehicleSpecification"]["baseName"],
+			this._data["vehicleSpecification"]["variant"]);
 	}
 
-	getCombinedId(modificationId) {
-		let key = this._data["@name"];
-		if (modificationId) {
-			key += "_" + modificationId;
-		}
-
-		return key;
+	get displayName() {
+		return nullifySentinel(this._data["displayName"]) ||
+			this._data["vehicleSpecification"]["displayName"] ||
+			this.shipId.combinedId;
 	}
 
-	getDisplayName(modificationId) {
-		// The underlying data here is rather unpleasant, but this implementation is verified against the fleet manager
-		// screen in-game. Particularly the Mustang line, where the Alpha has a "CNOU" prefix and the others "C.O.".
-		// Priority is given to the vehicle name in the localization file, but if that's not present it falls back to
-		// the display name on the ship itself... with a patching mechanism for modifications.
-		let displayName = localizationVehicles[this.getCombinedId(modificationId)];
+	getAttributes() {
+		const ifcsStates = _.keyBy(this._data["vehicleSpecification"]["movement"]["ifcsStates"], "state");
+		const scmVelocity = _.get(ifcsStates, "flightSpace.scmMode.maxVelocity", 0);
+		const cruiseVelocity = _.get(ifcsStates, "flightSpace.ab2CruMode.criuseSpeed", 0);
 
-		if (!displayName) {
-			displayName = this._data["@displayname"];
-			if (modificationId) {
-				const elems = this._data["Modifications"][modificationId]["Elems"];
-				if (elems) {
-					const replacement = elems.find(e => e["@idRef"] == this._data["@id"] && e["@name"] == "displayname");
-					if (replacement) {
-						displayName = replacement["@value"];
-					}
-				}
-			}
-		}
+		// TODO Fix crew seats!
+		//const seats = this.itemPorts.filter(p => p.matchesType("Seat"));
+		//const crewSeats = seats.filter(s =>
+		//	_.get(s._data, "ControllerDef.UserDef.Observerables.Observerable") ||
+		//	_.get(s._data, "ControllerDef[0].UserDef.Observerables.Observerable"));
+		const crewSeats = [undefined];
 
-		return displayName;
-	}
+		const mannedTurrets = this.itemPorts.filter(p => p.matchesType("TurretBase", "MannedTurret"));
 
-	getItemPorts(modificationId) {
-		if (modificationId) {
-			return this._modificationItemPorts[modificationId];
-		}
-
-		return this._itemPorts;
-	}
-
-	getModificationLoadouts() {
-		const modifications = [undefined].concat(this.modificationIds);
-		let results = modifications.map(x => ShipId.findLoadout(this._data["@name"], x));
-
-		// Filter out anything that doesn't have a valid loadout.
-		results = results.filter(n => n.loadoutId);
-
-		return results;
-	}
-
-	getAttributes(modificationId) {
-		let ifcsData = undefined;
-		if (modificationId) {
-			ifcsData = this._data["Modifications"][modificationId]["ifcs"];
-		}
-		if (!ifcsData) {
-			ifcsData = this._data["ifcs"];
-		}
-
-		const scmVelocity = Number(ifcsData["@SCMVelocity"]);
-
-		const ports = this.getItemPorts(modificationId);
-		const seats = ports.filter(p => p.matchesType("Seat"));
-		const crewSeats = seats.filter(s =>
-			_.get(s._data, "ControllerDef.UserDef.Observerables.Observerable") ||
-			_.get(s._data, "ControllerDef[0].UserDef.Observerables.Observerable"));
-		const mannedTurrets = ports.filter(p => p.matchesType("TurretBase", "MannedTurret"));
-
-		const size = Number(this._data["@size"]);
+		const size = this._data["size"];
 		let sizeCategory = "Small";
 		if (!scmVelocity) {
 			sizeCategory = "Ground";
@@ -247,85 +170,77 @@ class ShipSpecification {
 				name: "Normal Speed",
 				category: "Maneuverability",
 				description: "Maximum speed in normal flight",
-				value: scmVelocity || 0
+				value: scmVelocity
 			},
 			{
 				name: "Afterburner Speed",
 				category: "Maneuverability",
 				description: "Maximum speed with afterburner engaged",
-				value: Number(ifcsData["@CruiseSpeed"]) || 0
+				value: cruiseVelocity
 			},
 			{
 				name: "Total Hitpoints",
 				category: "Survivability",
 				description: "Total hitpoints of all ship parts",
-				value: this._findParts(modificationId).reduce((total, x) => total + Number(x["@damageMax"] || 0), 0)
+				value: this._findParts().reduce((total, x) => total + (x["damageMax"] || 0), 0)
 			}
 		];
 	}
 
-	_findParts(modificationId, className = undefined) {
-		let unsearched = [this._data["Parts"]["Part"]];
-		let elems = undefined;
-		if (modificationId) {
-			const modification = this._data["Modifications"][modificationId];
-			elems = modification["Elems"];
-			if (modification["mod"] && modification["mod"]["Parts"]) {
-				unsearched = [modification["mod"]["Parts"]["Part"]];
-			}
-		}
-
+	_findParts() {
+		let unsearched = this._data["vehicleSpecification"]["parts"].slice();
 		let result = [];
 		while (unsearched.length > 0) {
 			let potential = unsearched.pop();
-			let id = _.get(potential, potential["@class"] + ".@id");
-			if (!id) {
-				id = potential["@id"];
-			}
-
-			// TODO Need a more general mechanism to handle Elems; doing it on every access is brittle.
-			if (elems && id) {
-				const overrides = elems.filter(e => e["@idRef"] == id);
-				if (overrides.length > 0) {
-					// TODO Deep copying will be rather expensive if this part is high in the hierarchy.
-					potential = _.cloneDeep(potential);
-					let container = potential[potential["@class"]];
-					if (!container) {
-						container = potential;
-					}
-
-					overrides.forEach(x => container["@" + x["@name"]] = x["@value"]);
-				}
-			}
-
-			if (Boolean(Number(potential["@skipPart"]))) {
-				continue;
-			}
-
-			if (!className || potential["@class"] == className) {
-				result.push(potential);
-			}
-
-			if (potential["Parts"] && potential["Parts"]["Part"])
-			{
-				if (Array.isArray(potential["Parts"]["Part"])) {
-					potential["Parts"]["Part"].forEach(n => unsearched.push(n));
-				}
-				else {
-					unsearched.push(potential["Parts"]["Part"]);
-				}
-			}
+			result.push(potential);
+			potential["parts"].forEach(n => unsearched.push(n));
 		}
 
 		return result;
 	}
 
-	_findItemPorts(modificationId = undefined) {
-		const itemPorts = this._findParts(modificationId, "ItemPort");
+	_findItemPorts() {
+		return this._data["vehicleSpecification"]["ports"].map(x => new DataforgeItemPort(x));
+	}
 
-		return itemPorts.filter(n => n["ItemPort"]).map(function (part) {
-			return new SpaceshipItemPort(part["ItemPort"], part["@name"]);
-		});
+	_makeDefaultItems() {
+		const addEmbeddedItems = function(container, ports) {
+			for (const port of ports) {
+				// Don't overwrite any already default items that have already been set.
+				if (port["_embedded"] && !_.get(container, port.name + ".itemName")) {
+					let entry = {};
+					entry.itemName = port["_embedded"]["item"]["name"];
+					entry.children = {};
+					container[port.name] = entry;
+				}
+			}
+		};
+
+		const makeStructure = function(hardpoints) {
+			let result = {};
+			if (hardpoints) {
+				for (const hardpoint of hardpoints) {
+					if (hardpoint["item"]) {
+						let entry = {};
+						entry.itemName = hardpoint["item"]["name"];
+						entry.children = makeStructure(hardpoint.hardpoints);
+						addEmbeddedItems(entry.children, hardpoint["item"]["ports"]);
+						result[hardpoint.name] = entry;
+					}
+				}
+			}
+			return result;
+		};
+
+		// Start with the hardpoints structure which is trying to represent editable items.
+		let structure = makeStructure(this._data["hardpoints"]);
+
+		// Add in the embedded items, but don't overwrite anything that already exists.
+		const unflattened = this._findParts().map(n => n["ports"]);
+		const ports = unflattened.reduce((total, n) => total.concat(n), []);
+		addEmbeddedItems(structure, ports);
+
+		return structure;
 	}
 }
 
@@ -422,215 +337,44 @@ class SummaryText {
 	}
 }
 
-class SpaceshipComponent {
-	constructor(data) {
-		this._data = data;
-
-		this.itemPorts = this._findItemPorts();
-	}
-
-	get displayName() {
-		return localizationItems[this.name] || this.name;
-	}
-
-	get name() {
-		return this._data["@name"];
-	}
-
-	get type() {
-		return this._data["@itemType"];
-	}
-
-	get subtype() {
-		return this._data["@itemSubType"];
-	}
-
-	get size() {
-		return this._data["@itemSize"];
-	}
-
-	get requiredTags() {
-		if (!this._data["@requiredPortTags"]) {
-			return [];
-		}
-
-		return this._data["@requiredPortTags"].split(" ");
-	}
-
-	get bulletSpeed() {
-		return 0;
-	}
-
-	get bulletDuration() {
-		return 0;
-	}
-
-	get bulletRange() {
-		return 0;
-	}
-
-	get bulletCount() {
-		return 0;
-	}
-
-	get gunAlpha() {
-		return new DamageQuantity(0, 0, 0, 0);
-	}
-
-	get gunFireRate() {
-		return 0;
-	}
-
-	get gunBurstDps() {
-		return new DamageQuantity(0, 0, 0, 0);
-	}
-
-	get gunSustainedDps() {
-		return new DamageQuantity(0, 0, 0, 0);
-	}
-
-	get missileDamage() {
-		if (this.type == "Ordinance") {
-			const explosion = this._data["explosion"];
-			const quantity = new DamageQuantity(
-				explosion["damage_distortion"],
-				explosion["damage_energy"],
-				explosion["damage"],
-				0);
-
-			return quantity;
-		}
-
-		return new DamageQuantity(0, 0, 0, 0);
-	}
-
-	get missileRange() {
-		if (this.type == "Ordinance") {
-			return this._data["derived"]["max_range"];
-		}
-
-		return 0;
-	}
-
-	get missileGuidance() {
-		if (this.type == "Ordinance") {
-			return this._data["missile"]["MGCS"]["tracking"]["signalType"];
-		}
-
-		return "";
-	}
-
-	get shieldCapacity() {
-		return 0;
-	}
-
-	get shieldRegeneration() {
-		return 0;
-	}
-
-	get shieldDownDelay() {
-		return 0;
-	}
-
-	get quantumFuel() {
-		return 0;
-	}
-
-	get quantumRange() {
-		return 0;
-	}
-
-	get quantumEfficiency() {
-		return 0;
-	}
-
-	get quantumCooldown() {
-		return 0;
-	}
-
-	get quantumSpeed() {
-		return 0;
-	}
-
-	get summary() {
-		if (this.type == "Ordinance") {
-			return new SummaryText([
-				"{missileDamage.total} {missileDamage.type} damage",
-				"{missileGuidance} tracking with {missileRange}m max range"], this);
-		}
-
-		return new SummaryText();
-	}
-
-	_findItemPorts() {
-		if (!this._data["ports"]) {
-			return [];
-		}
-
-		return this._data["ports"].map(port => new SpaceshipItemPort(port, port["@name"]));
-	}
-}
-
 class DataforgeComponent {
 	constructor(data) {
 		this._data = data;
+		this._components = _.keyBy(this._data["components"], "name");
 
 		this.itemPorts = this._findItemPorts();
 	}
 
 	get displayName() {
-		return localizationItems[this.name] || this.name;
+		return nullifySentinel(this._data["displayName"]) || this.name;
 	}
 
 	get name() {
-		return this._data["@name"];
+		return this._data["name"];
 	}
 
 	get type() {
-		return this._data["@type"];
+		return this._data["type"]["type"];
 	}
 
 	get subtype() {
-		return this._data["Components"]["SCItem"]["ItemDefinition"]["@SubType"];
+		return this._data["type"]["subType"];
 	}
 
 	get size() {
-		return Number(this._data["@size"]);
+		return this._data["size"];
 	}
 
 	get requiredTags() {
-		const tags = this._data["Components"]["SCItem"]["ItemDefinition"]["@RequiredTags"];
-		if (!tags) {
-			return [];
-		}
-
-		return tags.split(" ");
+		return this._data["itemRequiredTags"];
 	}
 
 	get bulletSpeed() {
-		if (this.type == "WeaponGun") {
-			const ammo = this._data["ammo"];
-			if (!ammo) {
-				return 0;
-			}
-
-			return ammo["@speed"];
-		}
-
-		return 0;
+		return _.get(this._components, "ammoContainer.ammo.speed", 0);
 	}
 
 	get bulletDuration() {
-		if (this.type == "WeaponGun") {
-			const ammo = this._data["ammo"];
-			if (!ammo) {
-				return 0;
-			}
-
-			return ammo["@lifetime"];
-		}
-
-		return 0;
+		return _.get(this._components, "ammoContainer.ammo.lifetime", 0);
 	}
 
 	get bulletRange() {
@@ -638,122 +382,92 @@ class DataforgeComponent {
 	}
 
 	get bulletCount() {
-		if (this.type == "WeaponGun") {
-			const count = _.get(this._data, "Components.SCItemWeaponComponentParams.fire.projectileLaunchParams.@pelletCount");
-			return Number(count) || 1;
-		}
-
-		return 0;
+		// TODO Support multiple firing modes.
+		return _.get(this._components, "weapon.fireActions[0].pelletCount", 0);
 	}
 
 	get gunAlpha() {
-		if (this.type == "WeaponGun") {
-			const ammo = this._data["ammo"];
-			if (!ammo) {
-				return new DamageQuantity(0, 0, 0, 0);
-			}
-
-			const detonation = ammo["bullet"]["detonation"];
-			let damageInfo;
-			if (detonation) {
-				damageInfo = detonation["explosion"]["damage"]["DamageInfo"];
-			}
-			else {
-				damageInfo = ammo["bullet"]["damage"]["DamageInfo"];
-			}
-
-			return new DamageQuantity(
-				damageInfo["@DamageDistortion"],
-				damageInfo["@DamageEnergy"],
-				damageInfo["@DamagePhysical"],
-				damageInfo["@DamageThermal"]);
+		let damageInfo = _.get(this._components, "ammoContainer.ammo.areaDamage.damage");
+		if (!damageInfo) {
+			damageInfo = _.get(this._components, "ammoContainer.ammo.impactDamage.damage", []);
 		}
+		const damageMap = _.keyBy(damageInfo, "damageType");
 
-		return new DamageQuantity(0, 0, 0, 0);
+		return new DamageQuantity(
+			_.get(damageMap, "DISTORTION.value", 0),
+			_.get(damageMap, "ENERGY.value", 0),
+			_.get(damageMap, "PHYSICAL.value", 0),
+			_.get(damageMap, "THERMAL.value", 0));
 	}
 
 	get gunFireRate() {
-		if (this.type == "WeaponGun") {
-			const rate = _.get(this._data, "Components.SCItemWeaponComponentParams.fire.@fireRate");
-			return Number(rate) || 1;
-		}
-
-		return 0;
+		// TODO Support multiple firing modes.
+		return _.get(this._components, "weapon.fireActions[0].fireRate", 0);
 	}
 
 	get gunBurstDps() {
-		const scaled = this.gunAlpha.scale(this.bulletCount + this.gunFireRate / 60.0);
+		const scaled = this.gunAlpha.scale(this.bulletCount * this.gunFireRate / 60.0);
 		return scaled;
 	}
 
 	get gunSustainedDps() {
 		// TODO Actually calculate heat and energy limits based on ship equipment.
-		if (this.type == "WeaponGun") {
-			const derived = this._data["derived"];
-			const quantity = new DamageQuantity(
-				derived["dps_60s_dmg_dist"],
-				derived["dps_60s_dmg_enrg"],
-				derived["dps_60s_dmg_phys"],
-				derived["dps_60s_dmg_thrm"]);
-
-			return quantity;
-		}
-
-		return new DamageQuantity(0, 0, 0, 0);
+		// TODO Not having the SCDB simulation is regressing this!
+		return this.gunBurstDps;
 	}
 
 	get missileDamage() {
-		return new DamageQuantity(0, 0, 0, 0);
+		const damageInfo = _.get(this._components, "missle.damage.damage", []);
+		const damageMap = _.keyBy(damageInfo, "damageType");
+
+		return new DamageQuantity(
+			_.get(damageMap, "DISTORTION.value", 0),
+			_.get(damageMap, "ENERGY.value", 0),
+			_.get(damageMap, "PHYSICAL.value", 0),
+			_.get(damageMap, "THERMAL.value", 0));
 	}
 
 	get missileRange() {
-		return 0;
+		return _.get(this._components, "missle.trackingDistanceMax", 0);
 	}
 
 	get missileGuidance() {
-		return "";
+		return _.capitalize(_.get(this._components, "missle.trackingSignalType")) || "CrossSection";
 	}
 
 	get shieldCapacity() {
-		return Number(_.get(this._data,
-			"Components.SCItemShieldGeneratorParams.@MaxShieldHealth", 0));
+		return _.get(this._components, "shieldGenerator.maxShieldHealth", 0);
 	}
 
 	get shieldRegeneration() {
-		return Number(_.get(this._data,
-			"Components.SCItemShieldGeneratorParams.@MaxShieldRegen", 0));
+		return _.get(this._components, "shieldGenerator.maxShieldRegen", 0);
 	}
 
 	get shieldDownDelay() {
-		return Number(_.get(this._data,
-			"Components.SCItemShieldGeneratorParams.@DownedRegenDelay", 0));
+		return _.get(this._components, "shieldGenerator.downedRegenDelay", 0);
 	}
 
 	get quantumFuel() {
-		if (this.type == "QuantumFuelTank") {
-			return Number(_.get(this._data, "Components.SCItemFuelTankParams.@capacity", 0));
-		}
-
-		return 0;
+		return _.get(this._components, "quantumFuelTank.capacity", 0);
 	}
 
 	get quantumRange() {
 		// Underlying unit appears to be kilometers; convert to gigameters.
-		return Number(_.get(this._data, "Components.SCItemQuantumDriveParams.@jumpRange", 0)) / 1000000;
+		return _.get(this._components, "quantumDrive.jumpRange", 0) / 1000000;
 	}
 
 	get quantumEfficiency() {
 		// Underlying unit appears to be fuel used per 1000km travelled.
-		return Number(_.get(this._data, "Components.SCItemQuantumDriveParams.@quantumFuelRequirement", 0));
+		return _.get(this._components, "quantumDrive.quantumFuelRequirement", 0);
 	}
 
 	get quantumCooldown() {
-		return Number(_.get(this._data, "Components.SCItemQuantumDriveParams.params.@cooldownTime", 0));
+		return _.get(this._components, "quantumDrive.jump.cooldownTime", 0);
 	}
 
 	get quantumSpeed() {
 		// Underlying unit appears to be m/sec; convert to megameters/sec.
-		return Number(_.get(this._data, "Components.SCItemQuantumDriveParams.params.@driveSpeed", 0)) / 1000000;
+		return _.get(this._components, "quantumDrive.jump.driveSpeed", 0) / 1000000;
 	}
 
 	get summary() {
@@ -792,47 +506,32 @@ class DataforgeComponent {
 				"{quantumCooldown} second cooldown"], this);
 		}
 
+		if (this.type == "Ordinance") {
+			return new SummaryText([
+				"{missileDamage.total} {missileDamage.type} damage",
+				"{missileGuidance} sensors with {missileRange}m tracking range"], this);
+		}
+
 		return new SummaryText();
 	}
 
 	_findItemPorts() {
-		const ports = this._data["Components"]["SCItem"]["ItemPorts"];
-		if (!ports) {
-			return [];
-		}
-
-		let definitions = _.get(ports, "SItemPortCoreParams.Ports.SItemPortDef");
-		if (!definitions) {
-			return [];
-		}
-
-		if ("@__type" in definitions) {
-			definitions = [definitions];
-		}
-		else {
-			definitions = Object.values(definitions);
-		}
-
-		return definitions.map(x => new DataforgeItemPort(x));
+		return this._data["ports"].map(x => new DataforgeItemPort(x));
 	}
 }
 
 class ItemPortType {
-	constructor(type, subtypes) {
+	constructor(type, subtype) {
 		this.type = type;
-
-		this.subtypes = [];
-		if (subtypes) {
-			this.subtypes = subtypes.split(",");
-		}
+		this.subtype = subtype;
 	}
 }
 
 class BaseItemPort {
 	availableComponents(tags) {
-		let keys = Object.keys(mergedComponents);
+		let keys = Object.keys(allItems);
 		keys = keys.filter(n => !n.includes("test_") && !n.includes("_Template"));
-		return keys.filter(n => this.matchesComponent(tags, mergedComponents[n]));
+		return keys.filter(n => this.matchesComponent(tags, allItems[n]));
 	}
 
 	matchesType(type, subtype) {
@@ -851,10 +550,8 @@ class BaseItemPort {
 				// It looks like subtypes are ports constraining what components can fit,
 				// the subtypes on components aren't constraints just informative.
 				// TODO Or maybe I'm just missing a lot of implicit defaults and rules?
-				if (portType.subtypes.length > 0) {
-					if (!portType.subtypes.some(s => s == subtype)) {
-						return false;
-					}
+				if (portType.subtype != undefined && portType.subtype != subtype) {
+					return false;
 				}
 			}
 
@@ -889,100 +586,30 @@ class BaseItemPort {
 	}
 }
 
-class SpaceshipItemPort extends BaseItemPort {
-	constructor(data, name) {
-		super();
-
-		this._data = data;
-
-		this.name = name;
-		this.editable = !(data["@flags"] || "").includes("uneditable");
-	}
-
-	get minSize() {
-		return Number(this._data['@minsize']);
-	}
-
-	get maxSize() {
-		return Number(this._data['@maxsize']);
-	}
-
-	get tags() {
-		if (this._data["@portTags"]) {
-			return this._data["@portTags"].split(" ");
-		}
-
-		return [];
-	}
-
-	get types() {
-		if (this._data == undefined || this._data["Types"] == undefined) {
-			return [];
-		}
-
-		let types = this._data["Types"]["Type"];
-		if (!Array.isArray(types)) {
-			types = [types];
-		}
-
-		return types.map(x => {
-			const type = x["@type"];
-
-			// It looks like there are implicit defaults; the Sabre is an example.
-			let subtypes = x["@subtypes"];
-			if (!subtypes) {
-				if (type == "WeaponGun") {
-					subtypes = "Gun";
-				}
-				else if (type == "Turret") {
-					subtypes = "GunTurret";
-				}
-			}
-
-			return new ItemPortType(type, subtypes);
-		});
-	}
-}
-
 class DataforgeItemPort extends BaseItemPort {
 	constructor(data) {
 		super();
 
 		this._data = data;
 
-		this.name = data["@Name"];
-		this.editable = !(data["@Flags"] || "").includes("uneditable");
+		this.name = data["name"];
+		this.editable = !data["uneditable"];
 	}
 
 	get minSize() {
-		return this._data['@MinSize'];
+		return this._data["minSize"];
 	}
 
 	get maxSize() {
-		return this._data['@MaxSize'];
+		return this._data["maxSize"];
 	}
 
 	get tags() {
-		if (this._data["@PortTags"]) {
-			return this._data["@PortTags"].split(" ");
-		}
-
-		return [];
+		return this._data["portTags"];
 	}
 
 	get types() {
-		const definition = _.get(this._data, "Types.SItemPortDefTypes");
-		if (!definition) {
-			return [];
-		}
-
-		const subtypes = definition["SubTypes"];
-		if (subtypes) {
-			var subtype = subtypes["Enum"]["@value"];
-		}
-
-		const type = new ItemPortType(definition["@Type"], subtype);
-		return [type];
+		return this._data["acceptsTypes"].map(x => new ItemPortType(x["type"], x["subType"]));
 	}
 }
 
@@ -1059,20 +686,21 @@ class ItemBindingGroup {
 }
 
 class ItemBinding {
-	constructor(port, parentBinding, loadout = undefined) {
+	constructor(port, parentBinding, defaultItems = undefined) {
 		this.port = port;
 		this.parentBinding = parentBinding;
 		this.childBindings = {};
 
 		this.defaultComponent = undefined;
-		if (loadout) {
-			const defaultComponentName = this._getComponentFromLoadout(loadout);
+		if (defaultItems) {
+			const defaultComponentName = this._getDefaultComponent(defaultItems);
+
 			if (defaultComponentName) {
-				this.defaultComponent = mergedComponents[defaultComponentName];
+				this.defaultComponent = allItems[defaultComponentName];
 			}
 		}
 
-		this._setSelectedComponent(this.defaultComponent, loadout);
+		this._setSelectedComponent(this.defaultComponent, defaultItems);
 	}
 
 	get selectedComponent() {
@@ -1106,8 +734,8 @@ class ItemBinding {
 		return result;
 	}
 
-	// Takes a loadout only for initial construction; changes will leave it undefined.
-	_setSelectedComponent(component, loadout = undefined) {
+	// Takes defaultItems only for initial construction; changes will leave it undefined.
+	_setSelectedComponent(component, defaultItems = undefined) {
 		this._selectedComponent = component;
 
 		// Also update the children when the selected component changes.
@@ -1115,24 +743,25 @@ class ItemBinding {
 		if (component) {
 			for (const childPort of component.itemPorts) {
 				// Make the new child reactive.
-				Vue.set(this.childBindings, childPort.name, new ItemBinding(childPort, this, loadout));
+				Vue.set(this.childBindings, childPort.name, new ItemBinding(childPort, this, defaultItems));
 			}
 		}
 	}
 
-	_getComponentFromLoadout(loadout) {
-		let container = loadout;
+	_getDefaultComponent(defaultItems) {
+		let container = defaultItems;
 		let entry;
 
 		for (const portName of this.portPath) {
 			if (!container) {
 				return undefined;
 			}
-			entry = container.find(n => n[portName] != undefined);
-			container = _.get(entry, "attached");
+			entry = container[portName];
+			container = _.get(entry, "children");
 		}
 
-		return _.get(entry, this.portPath.slice(-1)[0]);
+		const result = _.get(entry, "itemName");
+		return result;
 	}
 }
 
@@ -1143,8 +772,8 @@ class ShipCustomization {
 		this.name = name;
 
 		this.childBindings = {};
-		for (const shipPort of this._specification.getItemPorts(this.shipId.modificationId)) {
-			this.childBindings[shipPort.name] = new ItemBinding(shipPort, undefined, this._loadout);
+		for (const shipPort of this._specification.itemPorts) {
+			this.childBindings[shipPort.name] = new ItemBinding(shipPort, undefined, this._specification.defaultItems);
 		}
 
 		this.childGroups = ItemBindingGroup.findGroups(Object.values(this.childBindings));
@@ -1210,8 +839,8 @@ class ShipCustomization {
 
 		const findComponent = (hashedName) => {
 			// TODO Also restrict this to matching components, to reduce hash collision chance.
-			const componentName = Object.keys(mergedComponents).find(k => hashAndEncode(k) == hashedName);
-			return mergedComponents[componentName];
+			const componentName = Object.keys(allItems).find(k => hashAndEncode(k) == hashedName);
+			return allItems[componentName];
 		};
 
 		const walk = (containers, index) => {
@@ -1265,17 +894,17 @@ class ShipCustomization {
 		return customization;
 	}
 
-	get shipDisplayName() {
-		return this._specification.getDisplayName(this.shipId.modificationId) || this.shipId.combinedId;
+	get displayName() {
+		return this._specification.displayName;
 	}
 
 	get shipManufacturer() {
-		const split = this.shipDisplayName.split(/[ _]/);
+		const split = this.displayName.split(/[ _]/);
 		return split[0].trim();
 	}
 
 	get shipName() {
-		const split = this.shipDisplayName.split(/[ _]/);
+		const split = this.displayName.split(/[ _]/);
 		return split.slice(1).join(" ").trim();
 	}
 
@@ -1288,7 +917,7 @@ class ShipCustomization {
 		const quantumFuel = this._getAllAttachedComponents().reduce((total, x) => total + x.quantumFuel, 0);
 		const quantumEfficiency = this._getAllAttachedComponents().reduce((total, x) => total + x.quantumEfficiency, 0);
 
-		let attributes = this._specification.getAttributes(this.shipId.modificationId);
+		let attributes = this._specification.getAttributes();
 
 		attributes = attributes.concat([
 			{
@@ -1362,11 +991,7 @@ class ShipCustomization {
 	}
 
 	get _specification() {
-		return shipSpecifications[this.shipId.specificationId];
-	}
-
-	get _loadout() {
-		return shipLoadouts[this.shipId.loadoutId];
+		return allVehicles[this.shipId.combinedId];
 	}
 
 	_getAllAttachedComponents() {
@@ -1391,62 +1016,22 @@ class ShipCustomization {
 
 
 // Translate underlying data into model objects.
-for (const key of Object.keys(shipSpecifications)) {
-	shipSpecifications[key] = new ShipSpecification(shipSpecifications[key]);
+var allVehicles = {}
+for (const key of Object.keys(vehicleData)) {
+	const specification = new ShipSpecification(vehicleData[key]);
+	allVehicles[specification.shipId.combinedId] = specification;
 }
 
-var mergedComponents = {}
-for (const key of Object.keys(dataforgeComponents)) {
-	mergedComponents[key] = new DataforgeComponent(dataforgeComponents[key]);
-}
-
-// Ordinance still seems to be sourced from the item 1.0 components. :(
-for (const key of Object.keys(spaceshipComponents)) {
-	if (!(key in mergedComponents)) {
-		const component = new SpaceshipComponent(spaceshipComponents[key]);
-		if (component.type == "Ordinance") {
-			mergedComponents[key] = component;
-		}
-	}
-}
-
-var localizationItems = {};
-var localizationVehicles = {};
-for (const entry of localizationStrings) {
-	if (entry["item_Name"]) {
-		localizationItems[entry["item"]] = entry["item_Name"];
-	}
-	else if (entry["vehicle_Name"]) {
-		localizationVehicles[entry["item"]] = entry["vehicle_Name"];
-	}
+var allItems = {}
+for (const key of Object.keys(itemData)) {
+	allItems[key] = new DataforgeComponent(itemData[key]);
 }
 
 
 // Immutable array of customizations for all the stock ships.
 // Needs to be global so that it can be referenced from the router on initial page load.
 const makeDefaultShipCustomizations = function() {
-	const unflattened = Object.values(shipSpecifications).map(n => n.getModificationLoadouts());
-	const flattened = unflattened.reduce((total, n) => total.concat(n), []);
-
-	// TODO This filtering mechanism is terrible.
-
-	const npcModifications = ["Pirate", "S42", "SQ42", "Dead", "CalMason", "Weak"];
-	let filtered = flattened.filter(x => !x.modificationId || !npcModifications.some(n => x.modificationId.includes(n)));
-
-	const nonsenseSpecifications = ["Turret", "Old", "AEGS_Avenger_Stalker"];
-	filtered = filtered.filter(x => !nonsenseSpecifications.some(n => x.specificationId.includes(n)));
-
-	const unfinishedSpecifications = ["Lightning", "Hull_C", "Cydnus", "Bengal", "Javelin"];
-	filtered = filtered.filter(x => !unfinishedSpecifications.some(u => x.specificationId.includes(u)));
-
-	let customizations = filtered.map(n => new ShipCustomization(n));
-
-	const nonsenseCombinedIds = ["AEGS_Eclipse_Raven"];
-	customizations = customizations.filter(x => !nonsenseCombinedIds.some(n => x.shipId.combinedId.includes(n)));
-
-	const npcDisplayNames = ["XIAN", "VNCL", "Vanduul Glaive"];
-	customizations = customizations.filter(x => !npcDisplayNames.some(n => x.shipDisplayName.includes(n)));
-
+	const customizations = Object.values(allVehicles).map(n => new ShipCustomization(n.shipId));
 	return customizations;
 };
 var defaultShipCustomizations = makeDefaultShipCustomizations();
@@ -1585,7 +1170,7 @@ var componentDisplay = Vue.component('component-display', {
 	props: ['componentName', 'disabled'],
 	computed: {
 		component: function () {
-			return mergedComponents[this.componentName];
+			return allItems[this.componentName];
 		}
 	}
 });
@@ -1637,7 +1222,7 @@ var componentSelector = Vue.component('component-selector', {
 			// Set it if it's changing for other group members, though. Multi-select should stick and be consistent.
 			if (!this.bindings.every(b => _.get(b.selectedComponent, "name") == name)) {
 				for (const binding of this.bindings) {
-					binding.selectedComponent = mergedComponents[name];
+					binding.selectedComponent = allItems[name];
 				}
 			}
 		}
@@ -1800,7 +1385,7 @@ var shipList = Vue.component('ship-list', {
 					key: "Total Missile Damage",
 					sortable: true,
 					renderHeader: this.renderSortableHeaderWithTooltip,
-					minWidth: 80
+					minWidth: 85
 				},
 				{
 					title: "Qntm Speed",
@@ -1822,7 +1407,7 @@ var shipList = Vue.component('ship-list', {
 	computed: {
 		shipAttributes: function() {
 			return loadoutStorage.all.concat(defaultShipCustomizations).filter(c => {
-				const searchable = (c.shipDisplayName + " " + c.name).toLowerCase();
+				const searchable = (c.displayName + " " + c.name).toLowerCase();
 				return searchable.includes(this.searchInput.toLowerCase());
 			}).map(c => {
 				const attributes = c.getAttributes();
@@ -2044,7 +1629,12 @@ var shipDetails = Vue.component('ship-details', {
 			const childGroups = prototypeBinding.childGroups;
 
 			// Hide magazine slots until they're worth customizing; they're distinguished by lack of types.
-			return childGroups.filter(g => g.members[0].port.types.length);
+			let filtered = childGroups.filter(g => g.members[0].port.types.length);
+
+			// Also hide weapon attachments until they're implemented.
+			filtered = filtered.filter(g => g.members[0].port.types.some(t => t.type != "WeaponAttachment"));
+
+			return filtered;
 		},
 		onOpenModal: function(event) {
 			this.showModal = true;
@@ -2148,6 +1738,9 @@ var app = new Vue({
 	computed: {
 		shipCustomizations: function() {
 			return defaultShipCustomizations;
+		},
+		gameDataVersion: function() {
+			return metaData.dataload.gameDataVersion;
 		}
 	},
 	methods: {

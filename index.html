@@ -32,11 +32,9 @@
 			iview.lang('en-US');
 		</script>
 
-		<script src="data/3.2.0-792285/shipSpecifications.js"></script>
-		<script src="data/3.2.0-792285/shipLoadouts.js"></script>
-		<script src="data/3.2.0-792285/spaceshipComponents.js"></script>
-		<script src="data/3.2.0-792285/dataforgeComponents.js"></script>
-		<script src="data/3.2.0-792285/localizationStrings.js"></script>
+		<script src="data/vehicles.js"></script>
+		<script src="data/items.js"></script>
+		<script src="data/meta.js"></script>
 
 		<script src="data/overrides.js"></script>
 
@@ -50,7 +48,7 @@
 						<row>
 							<i-col span="12">
 								<h1>Hardpoint</h1>
-								<p>Game Data Version 3.2.0-792285</p>
+								<p>Game Data Version {{ gameDataVersion }}</p>
 							</i-col>
 							<i-col span="12">
 								<i-menu mode="horizontal" theme="dark" @on-select="onNavigationSelect">
@@ -68,7 +66,7 @@
 											v-for="customization in shipCustomizations"
 											:key="customization.serialize()"
 											:name="customization.serialize()">
-											{{customization.shipDisplayName}}
+											{{customization.displayName}}
 										</menu-item>
 									</submenu>
 								</i-menu>
@@ -147,7 +145,7 @@
 				<row class="spaced-row">
 					<i-col span="14">
 						<h1>
-							{{selectedCustomization.shipDisplayName}}
+							{{selectedCustomization.displayName}}
 							<span v-if="selectedCustomization.storageKey">/ {{selectedCustomization.name}}</span>
 						</h1>
 						<br />
@@ -163,8 +161,7 @@
 							</i-button><i-button
 								v-if="selectedCustomization.storageKey"
 								type="error"
-								icon="trash-b"
-								size="large"
+								icon="md-trash"
 								class="large-icon-button"
 								@click="onClickDelete">
 							</i-button>

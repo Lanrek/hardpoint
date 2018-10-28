@@ -14,8 +14,12 @@
 	line-height: normal;
 	padding-top: 0px;
 	padding-bottom: 0px;
-	padding-left: 12px;
-	padding-right: 12px;
+	padding-left: 3px;
+	padding-right: 3px;
+}
+
+.large-icon-button .ivu-icon {
+	margin-top: -2px;
 }
 
 .horizontal-buttons button + button {
