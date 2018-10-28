@@ -452,6 +452,26 @@ class DataforgeComponent {
 		return _.capitalize(_.get(this._components, "missle.trackingSignalType")) || "CrossSection";
 	}
 
+	get missileTrackingAngle() {
+		return _.get(this._components, "missle.trackingAngle", 0);
+	}
+
+	get missileLockTime() {
+		return _.get(this._components, "missle.lockTime", 0);
+	}
+
+	get missileMaximumSpeed() {
+		return _.get(this._components, "missle.linearSpeed", 0);
+	}
+
+	get missileFlightTime() {
+		return _.get(this._components, "missle.interceptTime", 0) + _.get(this._components, "missle.terminalTime", 0);
+	}
+
+	get missileFlightRange() {
+		return this.missileMaximumSpeed * this.missileFlightTime;
+	}
+
 	get shieldCapacity() {
 		return _.get(this._components, "shieldGenerator.maxShieldHealth", 0);
 	}
@@ -532,7 +552,9 @@ class DataforgeComponent {
 		if (this.type == "Ordinance") {
 			return new SummaryText([
 				"{missileDamage.total} {missileDamage.type} damage",
-				"{missileGuidance} sensors with {missileRange} meter tracking range"], this);
+				"{missileLockTime} seconds lock time with {missileRange} meter lock range",
+				"{missileGuidance} sensors with {missileTrackingAngle} degree view",
+				"{missileFlightRange} meter flight = {missileMaximumSpeed} m/s speed X {missileFlightTime} seconds"], this);
 		}
 
 		return new SummaryText();
