@@ -609,11 +609,11 @@ class BaseItemPort {
 			return false;
 		}
 
-		if (this.minSize && component.size < this.minSize) {
+		if (this.minSize != undefined&& component.size < this.minSize) {
 			return false;
 		}
 
-		if (this.maxSize && component.size > this.maxSize) {
+		if (this.maxSize != undefined && component.size > this.maxSize) {
 			return false;
 		}
 
