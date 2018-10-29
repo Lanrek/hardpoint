@@ -516,7 +516,7 @@ class DataforgeComponent {
 
 			let summary = new SummaryText([
 				"{gunBurstDps.total} dps = " + damage + " {gunAlpha.type} damage X {gunFireRate} rpm",
-				"{gunSustainedDps.total} sustained dps (limited by heat)",
+				"{gunSustainedDps.total} sustained dps (currently broken)",
 				"{bulletRange} meter range = {bulletSpeed} m/s projectile speed X {bulletDuration} seconds"], this);
 
 			if (this.gunMaximumAmmo > 0) {
