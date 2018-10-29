@@ -520,7 +520,7 @@ class DataforgeComponent {
 				"{bulletRange} meter range = {bulletSpeed} m/s projectile speed X {bulletDuration} seconds"], this);
 
 			if (this.gunMaximumAmmo > 0) {
-				summary.patterns.push("{gunMaximumAmmo} rounds empty in {gunMagazineDuration} seconds for potentially {gunMagazineDamage.total} damage");
+				summary.patterns.push("{gunMaximumAmmo} rounds deplete in {gunMagazineDuration} seconds for potentially {gunMagazineDamage.total} damage");
 			}
 
 			return summary;
