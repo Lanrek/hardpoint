@@ -36,58 +36,69 @@ def combine_pages(api):
 
 	return result
 
-def download_pointers(directory, pointers):
+def download_pointers(directory, pointers, projection=None, name_field="name"):
 	for entry in pointers:
 		url = entry["_links"]["self"]["href"]
-		url = set_query_parameter(url, "projection", "full")
+		if projection:
+			url = set_query_parameter(url, "projection", projection)
 		data = get_json(url)
-		output_file = os.path.join(directory, data["name"] + ".json")
+		output_file = os.path.join(directory, data[name_field] + ".json")
 		print("Writing " + output_file)
 		with open(output_file, "w", encoding="UTF-8") as fp:
 			json.dump(data, fp, indent=4)
 
-def download_vehicles(vehicles_directory):
-	def hidden(name):
-		npc_names = ["_AI", "_Wreck", "_OLD", "probe_", "_S42", "_NoInterior", "_CitizenCon", "_Pirate", "_SimPod", "_Swarm"]
-		for entry in npc_names:
-			if entry in name:
-				print("Hiding NPC vehicle named " + name)
-				return True
 
-		unfinished_names = ["Redeemer", "DRAK_Cutlass_DRAK", "Taurus"]
-		for entry in unfinished_names:
-			if entry in name:
-				print("Hiding unfinished vehicle named " + name)
-				return True
+def hidden_vehicle_name(name):
+	npc_names = ["_AI", "_Wreck", "_OLD", "probe_", "_S42", "_NoInterior", "_CitizenCon", "_Pirate", "_SimPod", "_Swarm"]
+	for entry in npc_names:
+		if entry in name:
+			print("Hiding NPC vehicle named " + name)
+			return True
 
-		recolored_names = ["XIAN_Nox_Kue", "DRAK_Dragonfly_"]
-		for entry in recolored_names:
-			if entry in name:
-				print("Hiding recolored vehicle named " + name)
-				return True
+	unfinished_names = ["Redeemer", "DRAK_Cutlass_DRAK", "Taurus"]
+	for entry in unfinished_names:
+		if entry in name:
+			print("Hiding unfinished vehicle named " + name)
+			return True
 
-		return False
+	recolored_names = ["XIAN_Nox_Kue", "DRAK_Dragonfly_"]
+	for entry in recolored_names:
+		if entry in name:
+			print("Hiding recolored vehicle named " + name)
+			return True
 
+	return False
+
+def download_vehicles(directory):
 	pointers = combine_pages("http://dev.gamedata.scnis.io/api/vehicles")
-	pointers = [x for x in pointers if not hidden(x["name"])]
+	pointers = [x for x in pointers if not hidden_vehicle_name(x["name"])]
 
-	if not os.path.exists(vehicles_directory):
-		os.makedirs(vehicles_directory)
+	if not os.path.exists(directory):
+		os.makedirs(directory)
 
-	download_pointers(vehicles_directory, pointers)
+	download_pointers(directory, pointers, "full")
 
-def download_items(items_directory):
+def download_loadouts(directory):
+	pointers = combine_pages("http://dev.gamedata.scnis.io/api/loadouts")
+	pointers = [x for x in pointers if x["vehicleDefault"] and not hidden_vehicle_name(x["vehicleName"])]
+
+	if not os.path.exists(directory):
+		os.makedirs(directory)
+
+	download_pointers(directory, pointers, name_field="vehicleName")
+
+def download_items(directory):
 	included_types = ["Cooler", "EMP", "PowerPlant", "Shield", "Turret", "TurretBase", "WeaponMissile", "QuantumDrive", "QuantumFuelTank", "WeaponGun", "WeaponMining", "Ordinance"]
 
 	for type in included_types:
-		type_directory = os.path.join(items_directory, type)
+		type_directory = os.path.join(directory, type)
 		if not os.path.exists(type_directory):
 			os.makedirs(type_directory)
 
 		url = set_query_parameter("http://dev.gamedata.scnis.io/api/items/search/byType", "type", type)
 		pointers = combine_pages(url)
 
-		download_pointers(type_directory, pointers)
+		download_pointers(type_directory, pointers, "full")
 
 def write_javascript(data, output_file, variable):
 	with open(output_file, "w", encoding="UTF-8") as fp:
@@ -99,13 +110,13 @@ def download_meta(output_file, variable):
 	data = get_json("http://dev.gamedata.scnis.io/api/meta")
 	write_javascript(data, output_file, variable)
 
-def merge_directory(directory, output_file, variable, filter_name):
+def merge_directory(directory, output_file, variable, filter_name, name_field="name"):
 	combined = {}
 	for root, dirs, files in os.walk(directory):
 		for name in files:
 			with open(os.path.join(root, name), "r", encoding="UTF-8") as fp:
 				parsed = json.load(fp)
-				combined[parsed["name"]] = parsed
+				combined[parsed[name_field]] = parsed
 
 	for object in combined.values():
 		apply_filters(object, filter_name)
@@ -154,6 +165,7 @@ filters = {
 		"size": None,
 		"tags": None,
 		"displayName": None,
+		"crewStations": None,
 		"vehicleSpecification.baseName": None,
 		"vehicleSpecification.variant": None,
 		"vehicleSpecification.displayName": None,
@@ -162,7 +174,6 @@ filters = {
 		"vehicleSpecification.movement.ifcsStates.[].ab2CruMode.criuseSpeed": None,
 		"vehicleSpecification.parts.[]": "vehicle_part",
 		"vehicleSpecification.ports.[]": "port",
-		"hardpoints.[]": "vehicle_hardpoint",
 	},
 	"vehicle_part": {
 		"mass": None,
@@ -170,13 +181,14 @@ filters = {
 		"parts.[]": "vehicle_part",
 		"ports.[]": "port"
 	},
-	"vehicle_hardpoint": {
+	"loadout": {
+		"vehicleName": None,
+		"hardpoints.[]": "loadout_hardpoint",
+	},
+	"loadout_hardpoint": {
 		"name": None,
-		"item.name": None,
-		"name": None,
-		"item.ports.[].name": None,
-		"item.ports.[]._embedded.item.name": None,
-		"hardpoints.[]": "vehicle_hardpoint"
+		"equipped.name": None,
+		"hardpoints.[]": "loadout_hardpoint",
 	},
 	"item": {
 		"name": None,
@@ -237,16 +249,32 @@ arguments = parser.parse_args()
 
 snapshot_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "snapshots", arguments.snapshot))
 vehicles_directory = os.path.join(snapshot_path, "vehicles")
+loadouts_directory = os.path.join(snapshot_path, "loadouts")
 items_directory = os.path.join(snapshot_path, "items")
 
 if arguments.download:
 	download_vehicles(vehicles_directory)
+	download_loadouts(loadouts_directory)
 	download_items(items_directory)
 	download_meta(os.path.join(snapshot_path, "meta.js"), "metaData")
 
 if arguments.merge:
-	merge_directory(vehicles_directory, os.path.join(snapshot_path, "vehicles.js"), "vehicleData", "vehicle")
-	merge_directory(items_directory, os.path.join(snapshot_path, "items.js"), "itemData", "item")
+	merge_directory(
+		vehicles_directory,
+		os.path.join(snapshot_path, "vehicles.js"),
+		"vehicleData",
+		"vehicle")
+	merge_directory(
+		loadouts_directory,
+		os.path.join(snapshot_path, "loadouts.js"),
+		"loadoutData",
+		"loadout",
+		name_field="vehicleName")
+	merge_directory(
+		items_directory,
+		os.path.join(snapshot_path, "items.js"),
+		"itemData",
+		"item")
 
 	for key, value in filter_usage.items():
 		print("{:>6} {}".format(value, key))

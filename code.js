@@ -132,13 +132,6 @@ class ShipSpecification {
 		const scmVelocity = _.get(ifcsStates, "flightSpace.scmMode.maxVelocity", 0);
 		const cruiseVelocity = _.get(ifcsStates, "flightSpace.ab2CruMode.criuseSpeed", 0);
 
-		// TODO Fix crew seats!
-		//const seats = this.itemPorts.filter(p => p.matchesType("Seat"));
-		//const crewSeats = seats.filter(s =>
-		//	_.get(s._data, "ControllerDef.UserDef.Observerables.Observerable") ||
-		//	_.get(s._data, "ControllerDef[0].UserDef.Observerables.Observerable"));
-		const crewSeats = [undefined];
-
 		const mannedTurrets = this.itemPorts.filter(p => p.matchesType("TurretBase", "MannedTurret"));
 
 		const size = this._data["size"];
@@ -164,7 +157,7 @@ class ShipSpecification {
 				name: "Crew",
 				category: "Description",
 				description: "Seats with controls plus manned turrets",
-				value: crewSeats.length + mannedTurrets.length
+				value: this._data["crewStations"] + mannedTurrets.length
 			},
 			{
 				name: "Normal Speed",
@@ -204,42 +197,24 @@ class ShipSpecification {
 	}
 
 	_makeDefaultItems() {
-		const addEmbeddedItems = function(container, ports) {
-			for (const port of ports) {
-				// Don't overwrite any already default items that have already been set.
-				if (port["_embedded"] && !_.get(container, port.name + ".itemName")) {
-					let entry = {};
-					entry.itemName = port["_embedded"]["item"]["name"];
-					entry.children = {};
-					container[port.name] = entry;
-				}
-			}
-		};
+		const loadout = allLoadouts[this._data["name"]];
 
 		const makeStructure = function(hardpoints) {
 			let result = {};
 			if (hardpoints) {
 				for (const hardpoint of hardpoints) {
-					if (hardpoint["item"]) {
+					const itemName = _.get(hardpoint, "equipped.name");
+					if (itemName) {
 						let entry = {};
-						entry.itemName = hardpoint["item"]["name"];
+						entry.itemName = itemName;
 						entry.children = makeStructure(hardpoint.hardpoints);
-						addEmbeddedItems(entry.children, hardpoint["item"]["ports"]);
 						result[hardpoint.name] = entry;
 					}
 				}
 			}
 			return result;
 		};
-
-		// Start with the hardpoints structure which is trying to represent editable items.
-		let structure = makeStructure(this._data["hardpoints"]);
-
-		// Add in the embedded items, but don't overwrite anything that already exists.
-		const unflattened = this._findParts().map(n => n["ports"]);
-		const ports = unflattened.reduce((total, n) => total.concat(n), []);
-		addEmbeddedItems(structure, ports);
-
+		const structure = makeStructure(loadout["hardpoints"]);
 		return structure;
 	}
 }
@@ -494,8 +469,8 @@ class DataforgeComponent {
 	}
 
 	get quantumEfficiency() {
-		// Underlying unit appears to be fuel used per 1000km travelled.
-		return _.get(this._components, "quantumDrive.quantumFuelRequirement", 0);
+		// Underlying unit is fuel used per megameter travelled; convert to fuel/gigameter.
+		return _.get(this._components, "quantumDrive.quantumFuelRequirement", 0) * 1000;
 	}
 
 	get quantumCooldown() {
@@ -545,7 +520,7 @@ class DataforgeComponent {
 		if (this.type == "QuantumDrive") {
 			return new SummaryText([
 				"{quantumRange} gigameter jump distance at {quantumSpeed} megameters/sec",
-				"Consumes {quantumEfficiency} fuel per megameter",
+				"Consumes {quantumEfficiency} fuel per gigameter",
 				"{quantumCooldown} second cooldown after jumping"], this);
 		}
 
@@ -1018,7 +993,7 @@ class ShipCustomization {
 			},
 			{
 				name: "Quantum Range",
-				description: "Megameters of quantum travel range based on fuel capacity",
+				description: "Gigameters of quantum travel range based on fuel capacity",
 				category: "Travel",
 				value: Math.round(quantumFuel / quantumEfficiency) || 0
 			}
@@ -1061,6 +1036,8 @@ class ShipCustomization {
 
 
 // Translate underlying data into model objects.
+var allLoadouts = loadoutData;
+
 var allVehicles = {}
 for (const key of Object.keys(vehicleData)) {
 	const specification = new ShipSpecification(vehicleData[key]);
