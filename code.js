@@ -112,7 +112,7 @@ class ShipSpecification {
 	}
 
 	get tags() {
-		return this._data["tags"];
+		return this._data["vehicleSpecification"]["itemPortTags"] || [];
 	}
 
 	get shipId() {
@@ -125,6 +125,10 @@ class ShipSpecification {
 		return nullifySentinel(this._data["displayName"]) ||
 			this._data["vehicleSpecification"]["displayName"] ||
 			this.shipId.combinedId;
+	}
+
+	get cargoCapacity() {
+		return this._data["cargoCapacity"];
 	}
 
 	getAttributes() {
@@ -485,10 +489,28 @@ class DataforgeComponent {
 	get quantumSpoolTime() {
 		return _.get(this._components, "quantumDrive.jump.spoolUpTime", 0);
 	}
+
 	get quantumCalibrationTime() {
 		const required = _.get(this._components, "quantumDrive.jump.maxCalibrationRequirement", 0);
 		const rate = _.get(this._components, "quantumDrive.jump.calibrationRate", 0);
 		return required / rate;
+	}
+
+	get cargoCapacity() {
+		// Capacity for cargo grids, both on ships and embedded into containers.
+		return _.get(this._components, "cargoGrid.volume.cargoCapacity", 0);
+	}
+
+	get containerCapacity() {
+		// Capacity of the cargo grids embedded in a container.
+		if (this.type == "Container") {
+			const ports = _.get(this._data, "ports", []);
+			const embedded = ports.map(n => allItems[_.get(n, "_embedded.item.name")]).filter(n => n);
+			const total = embedded.reduce((total, x) => total + x.cargoCapacity, 0);
+			return total
+		}
+
+		return 0;
 	}
 
 	get summary() {
@@ -540,6 +562,11 @@ class DataforgeComponent {
 				"{missileLockTime} seconds lock time with {missileRange} meter lock range",
 				"{missileGuidance} sensors with {missileTrackingAngle} degree view",
 				"{missileFlightRange} meter flight = {missileMaximumSpeed} m/s speed X {missileFlightTime} seconds"], this);
+		}
+
+		if (this.type == "Container") {
+			return new SummaryText([
+				"{containerCapacity} SCUs cargo capacity"], this);
 		}
 
 		return new SummaryText();
@@ -946,6 +973,7 @@ class ShipCustomization {
 	getAttributes(category=undefined) {
 		const quantumFuel = this._getAllAttachedComponents().reduce((total, x) => total + x.quantumFuel, 0);
 		const quantumEfficiency = this._getAllAttachedComponents().reduce((total, x) => total + x.quantumEfficiency, 0);
+		const containerCapacity = this._getAllAttachedComponents().reduce((total, x) => total + x.containerCapacity, 0);
 
 		let attributes = this._specification.getAttributes();
 
@@ -964,6 +992,12 @@ class ShipCustomization {
 				name: "Manufacturer",
 				category: "Description",
 				value: this.shipManufacturer
+			},
+			{
+				name: "Cargo Capacity",
+				category: "Utility",
+				description: "Total cargo capacity in SCUs",
+				value: this._specification.cargoCapacity + containerCapacity
 			},
 			{
 				name: "Total Shields",
@@ -1371,6 +1405,13 @@ var shipList = Vue.component('ship-list', {
 					minWidth: 65
 				},
 				{
+					title: "Cargo",
+					key: "Cargo Capacity",
+					sortable: true,
+					renderHeader: this.renderSortableHeaderWithTooltip,
+					minWidth: 70
+				},
+				{
 					title: "SCM",
 					key: "Normal Speed",
 					sortable: true,
@@ -1558,6 +1599,17 @@ var shipDetails = Vue.component('ship-details', {
 				"Systems": ["Cooler", "Shield", "PowerPlant", "QuantumDrive"]
 			},
 
+			utilityColumns: [
+				{
+					title: "Utility",
+					key: "name"
+				},
+				{
+					title: " ",
+					key: "value",
+					width: 60
+				}
+			],
 			damageColumns: [
 				{
 					title: "Damage",
@@ -1660,8 +1712,11 @@ var shipDetails = Vue.component('ship-details', {
 		getChildBindingGroups: function (prototypeBinding) {
 			const childGroups = prototypeBinding.childGroups;
 
+			// Hide embbedded cargo grids since they're fixed.
+			let filtered = childGroups.filter(g => g.members[0].port.types.some(t => t.type != "Cargo"));
+
 			// Hide magazine slots until they're worth customizing; they're distinguished by lack of types.
-			let filtered = childGroups.filter(g => g.members[0].port.types.length);
+			filtered = filtered.filter(g => g.members[0].port.types.length);
 
 			// Also hide weapon attachments until they're implemented.
 			filtered = filtered.filter(g => g.members[0].port.types.some(t => t.type != "WeaponAttachment"));
