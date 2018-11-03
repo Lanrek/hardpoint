@@ -1540,7 +1540,7 @@ var shipDetails = Vue.component('ship-details', {
 
 			// Also defines the section display order.
 			sectionNames: ["Guns", "Missiles", "Systems"],
-			expandedSections: ["Guns", "Missiles"],
+			expandedSections: ["Guns", "Missiles", "Systems"],
 			// Also defines the section precedence order; lowest precedence is first.
 			sectionDefinitions: {
 				"Guns": ["WeaponGun", "Turret", "TurretBase"],
