@@ -473,13 +473,22 @@ class DataforgeComponent {
 		return _.get(this._components, "quantumDrive.quantumFuelRequirement", 0) * 1000;
 	}
 
+	get quantumSpeed() {
+		// Underlying unit appears to be m/sec; convert to megameters/sec.
+		return _.get(this._components, "quantumDrive.jump.driveSpeed", 0) / 1000000;
+	}
+
 	get quantumCooldown() {
 		return _.get(this._components, "quantumDrive.jump.cooldownTime", 0);
 	}
 
-	get quantumSpeed() {
-		// Underlying unit appears to be m/sec; convert to megameters/sec.
-		return _.get(this._components, "quantumDrive.jump.driveSpeed", 0) / 1000000;
+	get quantumSpoolTime() {
+		return _.get(this._components, "quantumDrive.jump.spoolUpTime", 0);
+	}
+	get quantumCalibrationTime() {
+		const required = _.get(this._components, "quantumDrive.jump.maxCalibrationRequirement", 0);
+		const rate = _.get(this._components, "quantumDrive.jump.calibrationRate", 0);
+		return required / rate;
 	}
 
 	get summary() {
@@ -521,6 +530,7 @@ class DataforgeComponent {
 			return new SummaryText([
 				"{quantumRange} gigameter jump distance at {quantumSpeed} megameters/sec",
 				"Consumes {quantumEfficiency} fuel per gigameter",
+				"Calibrates in no less than {quantumCalibrationTime} seconds and spools in {quantumSpoolTime} seconds",
 				"{quantumCooldown} second cooldown after jumping"], this);
 		}
 

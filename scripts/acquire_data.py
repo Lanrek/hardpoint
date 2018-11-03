@@ -222,6 +222,10 @@ filters = {
 		"components.[].quantumFuelRequirement": None,
 		"components.[].jump.cooldownTime": None,
 		"components.[].jump.driveSpeed": None,
+		"components.[].jump.calibrationRate": None,
+		"components.[].jump.minCalibrationRequirement": None,
+		"components.[].jump.maxCalibrationRequirement": None,
+		"components.[].jump.spoolUpTime": None,
 		"ports.[]": "port"
 	},
 	"port": {
