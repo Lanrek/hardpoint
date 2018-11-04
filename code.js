@@ -325,6 +325,7 @@ class DataforgeComponent {
 	constructor(data) {
 		this._data = data;
 		this._components = _.keyBy(this._data["components"], "name");
+		this._connections = _.keyBy(this._data["connections"], "pipeClass");
 
 		this.itemPorts = this._findItemPorts();
 	}
@@ -513,6 +514,18 @@ class DataforgeComponent {
 		return 0;
 	}
 
+	get powerBase() {
+		return _.get(this._connections, "POWER.powerBase", 0);
+	}
+
+	get powerDraw() {
+		return _.get(this._connections, "POWER.powerDraw", 0);
+	}
+
+	get powerToEm() {
+		return _.get(this._connections, "POWER.powerToEM", 0);
+	}
+
 	get summary() {
 		if (this.type == "WeaponGun") {
 			let damage = "{gunAlpha.total}";
@@ -569,6 +582,12 @@ class DataforgeComponent {
 				"{containerCapacity} SCUs cargo capacity"], this);
 		}
 
+		if (this.type == "PowerPlant") {
+			return new SummaryText([
+				"{powerDraw} maximum power generation per second",
+				"{powerToEm} increase in EM signature per power generated"], this);
+		}
+
 		return new SummaryText();
 	}
 
@@ -587,7 +606,7 @@ class ItemPortType {
 class BaseItemPort {
 	availableComponents(tags) {
 		let keys = Object.keys(allItems);
-		keys = keys.filter(n => !n.includes("test_") && !n.includes("_Template"));
+		keys = keys.filter(n => !n.toLowerCase().includes("test_") && !n.includes("_Template"));
 		return keys.filter(n => this.matchesComponent(tags, allItems[n]));
 	}
 
