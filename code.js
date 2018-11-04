@@ -218,6 +218,7 @@ class ShipSpecification {
 			}
 			return result;
 		};
+
 		const structure = makeStructure(loadout["hardpoints"]);
 		return structure;
 	}
@@ -515,15 +516,43 @@ class DataforgeComponent {
 	}
 
 	get powerBase() {
-		return _.get(this._connections, "POWER.powerBase", 0);
+		if (this.type != "PowerPlant") {
+			return _.get(this._connections, "POWER.powerBase", 0);
+		}
+
+		return 0;
 	}
 
 	get powerDraw() {
-		return _.get(this._connections, "POWER.powerDraw", 0);
+		if (this.type != "PowerPlant") {
+			return _.get(this._connections, "POWER.powerDraw", 0);
+		}
+
+		return 0;
+	}
+
+	get powerIncrease() {
+		return this.powerDraw - this.powerBase;
+	}
+
+	get powerGeneration() {
+		if (this.type == "PowerPlant") {
+			return _.get(this._connections, "POWER.powerDraw", 0);
+		}
+
+		return 0;
 	}
 
 	get powerToEm() {
 		return _.get(this._connections, "POWER.powerToEM", 0);
+	}
+
+	get flightAngularPower() {
+		return _.get(this._components, "flightController.powerUsage.angularAccelerationPowerAmount", 0);
+	}
+
+	get flightLinearPower() {
+		return _.get(this._components, "flightController.powerUsage.linearAccelerationPowerAmount", 0);
 	}
 
 	get summary() {
@@ -542,6 +571,8 @@ class DataforgeComponent {
 				summary.patterns.push("{gunMaximumAmmo} rounds deplete in {gunMagazineDuration} seconds for potentially {gunMagazineDamage.total} damage");
 			}
 
+			summary.patterns.push("{powerBase} power/second in standby and an additional {powerIncrease} when firing");
+
 			return summary;
 		}
 
@@ -558,7 +589,8 @@ class DataforgeComponent {
 		if (this.type == "Shield") {
 			return new SummaryText([
 				"{shieldCapacity} shield capacity",
-				"Regenerates {shieldRegeneration} capacity/second with a {shieldDownDelay} second delay after dropping"], this);
+				"Regenerates {shieldRegeneration} capacity/second with a {shieldDownDelay} second delay after dropping",
+				"{powerBase} power/second in standby and an additional {powerIncrease} when recharging"], this);
 		}
 
 		if (this.type == "QuantumDrive") {
@@ -584,7 +616,7 @@ class DataforgeComponent {
 
 		if (this.type == "PowerPlant") {
 			return new SummaryText([
-				"{powerDraw} maximum power generation per second",
+				"{powerGeneration} maximum power generation per second",
 				"{powerToEm} increase in EM signature per power generated"], this);
 		}
 
@@ -990,9 +1022,13 @@ class ShipCustomization {
 	}
 
 	getAttributes(category=undefined) {
-		const quantumFuel = this._getAllAttachedComponents().reduce((total, x) => total + x.quantumFuel, 0);
-		const quantumEfficiency = this._getAllAttachedComponents().reduce((total, x) => total + x.quantumEfficiency, 0);
-		const containerCapacity = this._getAllAttachedComponents().reduce((total, x) => total + x.containerCapacity, 0);
+		const allComponents = this._getAllAttachedComponents();
+		const weaponComponents = allComponents.filter(x => x.type == "WeaponGun");
+		const shieldComponents = allComponents.filter(x => x.type == "Shield");
+
+		const quantumFuel = allComponents.reduce((total, x) => total + x.quantumFuel, 0);
+		const quantumEfficiency = allComponents.reduce((total, x) => total + x.quantumEfficiency, 0);
+		const containerCapacity = allComponents.reduce((total, x) => total + x.containerCapacity, 0);
 
 		let attributes = this._specification.getAttributes();
 
@@ -1019,34 +1055,71 @@ class ShipCustomization {
 				value: this._specification.cargoCapacity + containerCapacity
 			},
 			{
+				name: "Power Generation",
+				category: "Power",
+				description: "Total power generating capacity of all power plants",
+				value: Math.round(allComponents.reduce((total, x) => total + x.powerGeneration, 0))
+
+			},
+			{
+				name: "Standby Usage",
+				category: "Power",
+				description: "Total power consumption of all components in standby mode",
+				value: Math.round(allComponents.reduce((total, x) => total + x.powerBase, 0))
+			},
+			{
+				name: "Weapons Firing Usage",
+				category: "Power",
+				description: "Additional power consumed when all weapons are firing",
+				value: Math.round(weaponComponents.reduce((total, x) => total + x.powerIncrease, 0))
+			},
+			{
+				name: "Shield Recharge Usage",
+				category: "Power",
+				description: "Additional power consumed when shields are actively recharging",
+				value: Math.round(shieldComponents.reduce((total, x) => total + x.powerIncrease, 0))
+			},
+			{
+				name: "Forward Acceleration Usage",
+				category: "Power",
+				description: "Additional power consumed when accelerating forward",
+				value: Math.round(allComponents.reduce((total, x) => total + x.flightLinearPower, 0))
+			},
+			{
+				name: "Maneuvering Usage",
+				category: "Power",
+				description: "Additional power consumed when applying rotational acceleration",
+				value: Math.round(allComponents.reduce((total, x) => total + x.flightAngularPower, 0))
+			},
+			{
 				name: "Total Shields",
 				category: "Survivability",
 				description: "Total capacity of all shield generators",
-				value: Math.round(this._getAllAttachedComponents().reduce((total, x) => total + x.shieldCapacity, 0))
+				value: Math.round(allComponents.reduce((total, x) => total + x.shieldCapacity, 0))
 			},
 			{
 				name: "Total Burst DPS",
 				category: "Damage",
 				description: "Total gun DPS without considering heat, power, or ammo",
-				value: Math.round(this._getAllAttachedComponents().reduce((total, x) => total + x.gunBurstDps.total, 0))
+				value: Math.round(allComponents.reduce((total, x) => total + x.gunBurstDps.total, 0))
 			},
 			{
 				name: "Total Sustained DPS",
 				description: "Total gun DPS that can be sustained indefinitely",
 				category: "Damage",
-				value: Math.round(this._getAllAttachedComponents().reduce((total, x) => total + x.gunSustainedDps.total, 0))
+				value: Math.round(allComponents.reduce((total, x) => total + x.gunSustainedDps.total, 0))
 			},
 			{
 				name: "Total Missile Damage",
 				description: "Total potential damage of all missiles",
 				category: "Damage",
-				value: Math.round(this._getAllAttachedComponents().reduce((total, x) => total + x.missileDamage.total, 0))
+				value: Math.round(allComponents.reduce((total, x) => total + x.missileDamage.total, 0))
 			},
 			{
 				name: "Quantum Speed",
 				description: "Max quantum travel speed in megameters/sec",
 				category: "Travel",
-				value: _.round(this._getAllAttachedComponents().reduce((total, x) => total + x.quantumSpeed, 0), 2)
+				value: _.round(allComponents.reduce((total, x) => total + x.quantumSpeed, 0), 2)
 			},
 			{
 				name: "Quantum Fuel",
@@ -1621,6 +1694,17 @@ var shipDetails = Vue.component('ship-details', {
 			utilityColumns: [
 				{
 					title: "Utility",
+					key: "name"
+				},
+				{
+					title: " ",
+					key: "value",
+					width: 60
+				}
+			],
+			powerColumns: [
+				{
+					title: "Power",
 					key: "name"
 				},
 				{

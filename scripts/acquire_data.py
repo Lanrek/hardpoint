@@ -88,7 +88,7 @@ def download_loadouts(directory):
 	download_pointers(directory, pointers, name_field="vehicleName")
 
 def download_items(directory):
-	included_types = ["Cooler", "EMP", "PowerPlant", "Shield", "Turret", "TurretBase", "WeaponMissile", "QuantumDrive", "QuantumFuelTank", "WeaponGun", "WeaponMining", "Ordinance", "Container", "Cargo"]
+	included_types = ["Cooler", "EMP", "PowerPlant", "Shield", "Turret", "TurretBase", "WeaponMissile", "QuantumDrive", "QuantumFuelTank", "WeaponGun", "WeaponMining", "Ordinance", "Container", "Cargo", "Ping", "FlightController"]
 
 	for type in included_types:
 		type_directory = os.path.join(directory, type)
@@ -232,6 +232,8 @@ filters = {
 		"components.[].jump.maxCalibrationRequirement": None,
 		"components.[].jump.spoolUpTime": None,
 		"components.[].volume.cargoCapacity": None,
+		"components.[].powerUsage.angularAccelerationPowerAmount": None,
+		"components.[].powerUsage.linearAccelerationPowerAmount": None,
 		"ports.[]": "port"
 	},
 	"port": {
