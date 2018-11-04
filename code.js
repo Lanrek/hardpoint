@@ -396,10 +396,21 @@ class DataforgeComponent {
 		return scaled;
 	}
 
+	get gunStandbyHeat() {
+		return _.get(this._components, "weapon.connection.heatRateOnline", 0);
+	}
+
+	get gunHeatPerShot() {
+		// TODO Support multiple firing modes.
+		return _.get(this._components, "weapon.fireActions[0].heatPerShot", 0);
+	}
+
 	get gunSustainedDps() {
-		// TODO Actually calculate heat and energy limits based on ship equipment.
-		// TODO Not having the SCDB simulation is regressing this!
-		return this.gunBurstDps;
+		let sustainedRate = this.maxCooling / this.gunHeatPerShot;
+		sustainedRate = Math.min(sustainedRate, this.gunFireRate / 60.0);
+
+		const scaled = this.gunAlpha.scale(this.bulletCount * sustainedRate);
+		return scaled;
 	}
 
 	get gunMaximumAmmo() {
@@ -555,6 +566,23 @@ class DataforgeComponent {
 		return _.get(this._components, "flightController.powerUsage.linearAccelerationPowerAmount", 0);
 	}
 
+	get coolingCoefficient() {
+		return _.get(this._connections, "HEAT.coolingCoefficient", 0);
+	}
+
+	get overheatTemperature() {
+		const maxTemperature = _.get(this._connections, "HEAT.maximumTemperature", 0);
+		const overheatRatio = _.get(this._connections, "HEAT.overheatTemperatureRatio", 0);
+
+		return maxTemperature * overheatRatio;
+	}
+
+	get maxCooling() {
+		// Newton's law of cooling; ambient temperature deduced to be 0.
+		const afterOneSec = this.overheatTemperature * Math.exp(-1 * this.coolingCoefficient);
+		return this.overheatTemperature - afterOneSec;
+	}
+
 	get summary() {
 		if (this.type == "WeaponGun") {
 			let damage = "{gunAlpha.total}";
@@ -564,7 +592,7 @@ class DataforgeComponent {
 
 			let summary = new SummaryText([
 				"{gunBurstDps.total} dps = " + damage + " {gunAlpha.type} damage X {gunFireRate} rpm",
-				"{gunSustainedDps.total} sustained dps (currently broken)",
+				"{gunSustainedDps.total} sustained dps ({gunHeatPerShot} heat/shot with {maxCooling} max cooling/sec)",
 				"{bulletRange} meter range = {bulletSpeed} m/s projectile speed X {bulletDuration} seconds"], this);
 
 			if (this.gunMaximumAmmo > 0) {
