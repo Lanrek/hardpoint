@@ -225,6 +225,15 @@
 	margin-top: 0px;
 }
 
+/* Merge the power and power usage tables. */
+.power-usage thead {
+	display: none;
+}
+.power-usage {
+	border-top-width: 0px;
+	margin-top: 0px;
+}
+
 /* Add a bit of space between the collapse section dropdown arrow and the header text. */
 .ivu-collapse-header > i {
 	margin-right: 8px;

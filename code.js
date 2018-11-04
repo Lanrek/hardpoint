@@ -1021,7 +1021,7 @@ class ShipCustomization {
 		return this._specification.tags;
 	}
 
-	getAttributes(category=undefined) {
+	getAttributes(category=undefined, context=undefined) {
 		const allComponents = this._getAllAttachedComponents();
 		const weaponComponents = allComponents.filter(x => x.type == "WeaponGun");
 		const shieldComponents = allComponents.filter(x => x.type == "Shield");
@@ -1030,7 +1030,47 @@ class ShipCustomization {
 		const quantumEfficiency = allComponents.reduce((total, x) => total + x.quantumEfficiency, 0);
 		const containerCapacity = allComponents.reduce((total, x) => total + x.containerCapacity, 0);
 
+		const powerUsages = [
+			{
+				name: "Standby Usage",
+				category: "Power Usage",
+				description: "Total power consumption of all components in standby mode",
+				value: Math.round(allComponents.reduce((total, x) => total + x.powerBase, 0)),
+				_disabled: true
+			},
+			{
+				name: "Weapons Firing Usage",
+				category: "Power Usage",
+				description: "Additional power consumed when all weapons are firing",
+				value: Math.round(weaponComponents.reduce((total, x) => total + x.powerIncrease, 0))
+			},
+			{
+				name: "Shield Recharge Usage",
+				category: "Power Usage",
+				description: "Additional power consumed when shields are actively recharging",
+				value: Math.round(shieldComponents.reduce((total, x) => total + x.powerIncrease, 0))
+			},
+			{
+				name: "Forward Acceleration Usage",
+				category: "Power Usage",
+				description: "Additional power consumed when accelerating forward",
+				value: Math.round(allComponents.reduce((total, x) => total + x.flightLinearPower, 0))
+			},
+			{
+				name: "Maneuvering Usage",
+				category: "Power Usage",
+				description: "Additional power consumed when applying rotational acceleration",
+				value: Math.round(allComponents.reduce((total, x) => total + x.flightAngularPower, 0))
+			}
+		];
+
+		let selectedPowerUsage = 0;
+		if (context) {
+			selectedPowerUsage = _.sum(powerUsages.filter(x => x.name in context.selectedPowerUsages).map(x => x.value));
+		}
+
 		let attributes = this._specification.getAttributes();
+		attributes = attributes.concat(powerUsages);
 
 		attributes = attributes.concat([
 			{
@@ -1059,37 +1099,12 @@ class ShipCustomization {
 				category: "Power",
 				description: "Total power generating capacity of all power plants",
 				value: Math.round(allComponents.reduce((total, x) => total + x.powerGeneration, 0))
-
 			},
 			{
-				name: "Standby Usage",
+				name: "Selected Power Usage",
 				category: "Power",
-				description: "Total power consumption of all components in standby mode",
-				value: Math.round(allComponents.reduce((total, x) => total + x.powerBase, 0))
-			},
-			{
-				name: "Weapons Firing Usage",
-				category: "Power",
-				description: "Additional power consumed when all weapons are firing",
-				value: Math.round(weaponComponents.reduce((total, x) => total + x.powerIncrease, 0))
-			},
-			{
-				name: "Shield Recharge Usage",
-				category: "Power",
-				description: "Additional power consumed when shields are actively recharging",
-				value: Math.round(shieldComponents.reduce((total, x) => total + x.powerIncrease, 0))
-			},
-			{
-				name: "Forward Acceleration Usage",
-				category: "Power",
-				description: "Additional power consumed when accelerating forward",
-				value: Math.round(allComponents.reduce((total, x) => total + x.flightLinearPower, 0))
-			},
-			{
-				name: "Maneuvering Usage",
-				category: "Power",
-				description: "Additional power consumed when applying rotational acceleration",
-				value: Math.round(allComponents.reduce((total, x) => total + x.flightAngularPower, 0))
+				description: "Sum of all selected power usages",
+				value: selectedPowerUsage
 			},
 			{
 				name: "Total Shields",
@@ -1681,6 +1696,9 @@ var shipDetails = Vue.component('ship-details', {
 
 			selectedCustomization: {},
 
+			// Dictionary where the values are ignored to make a reactive set.
+			selectedPowerUsages: {"Standby Usage": true, "Weapons Firing Usage": true, "Maneuvering Usage": true},
+
 			// Also defines the section display order.
 			sectionNames: ["Guns", "Missiles", "Systems"],
 			expandedSections: ["Guns", "Missiles", "Systems"],
@@ -1710,6 +1728,43 @@ var shipDetails = Vue.component('ship-details', {
 				{
 					title: " ",
 					key: "value",
+					align: "right",
+					width: 160
+				}
+			],
+			powerUsageColumns: [
+				{
+					width: 30,
+					align: "center",
+					render: (h, params) => {
+						return h("Checkbox", {
+							props: {
+								value: params.row.name in this.selectedPowerUsages,
+								disabled: params.row._disabled
+							},
+							on: {
+								input: (value) => {
+									if (value) {
+										Vue.set(this.selectedPowerUsages, params.row.name, true);
+									}
+									else {
+										Vue.delete(this.selectedPowerUsages, params.row.name);
+									}
+
+									this.$emit("input", value)
+								}
+							}
+						});
+					}
+				},
+				{
+					title: "Power",
+					key: "name"
+				},
+				{
+					title: " ",
+					key: "value",
+					align: "right",
 					width: 60
 				}
 			],
@@ -1721,6 +1776,7 @@ var shipDetails = Vue.component('ship-details', {
 				{
 					title: " ",
 					key: "value",
+					align: "right",
 					width: 60
 				}
 			],
@@ -1732,6 +1788,7 @@ var shipDetails = Vue.component('ship-details', {
 				{
 					title: " ",
 					key: "value",
+					align: "right",
 					width: 60
 				}
 			],
@@ -1743,6 +1800,7 @@ var shipDetails = Vue.component('ship-details', {
 				{
 					title: " ",
 					key: "value",
+					align: "right",
 					width: 60
 				}
 			],
@@ -1754,6 +1812,7 @@ var shipDetails = Vue.component('ship-details', {
 				{
 					title: " ",
 					key: "value",
+					align: "right",
 					width: 60
 				}
 			]
