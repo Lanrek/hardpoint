@@ -1758,7 +1758,7 @@ var shipDetails = Vue.component('ship-details', {
 					title: " ",
 					key: "value",
 					align: "right",
-					width: 160
+					width: 60
 				}
 			],
 			powerUsageColumns: [
