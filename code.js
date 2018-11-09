@@ -1172,7 +1172,7 @@ class ShipCustomization {
 			{
 				name: "Current Usage Ratio",
 				category: "Power",
-				description: "Sum of the power consumption of all components in their current state",
+				description: "Percentage of power generation capacity used by current settings",
 				value: Math.round(100 * (powerGeneration - currentPower) / powerGeneration) + "%"
 			},
 			{
