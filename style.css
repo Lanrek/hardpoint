@@ -73,8 +73,16 @@
 
 /* Make tooltips from table headers render nicely. */
 .ivu-table th .ivu-tooltip-rel {
-	padding-top:8px;
-	padding-bottom:8px;
+	padding-top: 8px;
+	padding-bottom: 8px;
+}
+
+.ivu-table-cell .ivu-tooltip-rel {
+	min-width: 240px;
+	padding-top: 15px;
+	padding-bottom: 15px;
+	padding-left: 4px;
+	margin-left: -4px;
 }
 
 .ivu-tooltip-inner {

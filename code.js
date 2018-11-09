@@ -1189,7 +1189,7 @@ class ShipCustomization {
 			},
 			{
 				name: "Total Sustained DPS",
-				description: "Total gun DPS that can be sustained indefinitely",
+				description: "Total gun DPS that can be sustained without overheating",
 				category: "Damage",
 				value: Math.round(this._sumComponentValue(allComponents, "gunSustainedDps.total"))
 			},
@@ -1789,7 +1789,8 @@ var shipDetails = Vue.component('ship-details', {
 			utilityColumns: [
 				{
 					title: "Utility",
-					key: "name"
+					key: "name",
+					render: this.renderRowTooltip
 				},
 				{
 					title: " ",
@@ -1801,7 +1802,8 @@ var shipDetails = Vue.component('ship-details', {
 			powerColumns: [
 				{
 					title: "Power",
-					key: "name"
+					key: "name",
+					render: this.renderRowTooltip
 				},
 				{
 					title: " ",
@@ -1813,7 +1815,8 @@ var shipDetails = Vue.component('ship-details', {
 			damageColumns: [
 				{
 					title: "Damage",
-					key: "name"
+					key: "name",
+					render: this.renderRowTooltip
 				},
 				{
 					title: " ",
@@ -1825,7 +1828,8 @@ var shipDetails = Vue.component('ship-details', {
 			maneuverabilityColumns: [
 				{
 					title: "Maneuverability",
-					key: "name"
+					key: "name",
+					render: this.renderRowTooltip
 				},
 				{
 					title: " ",
@@ -1837,7 +1841,8 @@ var shipDetails = Vue.component('ship-details', {
 			survivabilityColumns: [
 				{
 					title: "Survivability",
-					key: "name"
+					key: "name",
+					render: this.renderRowTooltip
 				},
 				{
 					title: " ",
@@ -1849,7 +1854,8 @@ var shipDetails = Vue.component('ship-details', {
 			travelColumns: [
 				{
 					title: "Travel",
-					key: "name"
+					key: "name",
+					render: this.renderRowTooltip
 				},
 				{
 					title: " ",
@@ -1957,6 +1963,19 @@ var shipDetails = Vue.component('ship-details', {
 
 			// Update the URL back to the non-loadout version of the same customization.
 			history.replaceState(history.state, document.title, makeCustomizationUrl().href);
+		},
+		renderRowTooltip(h, params) {
+			const tooltip = h(
+				"Tooltip", {
+					props: {
+						content: params.row.description,
+						placement: "left",
+						transfer: true
+					}
+				},
+				params.row.name);
+
+			return tooltip;
 		}
 	},
 	created() {
