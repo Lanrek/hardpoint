@@ -276,6 +276,12 @@
 	transform: rotate(180deg);
 }
 
+/* Increase the weight of the drop shadows on dropdowns so they don't fade into the content. */
+.ivu-dropdown .ivu-select-dropdown,
+.ivu-menu-submenu .ivu-select-dropdown {
+	box-shadow: 0 1px 8px 2px rgba(0,0,0,.4);
+}
+
 /* Add scrollbars back to dropdowns. */
 .ivu-dropdown .ivu-select-dropdown {
 	overflow: auto;
