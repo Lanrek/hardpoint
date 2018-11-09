@@ -1375,13 +1375,14 @@ var itemPortGroup = Vue.component('item-port-group', {
 
 			// When linking item ports, set their attached components to match the first in the group.
 			if (this.linked) {
-				const selectedComponent = this.allGroups[0].members[0].selectedComponent;
+				const selectedBinding = this.allGroups[0].members[0];
 				const childBindings = this.allGroups[0].members[0].childBindings;
 
 				for (const group of this.allGroups) {
 					for (const other of group.members) {
 						// Always set the component when linking a group. Multi-select should stick and be consistent.
-						other.selectedComponent = selectedComponent;
+						other.selectedComponent = selectedBinding.selectedComponent;
+						other.powerSelector = selectedBinding.powerSelector;
 
 						// TODO Currently ignoring third-level ports.
 						if (other.portPath.length == 1) {
@@ -1413,8 +1414,7 @@ var componentSelector = Vue.component('component-selector', {
 	props: ['customization', 'bindings', 'nested'],
 	data: function() {
 		return {
-			visible: false,
-			powerSelector: "Standby"
+			visible: false
 		}
 	},
 	computed: {
