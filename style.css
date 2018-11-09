@@ -57,6 +57,20 @@
 	text-align: right;
 }
 
+/* Component selector header and power selector */
+.component-selector-header {
+	margin-bottom: 4px;
+}
+
+.power-selector {
+	float:right;
+}
+
+.power-selector .ivu-radio-group .ivu-radio-group-item {
+	height: 20px;
+	line-height: 20px;
+}
+
 /* Make tooltips from table headers render nicely. */
 .ivu-table th .ivu-tooltip-rel {
 	padding-top:8px;
@@ -106,6 +120,11 @@
 
 .component-selector + .item-port-group {
 	margin-top: 16px;
+}
+
+/* Adjust location of icons in the component selector. */
+.component-selector .ivu-icon {
+	padding-bottom: 2px;
 }
 
 /* Item port group table layout. */
@@ -222,15 +241,6 @@
 	margin-top: 16px;
 }
 .ivu-table-wrapper:first-child {
-	margin-top: 0px;
-}
-
-/* Merge the power and power usage tables. */
-.power-usage thead {
-	display: none;
-}
-.power-usage {
-	border-top-width: 0px;
 	margin-top: 0px;
 }
 

@@ -287,9 +287,10 @@ class DamageQuantity {
 }
 
 class SummaryText {
-	constructor(patterns, values) {
+	constructor(patterns, component, binding) {
 		this.patterns = patterns;
-		this.values = values;
+		this.component = component;
+		this.binding = binding;
 
 		if (!this.patterns) {
 			this.patterns = ["No further information available"];
@@ -298,7 +299,7 @@ class SummaryText {
 
 	render() {
 		let getValue = key => {
-			let value = _.get(this.values, key);
+			let value = this.component.getValue(key, this.binding);
 
 			if (value.toFixed) {
 				// Round to two places and then drop any trailing 0s.
@@ -355,24 +356,46 @@ class DataforgeComponent {
 		return this._data["itemRequiredTags"];
 	}
 
-	get bulletSpeed() {
+	getValue(name, binding) {
+		const split = name.split(".");
+		const remainder = split.slice(1).join(".");
+
+		let first = this[split[0]];
+		const getterName = "get" + split[0].charAt(0).toUpperCase() + split[0].slice(1);
+		const getter = this[getterName];
+		if (getter) {
+			first = getter.call(this, binding);
+		}
+
+		let result = first;
+		if (remainder) {
+			result = _.get(first, remainder);
+		}
+
+		if (result == undefined) {
+			console.log("Warning: Failed to retrieve component value " + name);
+		}
+		return result;
+	}
+
+	getBulletSpeed(binding) {
 		return _.get(this._components, "ammoContainer.ammo.speed", 0);
 	}
 
-	get bulletDuration() {
+	getBulletDuration(binding) {
 		return _.get(this._components, "ammoContainer.ammo.lifetime", 0);
 	}
 
-	get bulletRange() {
-		return this.bulletSpeed * this.bulletDuration;
+	getBulletRange(binding) {
+		return this.getBulletSpeed(binding) * this.getBulletDuration(binding);
 	}
 
-	get bulletCount() {
+	getBulletCount(binding) {
 		// TODO Support multiple firing modes.
 		return _.get(this._components, "weapon.fireActions[0].pelletCount", 0);
 	}
 
-	get gunAlpha() {
+	getGunAlpha(binding) {
 		let damageInfo = _.get(this._components, "ammoContainer.ammo.areaDamage.damage");
 		if (!damageInfo) {
 			damageInfo = _.get(this._components, "ammoContainer.ammo.impactDamage.damage", []);
@@ -386,46 +409,46 @@ class DataforgeComponent {
 			_.get(damageMap, "THERMAL.value", 0));
 	}
 
-	get gunFireRate() {
+	getGunFireRate(binding) {
 		// TODO Support multiple firing modes.
 		return _.get(this._components, "weapon.fireActions[0].fireRate", 0);
 	}
 
-	get gunBurstDps() {
-		const scaled = this.gunAlpha.scale(this.bulletCount * this.gunFireRate / 60.0);
+	getGunBurstDps(binding) {
+		const scaled = this.getGunAlpha(binding).scale(this.getBulletCount(binding) * this.getGunFireRate(binding) / 60.0);
 		return scaled;
 	}
 
-	get gunStandbyHeat() {
+	getGunStandbyHeat(binding) {
 		return _.get(this._components, "weapon.connection.heatRateOnline", 0);
 	}
 
-	get gunHeatPerShot() {
+	getGunHeatPerShot(binding) {
 		// TODO Support multiple firing modes.
 		return _.get(this._components, "weapon.fireActions[0].heatPerShot", 0);
 	}
 
-	get gunSustainedDps() {
-		let sustainedRate = this.maxCooling / this.gunHeatPerShot;
-		sustainedRate = Math.min(sustainedRate, this.gunFireRate / 60.0);
+	getGunSustainedDps(binding) {
+		let sustainedRate = this.getMaxCooling(binding) / this.getGunHeatPerShot(binding);
+		sustainedRate = Math.min(sustainedRate, this.getGunFireRate(binding) / 60.0);
 
-		const scaled = this.gunAlpha.scale(this.bulletCount * sustainedRate);
+		const scaled = this.getGunAlpha(binding).scale(this.getBulletCount(binding) * sustainedRate);
 		return scaled;
 	}
 
-	get gunMaximumAmmo() {
+	getGunMaximumAmmo(binding) {
 		return _.get(this._components, "ammoContainer.maxAmmoCount", 0);
 	}
 
-	get gunMagazineDuration() {
-		return this.gunMaximumAmmo * 60.0 / this.gunFireRate;
+	getGunMagazineDuration(binding) {
+		return this.getGunMaximumAmmo(binding) * 60.0 / this.getGunFireRate(binding);
 	}
 
-	get gunMagazineDamage() {
-		return this.gunAlpha.scale(this.bulletCount * this.gunMaximumAmmo);
+	getGunMagazineDamage(binding) {
+		return this.getGunAlpha(binding).scale(this.getBulletCount(binding) * this.getGunMaximumAmmo(binding));
 	}
 
-	get missileDamage() {
+	getMissileDamage(binding) {
 		const damageInfo = _.get(this._components, "missle.damage.damage", []);
 		const damageMap = _.keyBy(damageInfo, "damageType");
 
@@ -436,74 +459,74 @@ class DataforgeComponent {
 			_.get(damageMap, "THERMAL.value", 0));
 	}
 
-	get missileRange() {
+	getMissileRange(binding) {
 		return _.get(this._components, "missle.trackingDistanceMax", 0);
 	}
 
-	get missileGuidance() {
+	getMissileGuidance(binding) {
 		return _.capitalize(_.get(this._components, "missle.trackingSignalType")) || "CrossSection";
 	}
 
-	get missileTrackingAngle() {
+	getMissileTrackingAngle(binding) {
 		return _.get(this._components, "missle.trackingAngle", 0);
 	}
 
-	get missileLockTime() {
+	getMissileLockTime(binding) {
 		return _.get(this._components, "missle.lockTime", 0);
 	}
 
-	get missileMaximumSpeed() {
+	getMissileMaximumSpeed(binding) {
 		return _.get(this._components, "missle.linearSpeed", 0);
 	}
 
-	get missileFlightTime() {
+	getMissileFlightTime(binding) {
 		return _.get(this._components, "missle.interceptTime", 0) + _.get(this._components, "missle.terminalTime", 0);
 	}
 
-	get missileFlightRange() {
-		return this.missileMaximumSpeed * this.missileFlightTime;
+	getMissileFlightRange(binding) {
+		return this.getMissileMaximumSpeed(binding) * this.getMissileFlightTime(binding);
 	}
 
-	get shieldCapacity() {
+	getShieldCapacity(binding) {
 		return _.get(this._components, "shieldGenerator.maxShieldHealth", 0);
 	}
 
-	get shieldRegeneration() {
+	getShieldRegeneration(binding) {
 		return _.get(this._components, "shieldGenerator.maxShieldRegen", 0);
 	}
 
-	get shieldDownDelay() {
+	getShieldDownDelay(binding) {
 		return _.get(this._components, "shieldGenerator.downedRegenDelay", 0);
 	}
 
-	get quantumFuel() {
+	getQuantumFuel(binding) {
 		return _.get(this._components, "quantumFuelTank.capacity", 0);
 	}
 
-	get quantumRange() {
+	getQuantumRange(binding) {
 		// Underlying unit appears to be kilometers; convert to gigameters.
 		return _.get(this._components, "quantumDrive.jumpRange", 0) / 1000000;
 	}
 
-	get quantumEfficiency() {
+	getQuantumEfficiency(binding) {
 		// Underlying unit is fuel used per megameter travelled; convert to fuel/gigameter.
 		return _.get(this._components, "quantumDrive.quantumFuelRequirement", 0) * 1000;
 	}
 
-	get quantumSpeed() {
+	getQuantumSpeed(binding) {
 		// Underlying unit appears to be m/sec; convert to megameters/sec.
 		return _.get(this._components, "quantumDrive.jump.driveSpeed", 0) / 1000000;
 	}
 
-	get quantumCooldown() {
+	getQuantumCooldown(binding) {
 		return _.get(this._components, "quantumDrive.jump.cooldownTime", 0);
 	}
 
-	get quantumSpoolTime() {
+	getQuantumSpoolTime(binding) {
 		return _.get(this._components, "quantumDrive.jump.spoolUpTime", 0);
 	}
 
-	get quantumCalibrationTime() {
+	getQuantumCalibrationTime(binding) {
 		const required = _.get(this._components, "quantumDrive.jump.maxCalibrationRequirement", 0);
 		const rate = _.get(this._components, "quantumDrive.jump.calibrationRate", 0);
 		return required / rate;
@@ -526,7 +549,19 @@ class DataforgeComponent {
 		return 0;
 	}
 
-	get powerBase() {
+	getCurrentPower(binding) {
+		if (binding.powerSelector == "Active") {
+			return  this.getPowerGeneration(binding) - this.getPowerDraw(binding);
+		}
+
+		if (binding.powerSelector == "Standby") {
+			return  this.getPowerGeneration(binding) - this.getPowerBase(binding);
+		}
+
+		return 0;
+	}
+
+	getPowerBase(binding) {
 		if (this.type != "PowerPlant") {
 			return _.get(this._connections, "POWER.powerBase", 0);
 		}
@@ -534,7 +569,7 @@ class DataforgeComponent {
 		return 0;
 	}
 
-	get powerDraw() {
+	getPowerDraw(binding) {
 		if (this.type != "PowerPlant") {
 			return _.get(this._connections, "POWER.powerDraw", 0);
 		}
@@ -542,48 +577,48 @@ class DataforgeComponent {
 		return 0;
 	}
 
-	get powerIncrease() {
-		return this.powerDraw - this.powerBase;
+	getPowerIncrease(binding) {
+		return this.getPowerDraw(binding) - this.getPowerBase(binding);
 	}
 
-	get powerGeneration() {
-		if (this.type == "PowerPlant") {
+	getPowerGeneration(binding) {
+		if (this.type == "PowerPlant" && binding.powerSelector != "Off") {
 			return _.get(this._connections, "POWER.powerDraw", 0);
 		}
 
 		return 0;
 	}
 
-	get powerToEm() {
+	getPowerToEm(binding) {
 		return _.get(this._connections, "POWER.powerToEM", 0);
 	}
 
-	get flightAngularPower() {
+	getFlightAngularPower(binding) {
 		return _.get(this._components, "flightController.powerUsage.angularAccelerationPowerAmount", 0);
 	}
 
-	get flightLinearPower() {
+	getFlightLinearPower(binding) {
 		return _.get(this._components, "flightController.powerUsage.linearAccelerationPowerAmount", 0);
 	}
 
-	get coolingCoefficient() {
+	getCoolingCoefficient(binding) {
 		return _.get(this._connections, "HEAT.coolingCoefficient", 0);
 	}
 
-	get overheatTemperature() {
+	getOverheatTemperature(binding) {
 		const maxTemperature = _.get(this._connections, "HEAT.maximumTemperature", 0);
 		const overheatRatio = _.get(this._connections, "HEAT.overheatTemperatureRatio", 0);
 
 		return maxTemperature * overheatRatio;
 	}
 
-	get maxCooling() {
+	getMaxCooling(binding) {
 		// Newton's law of cooling; ambient temperature deduced to be 0.
-		const afterOneSec = this.overheatTemperature * Math.exp(-1 * this.coolingCoefficient);
-		return this.overheatTemperature - afterOneSec;
+		const afterOneSec = this.getOverheatTemperature(binding) * Math.exp(-1 * this.getCoolingCoefficient(binding));
+		return this.getOverheatTemperature(binding) - afterOneSec;
 	}
 
-	get summary() {
+	getSummary(binding) {
 		if (this.type == "WeaponGun") {
 			let damage = "{gunAlpha.total}";
 			if (this.bulletCount > 1) {
@@ -593,9 +628,10 @@ class DataforgeComponent {
 			let summary = new SummaryText([
 				"{gunBurstDps.total} dps = " + damage + " {gunAlpha.type} damage X {gunFireRate} rpm",
 				"{gunSustainedDps.total} sustained dps ({gunHeatPerShot} heat/shot with {maxCooling} max cooling/sec)",
-				"{bulletRange} meter range = {bulletSpeed} m/s projectile speed X {bulletDuration} seconds"], this);
+				"{bulletRange} meter range = {bulletSpeed} m/s projectile speed X {bulletDuration} seconds"],
+				this, binding);
 
-			if (this.gunMaximumAmmo > 0) {
+			if (this.getGunMaximumAmmo(binding) > 0) {
 				summary.patterns.push("{gunMaximumAmmo} rounds deplete in {gunMagazineDuration} seconds for potentially {gunMagazineDamage.total} damage");
 			}
 
@@ -606,19 +642,20 @@ class DataforgeComponent {
 
 		if (this.type == "Turret" || this.type == "TurretBase") {
 			if (this.itemPorts[0]) {
-				return new SummaryText(["{itemPorts.length} size {itemPorts.[0].maxSize} item ports"], this);
+				return new SummaryText(["{itemPorts.length} size {itemPorts.[0].maxSize} item ports"], this, binding);
 			}
 		}
 
 		if (this.type == "WeaponMissile") {
-			return new SummaryText(["{itemPorts.length} size {itemPorts.[0].maxSize} missiles"], this);
+			return new SummaryText(["{itemPorts.length} size {itemPorts.[0].maxSize} missiles"], this, binding);
 		}
 
 		if (this.type == "Shield") {
 			return new SummaryText([
 				"{shieldCapacity} shield capacity",
 				"Regenerates {shieldRegeneration} capacity/second with a {shieldDownDelay} second delay after dropping",
-				"{powerBase} power/second in standby and an additional {powerIncrease} when recharging"], this);
+				"{powerBase} power/second in standby and an additional {powerIncrease} when recharging"],
+				this, binding);
 		}
 
 		if (this.type == "QuantumDrive") {
@@ -626,7 +663,8 @@ class DataforgeComponent {
 				"{quantumRange} gigameter jump distance at {quantumSpeed} megameters/sec",
 				"Consumes {quantumEfficiency} fuel per gigameter",
 				"Calibrates in no less than {quantumCalibrationTime} seconds and spools in {quantumSpoolTime} seconds",
-				"{quantumCooldown} second cooldown after jumping"], this);
+				"{quantumCooldown} second cooldown after jumping"],
+				this, binding);
 		}
 
 		if (this.type == "Ordinance") {
@@ -634,18 +672,19 @@ class DataforgeComponent {
 				"{missileDamage.total} {missileDamage.type} damage",
 				"{missileLockTime} seconds lock time with {missileRange} meter lock range",
 				"{missileGuidance} sensors with {missileTrackingAngle} degree view",
-				"{missileFlightRange} meter flight = {missileMaximumSpeed} m/s speed X {missileFlightTime} seconds"], this);
+				"{missileFlightRange} meter flight = {missileMaximumSpeed} m/s speed X {missileFlightTime} seconds"],
+				this, binding);
 		}
 
 		if (this.type == "Container") {
-			return new SummaryText([
-				"{containerCapacity} SCUs cargo capacity"], this);
+			return new SummaryText(["{containerCapacity} SCUs cargo capacity"], this, binding);
 		}
 
 		if (this.type == "PowerPlant") {
 			return new SummaryText([
 				"{powerGeneration} maximum power generation per second",
-				"{powerToEm} increase in EM signature per power generated"], this);
+				"{powerToEm} increase in EM signature per power generated"],
+				this, binding);
 		}
 
 		return new SummaryText();
@@ -827,6 +866,8 @@ class ItemBinding {
 		this.parentBinding = parentBinding;
 		this.childBindings = {};
 
+		this._powerSelector = "Standby";
+
 		this.defaultComponent = undefined;
 		if (defaultItems) {
 			const defaultComponentName = this._getDefaultComponent(defaultItems);
@@ -837,6 +878,19 @@ class ItemBinding {
 		}
 
 		this._setSelectedComponent(this.defaultComponent, defaultItems);
+	}
+
+	get powerSelector() {
+		let rootBinding = this;
+		while (rootBinding.parentBinding) {
+			rootBinding = rootBinding.parentBinding;
+		}
+
+		return rootBinding._powerSelector;
+	}
+
+	set powerSelector(value) {
+		this._powerSelector = value;
 	}
 
 	get selectedComponent() {
@@ -1050,56 +1104,16 @@ class ShipCustomization {
 	}
 
 	getAttributes(category=undefined, context=undefined) {
-		const allComponents = this._getAllAttachedComponents();
-		const weaponComponents = allComponents.filter(x => x.type == "WeaponGun");
-		const shieldComponents = allComponents.filter(x => x.type == "Shield");
+		const allComponents = this._getAllComponentBindings();
 
-		const quantumFuel = allComponents.reduce((total, x) => total + x.quantumFuel, 0);
-		const quantumEfficiency = allComponents.reduce((total, x) => total + x.quantumEfficiency, 0);
-		const containerCapacity = allComponents.reduce((total, x) => total + x.containerCapacity, 0);
+		const quantumFuel = this._sumComponentValue(allComponents, "quantumFuel");
+		const quantumEfficiency = this._sumComponentValue(allComponents, "quantumEfficiency");
+		const containerCapacity = this._sumComponentValue(allComponents, "containerCapacity");
 
-		const powerUsages = [
-			{
-				name: "Standby Usage",
-				category: "Power Usage",
-				description: "Total power consumption of all components in standby mode",
-				value: Math.round(allComponents.reduce((total, x) => total + x.powerBase, 0)),
-				_disabled: true
-			},
-			{
-				name: "Weapons Firing Usage",
-				category: "Power Usage",
-				description: "Additional power consumed when all weapons are firing",
-				value: Math.round(weaponComponents.reduce((total, x) => total + x.powerIncrease, 0))
-			},
-			{
-				name: "Shield Recharge Usage",
-				category: "Power Usage",
-				description: "Additional power consumed when shields are actively recharging",
-				value: Math.round(shieldComponents.reduce((total, x) => total + x.powerIncrease, 0))
-			},
-			{
-				name: "Forward Acceleration Usage",
-				category: "Power Usage",
-				description: "Additional power consumed when accelerating forward",
-				value: Math.round(allComponents.reduce((total, x) => total + x.flightLinearPower, 0))
-			},
-			{
-				name: "Maneuvering Usage",
-				category: "Power Usage",
-				description: "Additional power consumed when applying rotational acceleration",
-				value: Math.round(allComponents.reduce((total, x) => total + x.flightAngularPower, 0))
-			}
-		];
-
-		let selectedPowerUsage = 0;
-		if (context) {
-			selectedPowerUsage = _.sum(powerUsages.filter(x => x.name in context.selectedPowerUsages).map(x => x.value));
-		}
+		const currentPower = this._sumComponentValue(allComponents, "currentPower");
+		const powerGeneration = this._sumComponentValue(allComponents, "powerGeneration");
 
 		let attributes = this._specification.getAttributes();
-		attributes = attributes.concat(powerUsages);
-
 		attributes = attributes.concat([
 			{
 				name: "Loadout Name",
@@ -1126,43 +1140,55 @@ class ShipCustomization {
 				name: "Power Generation",
 				category: "Power",
 				description: "Total power generating capacity of all power plants",
-				value: Math.round(allComponents.reduce((total, x) => total + x.powerGeneration, 0))
+				value: Math.round(powerGeneration)
 			},
 			{
-				name: "Selected Power Usage",
+				name: "Standby Power Usage",
 				category: "Power",
-				description: "Sum of all selected power usages",
-				value: selectedPowerUsage
+				description: "Total power consumption of all components in standby mode",
+				value: Math.round(this._sumComponentValue(allComponents, "powerBase"))
+			},
+			{
+				name: "Current Power Usage",
+				category: "Power",
+				description: "Sum of the power consumption of all components in their current state",
+				value: Math.round(powerGeneration - currentPower)
+			},
+			{
+				name: "Current Usage Ratio",
+				category: "Power",
+				description: "Sum of the power consumption of all components in their current state",
+				value: Math.round(100 * (powerGeneration - currentPower) / powerGeneration) + "%"
 			},
 			{
 				name: "Total Shields",
 				category: "Survivability",
 				description: "Total capacity of all shield generators",
-				value: Math.round(allComponents.reduce((total, x) => total + x.shieldCapacity, 0))
+				value: Math.round(this._sumComponentValue(allComponents, "shieldCapacity"))
 			},
 			{
 				name: "Total Burst DPS",
 				category: "Damage",
 				description: "Total gun DPS without considering heat, power, or ammo",
-				value: Math.round(allComponents.reduce((total, x) => total + x.gunBurstDps.total, 0))
+				value: Math.round(this._sumComponentValue(allComponents, "gunBurstDps.total"))
 			},
 			{
 				name: "Total Sustained DPS",
 				description: "Total gun DPS that can be sustained indefinitely",
 				category: "Damage",
-				value: Math.round(allComponents.reduce((total, x) => total + x.gunSustainedDps.total, 0))
+				value: Math.round(this._sumComponentValue(allComponents, "gunSustainedDps.total"))
 			},
 			{
 				name: "Total Missile Damage",
 				description: "Total potential damage of all missiles",
 				category: "Damage",
-				value: Math.round(allComponents.reduce((total, x) => total + x.missileDamage.total, 0))
+				value: Math.round(this._sumComponentValue(allComponents, "missileDamage.total"))
 			},
 			{
 				name: "Quantum Speed",
 				description: "Max quantum travel speed in megameters/sec",
 				category: "Travel",
-				value: _.round(allComponents.reduce((total, x) => total + x.quantumSpeed, 0), 2)
+				value: _.round(this._sumComponentValue(allComponents, "quantumSpeed"), 2)
 			},
 			{
 				name: "Quantum Fuel",
@@ -1193,9 +1219,13 @@ class ShipCustomization {
 		return allVehicles[this.shipId.combinedId];
 	}
 
-	_getAllAttachedComponents() {
+	_sumComponentValue(components, name) {
+		return components.reduce((total, x) => total + x.selectedComponent.getValue(name, x), 0);
+	}
+
+	_getAllComponentBindings() {
 		const traverse = (binding) => {
-			let result = [binding.selectedComponent];
+			let result = [binding];
 			for (const child of Object.values(binding.childBindings)) {
 				result = result.concat(traverse(child));
 			}
@@ -1208,7 +1238,7 @@ class ShipCustomization {
 			result = result.concat(traverse(binding));
 		}
 
-		result = result.filter(n => n);
+		result = result.filter(n => n.selectedComponent);
 		return result;
 	}
 }
@@ -1368,7 +1398,7 @@ var itemPortGroup = Vue.component('item-port-group', {
 
 var componentDisplay = Vue.component('component-display', {
 	template: '#component-display',
-	props: ['componentName', 'disabled'],
+	props: ['componentName', 'disabled', 'bindings'],
 	computed: {
 		component: function () {
 			return allItems[this.componentName];
@@ -1380,10 +1410,11 @@ var componentDisplay = Vue.component('component-display', {
 // If so, the selector assumes all the ports are all identical to the first!
 var componentSelector = Vue.component('component-selector', {
 	template: '#component-selector',
-	props: ['customization', 'bindings'],
+	props: ['customization', 'bindings', 'nested'],
 	data: function() {
 		return {
-			visible: false
+			visible: false,
+			powerSelector: "Standby"
 		}
 	},
 	computed: {
@@ -1425,6 +1456,11 @@ var componentSelector = Vue.component('component-selector', {
 				for (const binding of this.bindings) {
 					binding.selectedComponent = allItems[name];
 				}
+			}
+		},
+		onPowerSelectorChange: function(value) {
+			for (const binding of this.bindings) {
+				binding.powerSelector = value;
 			}
 		}
 	}
@@ -1724,9 +1760,6 @@ var shipDetails = Vue.component('ship-details', {
 
 			selectedCustomization: {},
 
-			// Dictionary where the values are ignored to make a reactive set.
-			selectedPowerUsages: {"Standby Usage": true, "Weapons Firing Usage": true, "Maneuvering Usage": true},
-
 			// Also defines the section display order.
 			sectionNames: ["Guns", "Missiles", "Systems"],
 			expandedSections: ["Guns", "Missiles", "Systems"],
@@ -1746,7 +1779,7 @@ var shipDetails = Vue.component('ship-details', {
 					title: " ",
 					key: "value",
 					align: "right",
-					width: 60
+					width: 75
 				}
 			],
 			powerColumns: [
@@ -1758,43 +1791,7 @@ var shipDetails = Vue.component('ship-details', {
 					title: " ",
 					key: "value",
 					align: "right",
-					width: 60
-				}
-			],
-			powerUsageColumns: [
-				{
-					width: 30,
-					align: "center",
-					render: (h, params) => {
-						return h("Checkbox", {
-							props: {
-								value: params.row.name in this.selectedPowerUsages,
-								disabled: params.row._disabled
-							},
-							on: {
-								input: (value) => {
-									if (value) {
-										Vue.set(this.selectedPowerUsages, params.row.name, true);
-									}
-									else {
-										Vue.delete(this.selectedPowerUsages, params.row.name);
-									}
-
-									this.$emit("input", value)
-								}
-							}
-						});
-					}
-				},
-				{
-					title: "Power",
-					key: "name"
-				},
-				{
-					title: " ",
-					key: "value",
-					align: "right",
-					width: 60
+					width: 75
 				}
 			],
 			damageColumns: [
@@ -1806,7 +1803,7 @@ var shipDetails = Vue.component('ship-details', {
 					title: " ",
 					key: "value",
 					align: "right",
-					width: 60
+					width: 75
 				}
 			],
 			maneuverabilityColumns: [
@@ -1818,7 +1815,7 @@ var shipDetails = Vue.component('ship-details', {
 					title: " ",
 					key: "value",
 					align: "right",
-					width: 60
+					width: 75
 				}
 			],
 			survivabilityColumns: [
@@ -1830,7 +1827,7 @@ var shipDetails = Vue.component('ship-details', {
 					title: " ",
 					key: "value",
 					align: "right",
-					width: 60
+					width: 75
 				}
 			],
 			travelColumns: [
@@ -1842,7 +1839,7 @@ var shipDetails = Vue.component('ship-details', {
 					title: " ",
 					key: "value",
 					align: "right",
-					width: 60
+					width: 75
 				}
 			]
 		}

@@ -213,7 +213,8 @@
 													<template slot-scope="child">
 														<component-selector
 															:customization="selectedCustomization"
-															:bindings="child.targetBindings">
+															:bindings="child.targetBindings"
+															:nested="true">
 														</component-selector>
 													</template>
 												</item-port-group>
@@ -227,11 +228,6 @@
 					<i-col span="7">
 						<i-table :columns="utilityColumns" :data="selectedCustomization.getAttributes('Utility')"></i-table>
 						<i-table :columns="powerColumns" :data="selectedCustomization.getAttributes('Power', this)"></i-table>
-						<i-table
-							class="power-usage"
-							:columns="powerUsageColumns"
-							:data="selectedCustomization.getAttributes('Power Usage')">
-						</i-table>
 						<i-table :columns="damageColumns" :data="selectedCustomization.getAttributes('Damage')"></i-table>
 						<i-table :columns="maneuverabilityColumns" :data="selectedCustomization.getAttributes('Maneuverability')"></i-table>
 						<i-table :columns="survivabilityColumns" :data="selectedCustomization.getAttributes('Survivability')"></i-table>
@@ -253,15 +249,18 @@
 						<strong>{{component.displayName}}</strong>
 					</i-col>
 					<i-col span="12" class="right">
-						{{component.type}}
+						<p>Size {{component.size}} {{component.type}}</p>
 					</i-col>
 				</row>
 				<row v-if="componentName" :gutter="16">
 					<i-col span="12">
-						<span v-html="component.summary.render()"></span>
+						<span v-html="component.getSummary(bindings[0]).render()"></span>
 					</i-col>
-						<i-col span="12" class="right">
-						Size {{component.size}}
+					<i-col span="12" class="right">
+						<span>
+							{{component.getCurrentPower(bindings[0])}}<icon type="ios-flash" size="14" color="LightSeaGreen" />
+						</span>
+						<!--<span>50<icon type="ios-flame" size="14" color="DarkRed" /></span>-->
 					</i-col>
 				</row>
 			</i-button>
@@ -269,8 +268,16 @@
 
 		<template id="component-selector">
 			<div class="component-selector">
-				{{label}}
-				<br />
+				<p class="component-selector-header">
+					{{label}}
+					<span class="power-selector" v-if="!nested">
+						<radio-group v-model="powerSelector" @on-change="onPowerSelectorChange" type="button" size="small">
+							<radio label="Off"></radio>
+							<radio label="Standby"></radio>
+							<radio label="Active"></radio>
+						</radio-group>
+					</span>
+				</p>
 				<dropdown
 					ref="dropdown"
 					:trigger="bindings[0].port.editable ? 'click' : 'custom'"
@@ -278,13 +285,16 @@
 					@on-visible-change="onVisibleChange"
 					@on-click="onClick">
 
-					<component-display :component-name="selectedComponentName" :disabled="!bindings[0].port.editable">
+					<component-display
+						:component-name="selectedComponentName"
+						:bindings="bindings"
+						:disabled="!bindings[0].port.editable">
 					</component-display>
 					<span :class="{'flip-icon': visible}"><i class="ivu-icon ivu-icon-arrow-down-b ivu-select-arrow"></i></span>
 
 					<dropdown-menu slot="list">
 						<dropdown-item v-for="componentName in availableComponents" :name="componentName" :key="componentName">
-							<component-display :component-name="componentName">
+							<component-display :component-name="componentName" :bindings="bindings">
 							</component-display>
 						</dropdown-item>
 					</dropdown-menu>
