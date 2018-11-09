@@ -814,7 +814,8 @@ class ItemBindingGroup {
 
 	get allIdentical() {
 		const componentsIdentical = function(left, right) {
-			return _.get(left, "name") == _.get(right, "name");
+			// TODO This groups together slightly different turrets even when they're editable.
+			return _.get(left, "name") == _.get(right, "name") || ItemBindingGroup.turretsSimilar(left, right);
 		};
 
 		const first = this.members[0];
@@ -842,6 +843,13 @@ class ItemBindingGroup {
 		return true;
 	};
 
+	static turretsSimilar(left, right) {
+		return (_.get(left, "type") == "TurretBase" || _.get(right, "type") == "Turret") &&
+			_.get(left, "type") == _.get(right, "type") &&
+			_.get(left, "itemPorts.length") == _.get(right, "itemPorts.length") &&
+			_.get(left, "itemPorts.[0].maxSize") == _.get(right, "itemPorts.[0].maxSize")
+	}
+
 	static findGroups(bindings) {
 		if (bindings == undefined) {
 			return undefined;
@@ -854,8 +862,12 @@ class ItemBindingGroup {
 				g[0].port.maxSize == binding.port.maxSize &&
 				g[0].port.editable == binding.port.editable &&
 				// Handle the case where uneditable item ports have different components attached.
-				// TODO Consider allowing different types of turrets that share child ports to group.
-				(g[0].port.editable || _.get(g[0].selectedComponent, "name") == _.get(binding.selectedComponent, "name")) &&
+				(
+					g[0].port.editable ||
+					_.get(g[0].selectedComponent, "name") == _.get(binding.selectedComponent, "name") ||
+					// Handle the case where uneditable turrets don't differ in interesting ways.
+					ItemBindingGroup.turretsSimilar(g[0].selectedComponent, binding.selectedComponent)
+				) &&
 				_.isEqual(g[0].port.types, binding.port.types) &&
 				_.isEqual(g[0].port.tags, binding.port.tags));
 
