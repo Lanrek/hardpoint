@@ -866,8 +866,6 @@ class ItemBinding {
 		this.parentBinding = parentBinding;
 		this.childBindings = {};
 
-		this._powerSelector = "Standby";
-
 		this.defaultComponent = undefined;
 		if (defaultItems) {
 			const defaultComponentName = this._getDefaultComponent(defaultItems);
@@ -878,6 +876,12 @@ class ItemBinding {
 		}
 
 		this._setSelectedComponent(this.defaultComponent, defaultItems);
+
+		const defaultActiveTypes = ["Turret", "TurretBase", "WeaponGun", "Cooler"];
+		this._powerSelector = "Standby";
+		if (this.selectedComponent && defaultActiveTypes.includes(this.selectedComponent.type)) {
+			this._powerSelector = "Active";
+		}
 	}
 
 	get powerSelector() {
