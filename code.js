@@ -551,11 +551,15 @@ class DataforgeComponent {
 
 	getCurrentPower(binding) {
 		if (binding.powerSelector == "Active") {
-			return  this.getPowerGeneration(binding) - this.getPowerDraw(binding);
+			if (this.type == "FlightController") {
+				return -1 * this.getPowerBase(binding) - this.getFlightAngularPower(binding) - this.getFlightLinearPower(binding);
+			}
+
+			return this.getPowerGeneration(binding) - this.getPowerDraw(binding);
 		}
 
 		if (binding.powerSelector == "Standby") {
-			return  this.getPowerGeneration(binding) - this.getPowerBase(binding);
+			return this.getPowerGeneration(binding) - this.getPowerBase(binding);
 		}
 
 		return 0;
@@ -684,6 +688,13 @@ class DataforgeComponent {
 			return new SummaryText([
 				"{powerGeneration} maximum power generation per second",
 				"{powerToEm} increase in EM signature per power generated"],
+				this, binding);
+		}
+
+		if (this.type == "FlightController") {
+			return new SummaryText([
+				"{flightAngularPower} power/second when accelerating rotationally",
+				"{flightLinearPower} power/second when accelerating linearly"],
 				this, binding);
 		}
 
@@ -877,7 +888,7 @@ class ItemBinding {
 
 		this._setSelectedComponent(this.defaultComponent, defaultItems);
 
-		const defaultActiveTypes = ["Turret", "TurretBase", "WeaponGun", "Cooler"];
+		const defaultActiveTypes = ["Turret", "TurretBase", "WeaponGun", "Cooler", "FlightController"];
 		this._powerSelector = "Standby";
 		if (this.selectedComponent && defaultActiveTypes.includes(this.selectedComponent.type)) {
 			this._powerSelector = "Active";
@@ -1765,13 +1776,14 @@ var shipDetails = Vue.component('ship-details', {
 			selectedCustomization: {},
 
 			// Also defines the section display order.
-			sectionNames: ["Guns", "Missiles", "Systems"],
-			expandedSections: ["Guns", "Missiles", "Systems"],
+			sectionNames: ["Guns", "Missiles", "Systems", "Flight"],
+			expandedSections: ["Guns", "Missiles", "Systems", "Flight"],
 			// Also defines the section precedence order; lowest precedence is first.
 			sectionDefinitions: {
 				"Guns": ["WeaponGun", "Turret", "TurretBase"],
 				"Missiles": ["WeaponMissile"],
-				"Systems": ["Cooler", "Shield", "PowerPlant", "QuantumDrive"]
+				"Systems": ["Cooler", "Shield", "PowerPlant", "QuantumDrive"],
+				"Flight": ["FlightController"]
 			},
 
 			utilityColumns: [
