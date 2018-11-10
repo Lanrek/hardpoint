@@ -1477,6 +1477,26 @@ var componentSelector = Vue.component('component-selector', {
 		selectedComponentName: function() {
 			const component = this.bindings[0].selectedComponent;
 			return _.get(component, "name");
+		},
+		activePowerName: function() {
+			const type = _.get(this.bindings[0].selectedComponent, "type");
+			if (type == "Container" || type == "PowerPlant") {
+				return undefined;
+			}
+			if (type == "WeaponGun" || type == "WeaponMissile" || type == "Turret" || type == "TurretBase") {
+				return "Firing";
+			}
+			if (type == "Shield") {
+				return "Recharging";
+			}
+			if (type == "QuantumDrive") {
+				return "Spooling";
+			}
+			if (type == "FlightController") {
+				return "Maneuvering";
+			}
+
+			return "Active";
 		}
 	},
 	methods: {

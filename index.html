@@ -272,15 +272,15 @@
 			<div class="component-selector">
 				<p class="component-selector-header">
 					{{label}}
-					<span class="power-selector" v-if="!nested">
+					<span class="power-selector" v-if="!nested && selectedComponentName">
 						<radio-group
 							:value="bindings[0].powerSelector"
 							@on-change="onPowerSelectorChange"
 							type="button"
 							size="small">
-							<radio label="Off"></radio>
-							<radio label="Standby"></radio>
-							<radio label="Active"></radio>
+							<radio label="Off">Off</radio>
+							<radio label="Standby">Standby</radio>
+							<radio label="Active" v-if="activePowerName">{{activePowerName}}</radio>
 						</radio-group>
 					</span>
 				</p>
