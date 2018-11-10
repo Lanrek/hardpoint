@@ -6,7 +6,9 @@ var makeCustomizationUrl = function() {
 
 var copyShareableLink = new ClipboardJS(".clipboard-button", {
 	text: function() {
-		return makeCustomizationUrl().href;
+		const link = makeCustomizationUrl().href;
+		sendEvent("Customize", "CopyLink", link);
+		return link;
 	}
 });
 
@@ -58,6 +60,13 @@ var nullifySentinel = function(str) {
 	}
 
 	return str;
+}
+
+var sendEvent = function(category, action, label) {
+	gtag('event', action, {
+		'event_category': category,
+		'event_label': label
+	});
 }
 
 
@@ -1420,6 +1429,8 @@ var itemPortGroup = Vue.component('item-port-group', {
 					}
 				}
 			}
+
+			sendEvent("Customize", "Link", this.linked);
 		}
 	}
 });
@@ -1475,6 +1486,10 @@ var componentSelector = Vue.component('component-selector', {
 			// Fix the width of the dropdown dynamically since the dropdown widget doesn't handle padding.
 			const elementWidth = this.$refs["dropdown"].$el.offsetWidth;
 			this.$refs["dropdown"].$refs["drop"].$el.style.width = elementWidth + "px";
+
+			if (this.visible) {
+				sendEvent("Customize", "ViewComponents", this.bindings[0].port.name);
+			}
 		},
 		onClick: function(name) {
 			// Don't set component if it didn't change, because that would clear the child ports unnecessarily.
@@ -1484,11 +1499,15 @@ var componentSelector = Vue.component('component-selector', {
 					binding.selectedComponent = allItems[name];
 				}
 			}
+
+			sendEvent("Customize", "SelectComponent", name);
 		},
 		onPowerSelectorChange: function(value) {
 			for (const binding of this.bindings) {
 				binding.powerSelector = value;
 			}
+
+			sendEvent("Customize", "ChangePower", value);
 		}
 	}
 });
@@ -1730,6 +1749,13 @@ var shipList = Vue.component('ship-list', {
 		},
 		onCompareSelected(event) {
 			this.comparing = !this.comparing;
+			sendEvent("Comparison", "Compare", this.comparing);
+		},
+		onSortChange(event) {
+			sendEvent("Comparison", "Sort", event.key);
+		},
+		onFilterChange(event) {
+			sendEvent("Comparison", "Filter", event.key);
 		},
 		getAttributeFilter(key) {
 			const unique = [...new Set(defaultShipCustomizations.map(c => c.getAttributes().find(e => e.name == key).value))];
@@ -1768,6 +1794,11 @@ var shipList = Vue.component('ship-list', {
 					class: "ivu-table-cell-sort"
 				},
 				[tooltip]);
+		}
+	},
+	watch: {
+		searchInput: function(value) {
+			sendEvent("Comparison", "Search", value);
 		}
 	},
 	mounted() {
@@ -1967,8 +1998,12 @@ var shipDetails = Vue.component('ship-details', {
 			let url = new URL(location.href);
 			url.hash = ["/loadouts", this.selectedCustomization.storageKey].concat(url.hash.split("/").slice(-1)).join("/");
 			history.replaceState(history.state, document.title, url.href);
+
+			sendEvent("Customize", "Save", this.selectedCustomization.name);
 		},
 		onClickDelete: function(event) {
+			sendEvent("Customize", "Delete", this.selectedCustomization.name);
+
 			loadoutStorage.remove(this.selectedCustomization.storageKey);
 			this.selectedCustomization.storageKey = undefined;
 			this.selectedCustomization.name = undefined;

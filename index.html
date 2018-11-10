@@ -107,6 +107,8 @@
 					<i-col span="24">
 						<i-table
 							ref="table"
+							@on-sort-change="onSortChange"
+							@on-filter-change="onFilterChange"
 							:columns="attributeColumns"
 							:data="shipAttributes"
 							:height="tableHeight"
