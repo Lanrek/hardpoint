@@ -78,7 +78,6 @@
 }
 
 .summary-tables .ivu-table-cell .ivu-tooltip-rel {
-	min-width: 240px;
 	padding-top: 15px;
 	padding-bottom: 15px;
 	padding-left: 4px;
@@ -191,7 +190,7 @@
 	padding: 0px 16px 0px 16px;
 }
 
-.header h1 {
+.header h1 a {
 	color: var(--iview-background);
 	line-height: 40px;
 }
