@@ -173,6 +173,8 @@ filters = {
 		"vehicleSpecification.movement.ifcsStates.[].state": None,
 		"vehicleSpecification.movement.ifcsStates.[].scmMode.maxVelocity": None,
 		"vehicleSpecification.movement.ifcsStates.[].ab2CruMode.criuseSpeed": None,
+		"vehicleSpecification.movement.ifcsStates.[].rotationalAxes.[].axis": None,
+		"vehicleSpecification.movement.ifcsStates.[].rotationalAxes.[].maxSpeed": None,
 		"vehicleSpecification.parts.[]": "vehicle_part",
 		"vehicleSpecification.ports.[]": "port",
 	},

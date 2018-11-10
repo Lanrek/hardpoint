@@ -145,6 +145,12 @@ class ShipSpecification {
 		const scmVelocity = _.get(ifcsStates, "flightSpace.scmMode.maxVelocity", 0);
 		const cruiseVelocity = _.get(ifcsStates, "flightSpace.ab2CruMode.criuseSpeed", 0);
 
+		const rotationalAxes = _.keyBy(_.get(ifcsStates, "flightSpace.rotationalAxes", {}), "axis");
+		const maxYaw = _.get(rotationalAxes, "YAW.maxSpeed", 0);
+		const maxPitch = _.get(rotationalAxes, "PITCH.maxSpeed", 0);
+		const maxRoll = _.get(rotationalAxes, "ROLL.maxSpeed", 0);
+		const maxTurn = Math.max(maxYaw, maxPitch);
+
 		const mannedTurrets = this.itemPorts.filter(p => p.matchesType("TurretBase", "MannedTurret"));
 
 		const size = this._data["size"];
@@ -183,6 +189,31 @@ class ShipSpecification {
 				category: "Maneuverability",
 				description: "Maximum speed with afterburner engaged",
 				value: cruiseVelocity
+			},
+			{
+				name: "Yaw Rate Limit",
+				category: "Maneuverability",
+				description: "Maximum yaw rate in degrees/second not considering acceleration",
+				value: maxYaw
+			},
+			{
+				name: "Pitch Rate Limit",
+				category: "Maneuverability",
+				description: "Maximum pitch rate in degrees/second not considering acceleration",
+				value: maxPitch
+			},
+			{
+				name: "Turn Rate Limit",
+				category: "Maneuverability",
+				description: "Maximum yaw or pitch rate in degrees/second not considering acceleration",
+				value: maxTurn,
+				comparison: true
+			},
+			{
+				name: "Roll Rate Limit",
+				category: "Maneuverability",
+				description: "Maximum roll rate in degrees/second not considering acceleration",
+				value: maxRoll
 			},
 			{
 				name: "Total Hitpoints",
@@ -1139,7 +1170,7 @@ class ShipCustomization {
 		return this._specification.tags;
 	}
 
-	getAttributes(category=undefined, context=undefined) {
+	getAttributes(category=undefined) {
 		const allComponents = this._getAllComponentBindings();
 
 		const quantumFuel = this._sumComponentValue(allComponents, "quantumFuel");
@@ -1246,7 +1277,7 @@ class ShipCustomization {
 		}
 
 		if (category) {
-			attributes = attributes.filter(n => n.category == category);
+			attributes = attributes.filter(n => n.category == category && !n.comparison);
 		}
 		return attributes;
 	}
@@ -1647,6 +1678,13 @@ var shipList = Vue.component('ship-list', {
 					sortable: true,
 					renderHeader: this.renderSortableHeaderWithTooltip,
 					minWidth: 70
+				},
+				{
+					title: "Turn",
+					key: "Turn Rate Limit",
+					sortable: true,
+					renderHeader: this.renderSortableHeaderWithTooltip,
+					minWidth: 60
 				},
 				{
 					title: "SCM",
