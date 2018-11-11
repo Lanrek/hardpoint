@@ -468,12 +468,58 @@ class DataforgeComponent {
 		return _.get(this._components, "weapon.fireActions[0].heatPerShot", 0);
 	}
 
-	getGunSustainedDps(binding) {
-		let sustainedRate = this.getMaxCooling(binding) / this.getGunHeatPerShot(binding);
-		sustainedRate = Math.min(sustainedRate, this.getGunFireRate(binding) / 60.0);
+	getGunMaxCoolingPerShot(binding) {
+		const cool = (heat, seconds) => {
+			// Newton's law of cooling; ambient temperature deduced to be 0.
+			return heat * Math.exp(-1 * seconds * this.getCoolingCoefficient(binding));
+		};
 
-		const scaled = this.getGunAlpha(binding).scale(this.getBulletCount(binding) * sustainedRate);
+		const secondsPerShot  = 60.0 / this.getGunFireRate(binding);
+		const overheatTemperature = this.getOverheatTemperature(binding);
+		return overheatTemperature - cool(overheatTemperature, secondsPerShot);
+	}
+
+	getGunSustainedDps(binding) {
+		if (this.getGunMaxCoolingPerShot(binding) >= this.getGunHeatPerShot(binding)) {
+			return this.getGunBurstDps(binding);
+		}
+
+		const target = this.getOverheatTemperature(binding) - this.getGunHeatPerShot(binding);
+		const ratio = target / this.getOverheatTemperature(binding);
+		const secondsPerShot = Math.log(ratio) / (-1 * this.getCoolingCoefficient(binding));
+
+		const scaled = this.getGunAlpha(binding).scale(this.getBulletCount(binding) / secondsPerShot);
 		return scaled;
+	}
+
+	getGunContinuousDuration(binding) {
+		if (this.getGunMaxCoolingPerShot(binding) >= this.getGunHeatPerShot(binding)) {
+			return undefined;
+		}
+
+		const cool = (heat, seconds) => {
+			// Newton's law of cooling; ambient temperature deduced to be 0.
+			return heat * Math.exp(-1 * seconds * this.getCoolingCoefficient(binding));
+		};
+
+		// Quick and dirty simulation although there's probably an analytical solution.
+		// Limit the number of iterations to prevent infinite loops if there are bugs.
+		let shots = 0;
+		let heat = this.getGunStandbyHeat(binding);
+		const secondsPerShot  = 60.0 / this.getGunFireRate(binding);
+		heat = cool(heat, 1);
+		while (shots < 100) {
+			shots += 1;
+			heat += this.getGunHeatPerShot(binding);
+
+			if (heat >= this.getOverheatTemperature(binding)) {
+				return shots * secondsPerShot;
+			}
+
+			heat = cool(heat, secondsPerShot);
+		}
+
+		return undefined;
 	}
 
 	getGunMaximumAmmo(binding) {
@@ -656,12 +702,6 @@ class DataforgeComponent {
 		return maxTemperature * overheatRatio;
 	}
 
-	getMaxCooling(binding) {
-		// Newton's law of cooling; ambient temperature deduced to be 0.
-		const afterOneSec = this.getOverheatTemperature(binding) * Math.exp(-1 * this.getCoolingCoefficient(binding));
-		return this.getOverheatTemperature(binding) - afterOneSec;
-	}
-
 	getSummary(binding) {
 		if (this.type == "WeaponGun") {
 			let damage = "{gunAlpha.total}";
@@ -671,9 +711,14 @@ class DataforgeComponent {
 
 			let summary = new SummaryText([
 				"{gunBurstDps.total} dps = " + damage + " {gunAlpha.type} damage X {gunFireRate} rpm",
-				"{gunSustainedDps.total} sustained dps ({gunHeatPerShot} heat/shot with {maxCooling} max cooling/sec)",
-				"{bulletRange} meter range = {bulletSpeed} m/s projectile speed X {bulletDuration} seconds"],
+				"{gunSustainedDps.total} sustained dps ({gunHeatPerShot} heat/shot with {gunMaxCoolingPerShot} max cooling/shot)"],
 				this, binding);
+
+			if (this.getGunContinuousDuration(binding)) {
+				summary.patterns.push("{gunContinuousDuration} seconds of continuous fire before overheating");
+			}
+
+			summary.patterns.push("{bulletRange} meter range = {bulletSpeed} m/s projectile speed X {bulletDuration} seconds");
 
 			if (this.getGunMaximumAmmo(binding) > 0) {
 				summary.patterns.push("{gunMaximumAmmo} rounds deplete in {gunMagazineDuration} seconds for potentially {gunMagazineDamage.total} damage");
