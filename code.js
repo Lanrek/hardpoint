@@ -431,8 +431,9 @@ class DataforgeComponent {
 	}
 
 	getBulletCount(binding) {
-		// TODO Support multiple firing modes.
-		return _.get(this._components, "weapon.fireActions[0].pelletCount", 0);
+		// TODO Support multiple firing modes and figure out the nested fireAction for CHARGE.
+		const inner = _.get(this._components, "weapon.fireActions[0].fireAction.pelletCount", 0);
+		return inner || _.get(this._components, "weapon.fireActions[0].pelletCount", 0);
 	}
 
 	getGunAlpha(binding) {
@@ -450,8 +451,9 @@ class DataforgeComponent {
 	}
 
 	getGunFireRate(binding) {
-		// TODO Support multiple firing modes.
-		return _.get(this._components, "weapon.fireActions[0].fireRate", 0);
+		// TODO Support multiple firing modes and figure out the nested fireAction for CHARGE.
+		const inner = _.get(this._components, "weapon.fireActions[0].fireAction.fireRate", 0);
+		return inner ||  _.get(this._components, "weapon.fireActions[0].fireRate", 0);
 	}
 
 	getGunBurstDps(binding) {
@@ -464,8 +466,9 @@ class DataforgeComponent {
 	}
 
 	getGunHeatPerShot(binding) {
-		// TODO Support multiple firing modes.
-		return _.get(this._components, "weapon.fireActions[0].heatPerShot", 0);
+		// TODO Support multiple firing modes and figure out the nested fireAction for CHARGE.
+		const inner = _.get(this._components, "weapon.fireActions[0].fireAction.heatPerShot", 0);
+		return inner || _.get(this._components, "weapon.fireActions[0].heatPerShot", 0);
 	}
 
 	getGunMaxCoolingPerShot(binding) {
