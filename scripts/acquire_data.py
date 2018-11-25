@@ -61,7 +61,7 @@ def hidden_vehicle_name(name):
 			print("Hiding unfinished vehicle named " + name)
 			return True
 
-	recolored_names = ["XIAN_Nox_Kue", "DRAK_Dragonfly_"]
+	recolored_names = ["XIAN_Nox_Kue", "DRAK_Dragonfly_", "RSI_Constellation_Phoenix_"]
 	for entry in recolored_names:
 		if entry in name:
 			print("Hiding recolored vehicle named " + name)
