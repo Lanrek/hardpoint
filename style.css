@@ -57,7 +57,48 @@
 	text-align: right;
 }
 
-/* Component selector header and power selector */
+/* 3D turret coverage display canvas and container. */
+.coverage-display {
+	margin-top: 16px;
+	border: 1px solid #dcdee2;
+	text-align: center;
+}
+
+.coverage-display .title {
+	text-align: left;
+	background-color: var(--iview-content);
+	height: 40px;
+	border-bottom: 1px solid #e8eaec;
+	padding-left: 8px;
+    padding-right: 8px;
+	color: white;
+	font-size: 12px;
+	font-weight: bold;
+}
+
+.coverage-display .title:before {
+	content: ' ';
+	display: inline-block;
+	height: 100%;
+	vertical-align: middle;
+}
+
+.coverage-display .ivu-radio-group {
+	margin: 8px;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.coverage-display .ivu-radio-group .ivu-radio-group-item {
+	height: 20px;
+	line-height: 20px;
+}
+
+.coverage-display .canvas-container {
+	margin: 8px;
+}
+
+/* Component selector header and power selector. */
 .component-selector-header {
 	margin-bottom: 8px;
 }

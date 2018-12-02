@@ -338,7 +338,7 @@ class SummaryText {
 	}
 
 	render() {
-		let getValue = key => {
+		const getValue = key => {
 			let value = this.component.getValue(key, this.binding);
 
 			if (value.toFixed) {
@@ -370,6 +370,7 @@ class DataforgeComponent {
 		this._connections = _.keyBy(this._data["connections"], "pipeClass");
 
 		this.itemPorts = this._findItemPorts();
+		this._pitchLimits = this._makePitchLimits();
 	}
 
 	get displayName() {
@@ -396,6 +397,39 @@ class DataforgeComponent {
 		return this._data["itemRequiredTags"];
 	}
 
+	get turretInflections() {
+		const inflections = this._pitchLimits.slice(0, -1).map(x => x["turretRotation"]);
+
+		// Normalize to [-180, 180] which appear to be the bounds used elsewhere.
+		return inflections.map(x => ((x + 180) % 360) - 180);
+	}
+
+	getTurretPitchRange(binding, yaw) {
+		let result = {
+			"min": this.getTurretMinPitch(binding),
+			"max": this.getTurretMaxPitch(binding)
+		};
+
+		if (this._pitchLimits.length) {
+			// Limits in game data appear normalized to [0, 360].
+			const normalizedYaw = (360 + yaw % 360) % 360;
+
+			const upperIndex = _.findIndex(this._pitchLimits, x => x["turretRotation"] > normalizedYaw);
+			const upper = this._pitchLimits[upperIndex];
+			const lower = this._pitchLimits[upperIndex - 1];
+
+			// Interpolate between the surrounding points.
+			const alpha = (normalizedYaw - lower["turretRotation"]) / (upper["turretRotation"] - lower["turretRotation"]);
+			const lowerLimit = lower["lowerLimit"] * (1 - alpha) + upper["lowerLimit"] * alpha;
+			const upperLimit = lower["upperLimit"] * (1 - alpha) + upper["upperLimit"] * alpha;
+
+			result.min = Math.max(result.min, lowerLimit);
+			result.max = Math.min(result.max, upperLimit);
+		}
+
+		return result;
+	}
+
 	getValue(name, binding) {
 		const split = name.split(".");
 		const remainder = split.slice(1).join(".");
@@ -416,6 +450,46 @@ class DataforgeComponent {
 			console.log("Warning: Failed to retrieve component value " + name);
 		}
 		return result;
+	}
+
+	getTurretMinYaw(binding) {
+		let candidates = [-180];
+		candidates.push(binding.port.minYaw);
+		candidates.push(this._getTurretRotationLimit("YAW", "lowerLimit"));
+
+		// Undefined will always sort to the end.
+		candidates.sort((a, b) => b - a);
+		return candidates[0];
+	}
+
+	getTurretMaxYaw(binding) {
+		let candidates = [180];
+		candidates.push(binding.port.maxYaw);
+		candidates.push(this._getTurretRotationLimit("YAW", "upperLimit"));
+
+		// Undefined will always sort to the end.
+		candidates.sort((a, b) => a - b);
+		return candidates[0];
+	}
+
+	getTurretMinPitch(binding) {
+		let candidates = [-90];
+		candidates.push(binding.port.minPitch);
+		candidates.push(this._getTurretRotationLimit("PITCH", "lowerLimit"));
+
+		// Undefined will always sort to the end.
+		candidates.sort((a, b) => b - a);
+		return candidates[0];
+	}
+
+	getTurretMaxPitch(binding) {
+		let candidates = [90];
+		candidates.push(binding.port.maxPitch);
+		candidates.push(this._getTurretRotationLimit("PITCH", "upperLimit"));
+
+		// Undefined will always sort to the end.
+		candidates.sort((a, b) => a - b);
+		return candidates[0];
 	}
 
 	getBulletSpeed(binding) {
@@ -789,6 +863,32 @@ class DataforgeComponent {
 		return new SummaryText();
 	}
 
+	_getTurretRotationLimit(axis, limit) {
+		const movementAxes = _.keyBy(_.get(this._components, "turret.movementAxes", {}), "axis");
+		const rotationLimits = _.get(movementAxes, axis + ".rotationalLimits", []);
+		if (rotationLimits.length == 1) {
+			return rotationLimits[0][limit];
+		}
+
+		return undefined;
+	}
+
+	_makePitchLimits() {
+		const movementAxes = _.keyBy(_.get(this._components, "turret.movementAxes", {}), "axis");
+		const pitchLimits = _.get(movementAxes, "PITCH.rotationalLimits", []);
+
+		if (pitchLimits.length > 1) {
+			// Duplicate the first entry but wrapped around 360 degrees.
+			let expanded = pitchLimits.slice();
+			let wrapped = _.cloneDeep(expanded[0]);
+			wrapped["turretRotation"] += 360;
+			expanded.push(wrapped);
+			return expanded;
+		}
+
+		return [];
+	}
+
 	_findItemPorts() {
 		return this._data["ports"].map(x => new DataforgeItemPort(x));
 	}
@@ -865,6 +965,7 @@ class DataforgeItemPort extends BaseItemPort {
 		super();
 
 		this._data = data;
+		this._constraints = _.keyBy(_.get(this._data, "rotationConstraints", {}), "axis");
 
 		this.name = data["name"];
 		this.editable = !data["uneditable"];
@@ -884,6 +985,42 @@ class DataforgeItemPort extends BaseItemPort {
 
 	get types() {
 		return this._data["acceptsTypes"].map(x => new ItemPortType(x["type"], x["subType"]));
+	}
+
+	get minYaw() {
+		return _.get(this._constraints, "YAW.min");
+	}
+
+	get maxYaw() {
+		return _.get(this._constraints, "YAW.max");
+	}
+
+	get minPitch() {
+		// Necessary for the Constellation and the Khartu-al -- not sure why.
+		// Default value determined by comparing pitch range to yaw range on the Andromeda.
+		if (this._minPitch == 0 && this._maxPitch == 0) {
+			return -2.5;
+		}
+
+		return this._minPitch;
+	}
+
+	get maxPitch() {
+		// Necessary for the Constellation and the Khartu-al -- not sure why.
+		// Default value determined by comparing pitch range to yaw range on the Andromeda.
+		if (this._minPitch == 0 && this._maxPitch == 0) {
+			return 2.5;
+		}
+
+		return this._maxPitch;
+	}
+
+	get _minPitch() {
+		return _.get(this._constraints, "PITCH.min");
+	}
+
+	get _maxPitch() {
+		return _.get(this._constraints, "PITCH.max");
 	}
 }
 
@@ -1013,7 +1150,9 @@ class ItemBinding {
 	}
 
 	set selectedComponent(component) {
-		this._setSelectedComponent(component);
+		if (this.port.editable) {
+			this._setSelectedComponent(component);
+		}
 	}
 
 	get childGroups() {
@@ -1082,6 +1221,9 @@ class ShipCustomization {
 		}
 
 		this.childGroups = ItemBindingGroup.findGroups(Object.values(this.childBindings));
+
+		// TODO Not really the right spot for this, but it's quick and convenient...
+		this.hoveredBindings = [];
 	}
 
 	// Serialization format: <shipId><bindingList>
@@ -1247,7 +1389,7 @@ class ShipCustomization {
 			},
 			{
 				name: "Cargo Capacity",
-				category: "Utility",
+				category: "Travel",
 				description: "Total cargo capacity in SCUs",
 				value: this._specification.cargoCapacity + containerCapacity
 			},
@@ -1381,6 +1523,24 @@ const makeDefaultShipCustomizations = function() {
 	return customizations;
 };
 var defaultShipCustomizations = makeDefaultShipCustomizations();
+
+// Ensure there's a turret rotation entry for any port that can mount a turret.
+var turretRotationsDefined = {};
+for (customization of Object.values(defaultShipCustomizations)) {
+	const turretTypes = ["Turret", "TurretBase"];
+	const turrets = Object.values(customization.childBindings).filter(
+		b => turretTypes.some(t => b.port.matchesType(t)));
+
+	const overrideIds = turrets.map(b => customization.shipId.specificationId + "." + b.port.name);
+	const missing = overrideIds.filter(n => _.get(turretRotations, n) == undefined);
+	if (missing.length == 0) {
+		turretRotationsDefined[customization.shipId.combinedId] = true;
+	}
+	else {
+		console.log("Warning: Missing turret rotations for " + customization.shipId.combinedId);
+		missing.forEach(n => console.log("  " + n));
+	}
+}
 
 
 // Storage layer for customizations.
@@ -1601,6 +1761,12 @@ var componentSelector = Vue.component('component-selector', {
 
 			sendEvent("Customize", "SelectComponent", name);
 		},
+		onMouseOver: function() {
+			this.customization.hoveredBindings = this.bindings;
+		},
+		onMouseLeave: function() {
+			this.customization.hoveredBindings = [];
+		},
 		onPowerSelectorChange: function(value) {
 			for (const binding of this.bindings) {
 				binding.powerSelector = value;
@@ -1608,6 +1774,351 @@ var componentSelector = Vue.component('component-selector', {
 
 			sendEvent("Customize", "ChangePower", value);
 		}
+	}
+});
+
+var actualMaterial = new THREE.MeshLambertMaterial({
+	side: THREE.DoubleSide,
+	depthTest: false,
+	color: 0x7b7b7b,
+	opacity: 0.25,
+	transparent: true
+});
+
+var hoverMaterial = new THREE.MeshLambertMaterial({
+	side: THREE.DoubleSide,
+	depthTest: false,
+	color: 0x2d8cf0,
+	opacity: 0.25,
+	transparent: true
+});
+
+var stencilMaterial = new THREE.MeshLambertMaterial({
+	colorWrite: false,
+	depthWrite: false,
+	side: THREE.DoubleSide
+});
+
+var coverageDisplay = Vue.component("coverage-display", {
+	template: "#coverage-display",
+	props: ["customization"],
+	data: function() {
+		return {
+			selectedView: "Side"
+		}
+	},
+	watch: {
+		customization: {
+			handler: function(value) {
+				this.makeCoverageSegments();
+				this.renderScene();
+			},
+			deep: true
+		},
+		selectedView: function(value) {
+			sendEvent("Customize", "ChangeCoverageView", value);
+		}
+	},
+	methods: {
+		renderScene: function() {
+			const gl = this.renderer.context;
+			this.renderer.clear();
+
+			this.camera.near = this.cameraDistance;
+			this.camera.updateProjectionMatrix();
+
+			for (const scenes of Object.values(this.segments)) {
+				this.renderer.clearStencil();
+
+				gl.enable(gl.STENCIL_TEST);
+
+				// Increment the stencil buffer for each face.
+				gl.stencilFunc(gl.ALWAYS, 1, 0xff);
+				gl.stencilOp(gl.KEEP, gl.KEEP, gl.INCR);
+				this.renderer.render(scenes.stencil, this.camera);
+
+				// Only render when there are an uneven number of faces behind the near clip plane.
+				// Decrement the stencil buffer when drawing the actual object to prevent any self-overlap.
+				gl.stencilFunc(gl.EQUAL, 1, 0x01);
+				gl.stencilOp(gl.KEEP, gl.KEEP, gl.DECR);
+				this.renderer.render(scenes.actual, this.camera);
+
+				gl.disable(gl.STENCIL_TEST);
+			}
+
+			this.camera.near = 5;
+			this.camera.updateProjectionMatrix();
+
+			this.renderer.render(this.baseScene, this.camera);
+		},
+		updateControls: function() {
+			requestAnimationFrame(this.updateControls);
+
+			this.controls.update();
+		},
+		onControlsChange: function(change) {
+			const position = change.target.object.position;
+			const sum = position.x + position.y + position.z;
+
+			if (sum != this.cameraDistance) {
+				this.selectedView = "Free";
+			}
+
+			this.renderScene();
+		},
+		onResize: function(event, extra = 0) {
+			this.$refs.canvas.width = this.$refs.container.offsetWidth - extra;
+			this.$refs.canvas.height = this.$refs.canvas.width;
+
+			this.camera.updateProjectionMatrix();
+
+			this.renderer.setSize(this.$refs.canvas.width, this.$refs.canvas.height);
+
+			this.controls.handleResize();
+
+			this.renderScene();
+		},
+		onViewChange: function(value) {
+			if (this.selectedView != "Free") {
+				this.positionCamera();
+				this.renderScene();
+			}
+		},
+		positionCamera: function() {
+			this.camera.position.set(
+				this.cameraDistance * (this.selectedView == "Front"),
+				this.cameraDistance * (this.selectedView == "Side"),
+				this.cameraDistance * (this.selectedView == "Top"));
+
+			if (this.selectedView == "Top") {
+				this.camera.up.set(1, 0, 0);
+			}
+			else {
+				this.camera.up.set(0, 0, 1);
+			}
+			this.camera.lookAt(0, 0, 0);
+
+			this.camera.updateProjectionMatrix();
+		},
+		sphericalToCartesian: function(yawInDegrees, pitchInDegrees, radius) {
+			// Measures 0 degrees pitch as z = 0 and 90 degrees pitch is +Z.
+			// Measures 0 degrees yaw as +X, and 90 degrees yaw as +Y.
+			var yawInRadians = yawInDegrees * Math.PI / 180.0;
+			var pitchInRadians = pitchInDegrees * Math.PI / 180.0;
+
+			return new THREE.Vector3(
+				radius * Math.cos(pitchInRadians) * Math.cos(yawInRadians),
+				radius * Math.cos(pitchInRadians) * Math.sin(yawInRadians),
+				radius * Math.sin(pitchInRadians)
+			);
+		},
+		makeCoverageSegments: function() {
+			for (const scenes of Object.values(this.segments)) {
+				for (mesh of scenes.actual.children.filter(c => c.type == "Mesh")) {
+					scenes.actual.remove(mesh);
+				}
+				for (mesh of scenes.stencil.children.filter(c => c.type == "Mesh")) {
+					scenes.stencil.remove(mesh);
+				}
+				scenes.geometry.dispose();
+			}
+			this.renderer.renderLists.dispose();
+			this.segments = {};
+
+			const getMaxRange = binding => {
+				return _.max(Object.values(binding.childBindings).filter(
+					n => n.selectedComponent).map(
+					n => n.selectedComponent.getBulletRange(n)));
+			};
+
+			const turretTypes = ["Turret", "TurretBase"];
+			const turrets = Object.values(this.customization.childBindings).filter(
+				n => turretTypes.includes(_.get(n, "selectedComponent.type")));
+			const maxRange = _.max(turrets.map(n => getMaxRange(n)));
+			for (const binding of turrets) {
+				const range = getMaxRange(binding);
+
+				// Exclude turrets without guns attached.
+				if (range) {
+					this.makeCoverageSegment(binding, range / maxRange);
+				}
+			}
+		},
+		makeCoverageSegment: function(binding, relativeDistance) {
+			const distance = this.sceneRadius * relativeDistance;
+
+			const minYaw = binding.selectedComponent.getTurretMinYaw(binding);
+			const maxYaw = binding.selectedComponent.getTurretMaxYaw(binding);
+
+			const yawSlices = Math.ceil(Math.abs((maxYaw - minYaw) / 10));
+			const pitchSlices = yawSlices;
+
+			const yawIncrement = (maxYaw - minYaw) / yawSlices;
+			let yawSamples = Array.from({length: yawSlices + 1}, (v, i) => minYaw + yawIncrement * i);
+			const inflections = binding.selectedComponent.turretInflections.filter(i => i > minYaw && i < minYaw);
+			yawSamples = yawSamples.concat(inflections);
+			yawSamples.sort((a, b) => a - b);
+
+			var geometry = new THREE.Geometry();
+			geometry.vertices.push(
+				new THREE.Vector3(0, 0, 0));
+
+			let lastVertex = 0;
+			for (let yawIndex = 0; yawIndex < yawSamples.length; yawIndex += 1) {
+				const pitchRange = binding.selectedComponent.getTurretPitchRange(binding, yawSamples[yawIndex]);
+				const pitchIncrement = (pitchRange.max - pitchRange.min) / pitchSlices;
+				const pitchSamples = Array.from({length: pitchSlices + 1}, (v, i) => pitchRange.min + pitchIncrement * i);
+
+				for (const pitchSample of pitchSamples) {
+					geometry.vertices.push(this.sphericalToCartesian(
+						yawSamples[yawIndex], pitchSample, distance));
+				}
+
+				lastVertex += pitchSamples.length;
+				const currentYawVertex = lastVertex - pitchSamples.length + 1;
+				const previousYawVertex = lastVertex - pitchSamples.length * 2 + 1;
+				const centerVertex = 0;
+
+				// Need two yaw samples to draw a slice.
+				if (yawIndex > 0) {
+					for (let pitchIndex = 0; pitchIndex < pitchSamples.length - 1; pitchIndex += 1) {
+						const previousFloor = previousYawVertex + pitchIndex;
+						const previousCeiling = previousYawVertex + pitchIndex + 1;
+						const currentFloor = currentYawVertex + pitchIndex;
+						const currentCeiling = currentYawVertex + pitchIndex + 1;
+
+						// Arc face quad.
+						geometry.faces.push(new THREE.Face3(previousFloor, previousCeiling, currentCeiling));
+						geometry.faces.push(new THREE.Face3(previousFloor, currentCeiling, currentFloor));
+					}
+
+					const firstFloor = previousYawVertex;
+					const firstCeiling = previousYawVertex + pitchSlices;
+					const lastFloor = currentYawVertex;
+					const lastCeiling = currentYawVertex + pitchSlices;
+
+					// Min pitch floor and max pitch ceiling.
+					geometry.faces.push(new THREE.Face3(centerVertex, firstFloor, lastFloor));
+					geometry.faces.push(new THREE.Face3(centerVertex, lastCeiling, firstCeiling));
+				}
+
+				// Min and max yaw sides if yaw is bounded.
+				if (maxYaw - minYaw < 360) {
+					for (let pitchIndex = 0; pitchIndex < pitchSamples.length - 1; pitchIndex += 1) {
+						if (yawIndex == 0) {
+							geometry.faces.push(new THREE.Face3(
+								centerVertex, currentYawVertex + pitchIndex + 1, currentYawVertex + pitchIndex));
+						}
+
+						if (yawIndex == yawSlices) {
+							geometry.faces.push(new THREE.Face3(
+								centerVertex, currentYawVertex + pitchIndex, currentYawVertex + pitchIndex + 1));
+						}
+					}
+				}
+			}
+
+			geometry.computeFaceNormals();
+			geometry.computeVertexNormals();
+
+			const overrideId = this.customization.shipId.specificationId + "." + binding.port.name
+			const flip = _.get(turretRotations, overrideId + ".flip", false);
+			const rollOffset = _.get(turretRotations, overrideId + ".roll", 0);
+			const yawOffset = _.get(turretRotations, overrideId + ".yaw", 0);
+
+			if (flip) {
+				let matrix = new THREE.Matrix4();
+				matrix.elements[5] = -1;
+				geometry.applyMatrix(matrix);
+			}
+			geometry.rotateX(rollOffset * Math.PI / 180);
+			geometry.rotateZ(yawOffset * Math.PI / 180);
+
+			let result = {
+				actual: new THREE.Scene(),
+				stencil: new THREE.Scene(),
+				geometry: geometry
+			};
+
+			let material = actualMaterial;
+			if (this.customization.hoveredBindings.some(b => b == binding || b.parentBinding == binding)) {
+				material = hoverMaterial;
+			}
+
+			result.actual.add(new THREE.Mesh(geometry, material));
+			result.actual.add(new THREE.AmbientLight());
+			result.stencil.add(new THREE.Mesh(geometry, stencilMaterial));
+
+			// Not Vue.set reactively because nothing is watching the segments.
+			this.segments[binding.port.name] = result;
+		}
+	},
+	mounted() {
+		this.cameraDistance = 500;
+		this.sceneRadius = 100;
+
+		const width = 2 * this.sceneRadius;
+		const height = 2 * this.sceneRadius;
+		const near = 5;
+		const far = this.cameraDistance * 2;
+		this.camera = new THREE.OrthographicCamera(
+			width / -2, width / 2, height / 2, height / -2, near, far);
+		this.positionCamera();
+
+		this.controls = new THREE.TrackballControls(this.camera);
+		this.controls.rotateSpeed = 5.0;
+		this.controls.noZoom = true;
+		this.controls.noPan = true;
+		this.controls.staticMoving = true;
+		this.controls.dynamicDampingFactor = 0.3;
+		this.controls.addEventListener("change", this.onControlsChange);
+
+		this.renderer = new THREE.WebGLRenderer({
+			canvas: this.$refs.canvas,
+			antialias: true,
+			stencil: true,
+			alpha: true
+		});
+		this.renderer.setClearColor(0x000000, 0);
+		this.renderer.setPixelRatio(window.devicePixelRatio || 1);
+		this.renderer.autoClear = false;
+
+		this.baseScene = new THREE.Scene();
+
+		const axesHelper = new THREE.AxesHelper(this.sceneRadius);
+		this.baseScene.add(axesHelper);
+
+		let placeholder = new THREE.Mesh(
+			new THREE.ConeGeometry(10, 25, 3),
+			new THREE.MeshPhongMaterial({color: 0x606060, flatShading: true}));
+		placeholder.rotation.z = -Math.PI / 2;
+		this.baseScene.add(placeholder);
+
+		this.baseScene.add(new THREE.AmbientLight(0xB10DC9));
+		let directional = new THREE.DirectionalLight();
+		directional.position.x = -0.15;
+		directional.position.y = -0.25;
+		directional.position.z = 1;
+		this.baseScene.add(directional);
+
+		this.segments = {};
+		this.makeCoverageSegments();
+
+		// The extra 16 pixels of width when mounted probably comes from gutters...
+		this.onResize(undefined, 16);
+
+		this.updateControls();
+
+		window.addEventListener("resize", this.onResize);
+	},
+	beforeDestroy() {
+		window.removeEventListener("resize", this.onResize);
+
+		this.controls.dispose();
+
+		this.renderer.dispose();
+		this.renderer.forceContextLoss();
+		this.renderer = undefined;
 	}
 });
 
@@ -1935,19 +2446,6 @@ var shipDetails = Vue.component('ship-details', {
 				"Flight": ["FlightController"]
 			},
 
-			utilityColumns: [
-				{
-					title: "Utility",
-					key: "name",
-					render: this.renderRowTooltip
-				},
-				{
-					title: " ",
-					key: "value",
-					align: "right",
-					width: 75
-				}
-			],
 			powerColumns: [
 				{
 					title: "Power",
@@ -2021,11 +2519,15 @@ var shipDetails = Vue.component('ship-details', {
 				const serialized = val.serialize();
 
 				let url = new URL(location.href);
+				const previous = url.href;
 				url.hash = url.hash.split("/").slice(0, -1).concat(serialized).join("/");
-				history.replaceState(history.state, document.title, url.href);
 
-				if (val.storageKey) {
-					loadoutStorage.set(val, serialized);
+				if (url != previous) {
+					history.replaceState(history.state, document.title, url.href);
+
+					if (val.storageKey) {
+						loadoutStorage.set(val, serialized);
+					}
 				}
 			},
 			deep: true
@@ -2049,6 +2551,17 @@ var shipDetails = Vue.component('ship-details', {
 		},
 		modalTitle: function() {
 			return this.modalAction + " Loadout";
+		},
+		showTurretCoverage: function() {
+			if (!turretRotationsDefined[this.selectedCustomization.shipId.combinedId]) {
+				return false;
+			}
+
+			const turretTypes = ["Turret", "TurretBase"];
+			const turrets = Object.values(this.selectedCustomization.childBindings).filter(
+				n => turretTypes.includes(_.get(n, "selectedComponent.type")));
+
+			return turrets.length > 0;
 		}
 	},
 	methods: {

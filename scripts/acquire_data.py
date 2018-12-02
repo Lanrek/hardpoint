@@ -244,6 +244,11 @@ filters = {
 		"components.[].volume.cargoCapacity": None,
 		"components.[].powerUsage.angularAccelerationPowerAmount": None,
 		"components.[].powerUsage.linearAccelerationPowerAmount": None,
+		"components.[].movementAxes.[].axis": None,
+		"components.[].movementAxes.[].rotationalLimits.[].axis": None,
+		"components.[].movementAxes.[].rotationalLimits.[].turretRotation": None,
+		"components.[].movementAxes.[].rotationalLimits.[].lowerLimit": None,
+		"components.[].movementAxes.[].rotationalLimits.[].upperLimit": None,
 		"ports.[]": "port"
 	},
 	"port": {
@@ -254,7 +259,10 @@ filters = {
 		"portTags": None,
 		"_embedded.item.name": None,
 		"acceptsTypes.[].type": None,
-		"acceptsTypes.[].subType": None
+		"acceptsTypes.[].subType": None,
+		"rotationConstraints.[].axis": None,
+		"rotationConstraints.[].min": None,
+		"rotationConstraints.[].max": None
 	}
 }
 

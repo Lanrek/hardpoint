@@ -22,6 +22,9 @@
 		<script src="//unpkg.com/lodash"></script>
 		<script src="//unpkg.com/clipboard@2.0.0/dist/clipboard.min.js"></script>
 
+		<script src="//unpkg.com/three@0.98.0/build/three.min.js"></script>
+		<script src="//unpkg.com/three@0.98.0/examples/js/controls/TrackballControls.js"></script>
+
 		<link rel="stylesheet" href="//unpkg.com/iview/dist/styles/iview.css">
 
 		<script src="//unpkg.com/vue"></script>
@@ -230,8 +233,10 @@
 						</collapse>
 					</i-col>
 					<i-col span="7" class="summary-tables">
-						<i-table :columns="utilityColumns" :data="selectedCustomization.getAttributes('Utility')"></i-table>
 						<i-table :columns="powerColumns" :data="selectedCustomization.getAttributes('Power')"></i-table>
+						<coverage-display v-if="showTurretCoverage"
+							:customization="selectedCustomization">
+						</coverage-display>
 						<i-table :columns="damageColumns" :data="selectedCustomization.getAttributes('Damage')"></i-table>
 						<i-table :columns="maneuverabilityColumns" :data="selectedCustomization.getAttributes('Maneuverability')"></i-table>
 						<i-table :columns="survivabilityColumns" :data="selectedCustomization.getAttributes('Survivability')"></i-table>
@@ -271,7 +276,10 @@
 		</template>
 
 		<template id="component-selector">
-			<div class="component-selector">
+			<div
+				class="component-selector"
+				@mouseover="onMouseOver"
+				@mouseleave="onMouseLeave">
 				<p class="component-selector-header">
 					{{label}}
 					<span class="power-selector" v-if="!nested && selectedComponentName">
@@ -307,6 +315,25 @@
 						</dropdown-item>
 					</dropdown-menu>
 				</dropdown>
+			</div>
+		</template>
+
+		<template id="coverage-display">
+			<div class="coverage-display">
+				<div class="title">Turret Coverage</div>
+				<radio-group
+					v-model="selectedView"
+					@on-change="onViewChange"
+					type="button"
+					size="small">
+					<radio label="Top"></radio>
+					<radio label="Side"></radio>
+					<radio label="Front"></radio>
+					<radio label="Free"></radio>
+				</radio-group>
+				<div class="canvas-container" ref="container">
+					<canvas width="32px" height="32px" ref="canvas"></canvas>
+				</div>
 			</div>
 		</template>
 
