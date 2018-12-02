@@ -59,6 +59,38 @@ var turretRotations = {
 			"yaw": 180
 		}
 	},
+	"AEGS_Reclaimer": {
+		"hardpoint_turret": {
+		},
+		"hardpoint_tractor_beam_right": {
+		},
+		"hardpoint_tractor_beam_left": {
+		},
+		"hardpoint_remote_turret_front_left": {
+			"roll": -90
+		},
+		"hardpoint_remote_turret_front_right": {
+			"roll": 90
+		},
+		"hardpoint_remote_turret_top": {
+		},
+		"hardpoint_remote_turret_bottom": {
+			"roll": 180,
+			"yaw": 180
+		},
+		"hardpoint_remote_turret_rear_left": {
+			"roll": 135,
+			"yaw": 180
+		},
+		"hardpoint_remote_turret_rear_right": {
+			"roll": -135,
+			"yaw": 180
+		},
+		"turret_rear": {
+		},
+		"turret_rear": {
+		}
+	},
 	"AEGS_Retaliator": {
 		"hardpoint_turret_frontbottom": {
 			"roll": 180
@@ -88,6 +120,12 @@ var turretRotations = {
 			"roll": -90
 		}
 	},
+	"AEGS_Vanguard": {
+		"hardpoint_weapon_gun_nose": {
+		},
+		"hardpoint_turret": {
+		}
+	},
 	"ANVL_Arrow": {
 		"hardpoint_gimbal_mount": {
 			"roll": 180
@@ -95,6 +133,14 @@ var turretRotations = {
 		"hardpoint_weapon_wing_left": {
 		},
 		"hardpoint_weapon_wing_right": {
+		}
+	},
+	"ANVL_Gladiator": {
+		"hardpoint_class_2_left_wing": {
+		},
+		"hardpoint_class_2_right_wing": {
+		},
+		"hardpoint_turret": {
 		}
 	},
 	"ANVL_Hornet": {
@@ -123,6 +169,12 @@ var turretRotations = {
 			"roll": -90
 		},
 		"hardpoint_turret": {
+		}
+	},
+	"ANVL_Terrapin": {
+		"hardpoint_seat_support": {
+		},
+		"hardpoint_weapon_nose": {
 		}
 	},
 	"ANVL_Valkyrie": {
@@ -162,6 +214,21 @@ var turretRotations = {
 		"hardpoint_Right_Wing_S3": {
 		}
 	},
+	"DRAK_Caterpillar": {
+		"hardpoint_turret_bottom": {
+			"roll": 180
+		},
+		"hardpoint_turret_top": {
+		},
+		"hardpoint_weapon_top": {
+		},
+		"hardpoint_weapon_left": {
+			"roll": 90
+		},
+		"hardpoint_weapon_right": {
+			"roll": -90
+		}
+	},
 	"DRAK_Cutlass_Black": {
 		"hardpoint_Right_Body_Weapon": {
 			"roll": 180
@@ -194,6 +261,14 @@ var turretRotations = {
 		},
 		"hardpoint_rear_turret": {
 			"yaw": 180
+		}
+	},
+	"MISC_Razor": {
+		"hardpoint_weapon_left": {
+			"roll": 45
+		},
+		"hardpoint_weapon_right": {
+			"roll": -45
 		}
 	},
 	"MISC_Starfarer": {
