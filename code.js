@@ -782,7 +782,7 @@ class DataforgeComponent {
 	getSummary(binding) {
 		if (this.type == "WeaponGun") {
 			let damage = "{gunAlpha.total}";
-			if (this.bulletCount > 1) {
+			if (this.getBulletCount(binding) > 1) {
 				damage += " X {bulletCount}";
 			}
 
