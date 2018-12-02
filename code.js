@@ -1761,12 +1761,6 @@ var componentSelector = Vue.component('component-selector', {
 
 			sendEvent("Customize", "SelectComponent", name);
 		},
-		onMouseOver: function() {
-			this.customization.hoveredBindings = this.bindings;
-		},
-		onMouseLeave: function() {
-			this.customization.hoveredBindings = [];
-		},
 		onPowerSelectorChange: function(value) {
 			for (const binding of this.bindings) {
 				binding.powerSelector = value;
@@ -2629,6 +2623,12 @@ var shipDetails = Vue.component('ship-details', {
 
 			// Update the URL back to the non-loadout version of the same customization.
 			history.replaceState(history.state, document.title, makeCustomizationUrl().href);
+		},
+		onMouseOver: function(bindings) {
+			this.selectedCustomization.hoveredBindings = bindings;
+		},
+		onMouseLeave: function() {
+			this.selectedCustomization.hoveredBindings = [];
 		},
 		renderRowTooltip(h, params) {
 			const tooltip = h(

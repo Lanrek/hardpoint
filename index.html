@@ -203,7 +203,10 @@
 										:customization="selectedCustomization"
 										:group-name="group.name">
 										<template slot-scope="parent">
-											<div class="component-and-children-selector">
+											<div
+												class="component-and-children-selector"
+												@mouseover="onMouseOver(parent.targetBindings)"
+												@mouseleave="onMouseLeave">
 												<component-selector
 													:customization="selectedCustomization"
 													:bindings="parent.targetBindings">
@@ -276,10 +279,7 @@
 		</template>
 
 		<template id="component-selector">
-			<div
-				class="component-selector"
-				@mouseover="onMouseOver"
-				@mouseleave="onMouseLeave">
+			<div class="component-selector">
 				<p class="component-selector-header">
 					{{label}}
 					<span class="power-selector" v-if="!nested && selectedComponentName">
