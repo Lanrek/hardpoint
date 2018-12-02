@@ -67,7 +67,7 @@
 .coverage-display .title {
 	text-align: left;
 	background-color: var(--iview-content);
-	height: 40px;
+	height: 38px;
 	border-bottom: 1px solid #e8eaec;
 	padding-left: 8px;
     padding-right: 8px;
@@ -290,6 +290,11 @@
 }
 .ivu-table-wrapper:first-child {
 	margin-top: 0px;
+}
+
+/* Make table headers and collapse headers identically sized. */
+.ivu-table th {
+	height: 38px;
 }
 
 /* Add a bit of space between the collapse section dropdown arrow and the header text. */
