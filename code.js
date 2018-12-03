@@ -337,16 +337,44 @@ class SummaryText {
 		}
 	}
 
-	render() {
+	render(reference) {
 		const getValue = key => {
 			let value = this.component.getValue(key, this.binding);
 
-			if (value.toFixed) {
-				// Round to two places and then drop any trailing 0s.
-				value = this._formatThousands(+value.toFixed(2));
+			let type = "summary-value";
+			if (reference && this.component.type == reference.type && this.component.name != reference.name) {
+				type = "summary-value-equal";
+				const baseline = reference.getValue(key, this.binding);
+
+				if (baseline && typeof baseline != "string") {
+					let increase = (a, b) => a > b;
+					if (DataforgeComponent.reversedValues.includes(key)) {
+						increase = (a, b) => a < b;
+					}
+
+					if (increase(value, baseline)) {
+						type = "summary-value-increase";
+					}
+					if (increase(baseline, value)) {
+						type = "summary-value-decrease";
+					}
+				}
 			}
 
-			return '<span class="summary-value">' + value + '</span>';
+			if (value.toFixed) {
+				let places = 2;
+				if (value > 100) {
+					places = 0;
+				}
+				else if (value > 10) {
+					places = 1;
+				}
+
+				// Round and then drop any trailing 0s.
+				value = this._formatThousands(+value.toFixed(places));
+			}
+
+			return '<span class="' + type + '">' + value + '</span>';
 		};
 
 		const expanded = this.patterns.map(p => {
@@ -371,6 +399,23 @@ class DataforgeComponent {
 
 		this.itemPorts = this._findItemPorts();
 		this._pitchLimits = this._makePitchLimits();
+	}
+
+	static get reversedValues() {
+		return [
+			"gunHeatPerShot",
+			"powerBase",
+			"powerIncrease",
+			"shieldDownDelay",
+			"quantumEfficiency",
+			"quantumCalibrationTime",
+			"quantumSpoolTime",
+			"quantumCooldown",
+			"missileLockTime",
+			"powerToEm",
+			"flightAngularPower",
+			"flightLinearPower"
+		];
 	}
 
 	get displayName() {
@@ -1674,12 +1719,15 @@ var itemPortGroup = Vue.component('item-port-group', {
 	}
 });
 
-var componentDisplay = Vue.component('component-display', {
-	template: '#component-display',
-	props: ['componentName', 'disabled', 'bindings'],
+var componentDisplay = Vue.component("component-display", {
+	template: "#component-display",
+	props: ["componentName", "disabled", "bindings", "referenceName"],
 	computed: {
 		component: function () {
 			return allItems[this.componentName];
+		},
+		reference: function () {
+			return allItems[this.referenceName];
 		}
 	}
 });

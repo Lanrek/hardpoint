@@ -47,6 +47,21 @@
 	font-weight: bolder;
 }
 
+.summary-value-increase {
+	color: #006c49;
+	font-weight: bolder;
+}
+
+.summary-value-decrease {
+	color: DarkRed;
+	font-weight: bolder;
+}
+
+.summary-value-equal {
+	color: #515a6e;
+	font-weight: bolder;
+}
+
 .nav-button {
 	text-align: center;
 	width: 100%;

@@ -266,7 +266,7 @@
 				</row>
 				<row v-if="componentName" :gutter="16">
 					<i-col span="12">
-						<span v-html="component.getSummary(bindings[0]).render()"></span>
+						<span v-html="component.getSummary(bindings[0]).render(reference)"></span>
 					</i-col>
 					<i-col span="12" class="right">
 						<span>
@@ -310,7 +310,10 @@
 
 					<dropdown-menu slot="list">
 						<dropdown-item v-for="componentName in availableComponents" :name="componentName" :key="componentName">
-							<component-display :component-name="componentName" :bindings="bindings">
+							<component-display
+								:component-name="componentName"
+								:bindings="bindings"
+								:reference-name="selectedComponentName">
 							</component-display>
 						</dropdown-item>
 					</dropdown-menu>
