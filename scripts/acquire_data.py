@@ -249,6 +249,10 @@ filters = {
 		"components.[].movementAxes.[].rotationalLimits.[].turretRotation": None,
 		"components.[].movementAxes.[].rotationalLimits.[].lowerLimit": None,
 		"components.[].movementAxes.[].rotationalLimits.[].upperLimit": None,
+		"components.[].heatFactor": None,
+		"components.[].heatGeneration.minHeatAmount": None,
+		"components.[].heatGeneration.angularAccelerationHeatAmount": None,
+		"components.[].heatGeneration.linearAccelerationHeatAmount": None,
 		"ports.[]": "port"
 	},
 	"port": {

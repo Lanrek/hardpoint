@@ -62,6 +62,30 @@ var nullifySentinel = function(str) {
 	return str;
 }
 
+var roundThreeFigures = function(num) {
+	let places = 2;
+	if (Math.abs(num) > 100) {
+		places = 0;
+	}
+	else if (Math.abs(num) > 10) {
+		places = 1;
+	}
+
+	return num.toFixed(places);
+}
+
+var formatNumber = function(num) {
+	if (num.toFixed) {
+		if (num >= 1000000000) {
+			return num.toExponential();
+		}
+
+		return (+roundThreeFigures(num)).toLocaleString();
+	}
+
+	return num;
+}
+
 var sendEvent = function(category, action, label) {
 	gtag('event', action, {
 		'event_category': category,
@@ -361,19 +385,7 @@ class SummaryText {
 				}
 			}
 
-			if (value.toFixed) {
-				let places = 2;
-				if (value > 100) {
-					places = 0;
-				}
-				else if (value > 10) {
-					places = 1;
-				}
-
-				// Round and then drop any trailing 0s.
-				value = this._formatThousands(+value.toFixed(places));
-			}
-
+			value = formatNumber(value);
 			return '<span class="' + type + '">' + value + '</span>';
 		};
 
@@ -383,11 +395,6 @@ class SummaryText {
 		}).join("");
 
 		return '<span class="summary">' + expanded + '</span>';
-	}
-
-	_formatThousands(num) {
-		var values = num.toString().split(".");
-		return values[0].replace(/.(?=(?:.{3})+$)/g, "$&,") + ( values.length == 2 ? "." + values[1] : "" );
 	}
 }
 
@@ -758,16 +765,30 @@ class DataforgeComponent {
 	}
 
 	getCurrentPower(binding) {
+		if (this.type == "PowerPlant") {
+			return this.getPowerGeneration(binding) * binding.customization.powerUsageRatio;
+		}
+
+		return -1 * this.getPowerConsumption(binding);
+	}
+
+	getPowerConsumption(binding) {
 		if (binding.powerSelector == "Active") {
 			if (this.type == "FlightController") {
-				return -1 * this.getPowerBase(binding) - this.getFlightAngularPower(binding) - this.getFlightLinearPower(binding);
+				// TODO This is a fairly basic activity approximation used for both power and heat calculations.
+				return this.getPowerBase(binding) + this.getFlightAngularPower(binding) + this.getFlightLinearPower(binding);
 			}
 
-			return this.getPowerGeneration(binding) - this.getPowerDraw(binding);
+			return this.getPowerDraw(binding);
 		}
 
 		if (binding.powerSelector == "Standby") {
-			return this.getPowerGeneration(binding) - this.getPowerBase(binding);
+			if (this.type == "Turret" || this.type == "TurretBase") {
+				// Turrets seem to draw power even when not being actively rotated.
+				return this.getPowerDraw(binding);
+			}
+
+			return this.getPowerBase(binding);
 		}
 
 		return 0;
@@ -822,6 +843,55 @@ class DataforgeComponent {
 		const overheatRatio = _.get(this._connections, "HEAT.overheatTemperatureRatio", 0);
 
 		return maxTemperature * overheatRatio;
+	}
+
+	getCurrentTemperature(binding) {
+		let factor = 1.6;
+		if (this.type == "PowerPlant") {
+			factor = _.get(this._components, "powerPlant.heatFactor", 0);
+		}
+		else if (this.type == "Shield") {
+			factor = _.get(this._components, "shieldGenerator.heatFactor", 0);
+		}
+
+		if (this.type == "Cooler" || this.type == "QuantumDrive" || this.type == "Turret" || this.type == "TurretBase") {
+			return 0;
+		}
+
+		if (this.type == "WeaponGun") {
+			if (binding.powerSelector == "Active") {
+				// TODO Not correct!
+				return this.getOverheatTemperature(binding);
+			}
+
+			if (binding.powerSelector == "Standby") {
+				return this.getGunStandbyHeat(binding);
+			}
+		}
+
+		if (this.type == "FlightController") {
+			const minimum = _.get(this._components, "flightController.heatGeneration.minHeatAmount", 0);
+			const angular = _.get(this._components, "flightController.heatGeneration.angularAccelerationHeatAmount", 0);
+			const linear = _.get(this._components, "flightController.heatGeneration.linearAccelerationHeatAmount", 0);
+
+			if (binding.powerSelector == "Active") {
+				// TODO This is a fairly basic activity approximation used for both power and heat calculations.
+				return minimum + angular + linear;
+			}
+
+			if (binding.powerSelector == "Standby") {
+				return minimum;
+			}
+		}
+
+		return factor * Math.abs(this.getCurrentPower(binding));
+	}
+
+	getCurrentCooling(binding) {
+		const temperature = this.getCurrentTemperature(binding);
+		const rate = Math.exp(-1 * this.getCoolingCoefficient(binding));
+
+		return temperature * rate - temperature;
 	}
 
 	getSummary(binding) {
@@ -1154,10 +1224,11 @@ class ItemBindingGroup {
 }
 
 class ItemBinding {
-	constructor(port, parentBinding, defaultItems = undefined) {
+	constructor(port, parentBinding, customization, defaultItems = undefined) {
 		this.port = port;
 		this.parentBinding = parentBinding;
 		this.childBindings = {};
+		this.customization = customization;
 
 		this.defaultComponent = undefined;
 		if (defaultItems) {
@@ -1232,7 +1303,7 @@ class ItemBinding {
 		if (component) {
 			for (const childPort of component.itemPorts) {
 				// Make the new child reactive.
-				Vue.set(this.childBindings, childPort.name, new ItemBinding(childPort, this, defaultItems));
+				Vue.set(this.childBindings, childPort.name, new ItemBinding(childPort, this, this.customization, defaultItems));
 			}
 		}
 	}
@@ -1262,7 +1333,7 @@ class ShipCustomization {
 
 		this.childBindings = {};
 		for (const shipPort of this._specification.itemPorts) {
-			this.childBindings[shipPort.name] = new ItemBinding(shipPort, undefined, this._specification.defaultItems);
+			this.childBindings[shipPort.name] = new ItemBinding(shipPort, undefined, this, this._specification.defaultItems);
 		}
 
 		this.childGroups = ItemBindingGroup.findGroups(Object.values(this.childBindings));
@@ -1405,6 +1476,14 @@ class ShipCustomization {
 		return this._specification.tags;
 	}
 
+	get powerUsageRatio() {
+		const allComponents = this._getAllComponentBindings();
+		const powerConsumption = this._sumComponentValue(allComponents, "powerConsumption");
+		const powerGeneration = this._sumComponentValue(allComponents, "powerGeneration");
+
+		return powerConsumption / powerGeneration;
+	}
+
 	getAttributes(category=undefined) {
 		const allComponents = this._getAllComponentBindings();
 
@@ -1412,7 +1491,7 @@ class ShipCustomization {
 		const quantumEfficiency = this._sumComponentValue(allComponents, "quantumEfficiency");
 		const containerCapacity = this._sumComponentValue(allComponents, "containerCapacity");
 
-		const currentPower = this._sumComponentValue(allComponents, "currentPower");
+		const powerConsumption = this._sumComponentValue(allComponents, "powerConsumption");
 		const powerGeneration = this._sumComponentValue(allComponents, "powerGeneration");
 
 		let attributes = this._specification.getAttributes();
@@ -1454,13 +1533,19 @@ class ShipCustomization {
 				name: "Current Power Usage",
 				category: "Power",
 				description: "Sum of the power consumption of all components in their current state",
-				value: Math.round(powerGeneration - currentPower)
+				value: Math.round(powerConsumption)
 			},
 			{
 				name: "Current Usage Ratio",
 				category: "Power",
 				description: "Percentage of power generation capacity used by current settings",
-				value: Math.round(100 * (powerGeneration - currentPower) / powerGeneration) + "%"
+				value: Math.round(100 * (powerConsumption) / powerGeneration) + "%"
+			},
+			{
+				name: "Current Heat",
+				category: "Heat",
+				description: "Total heat of all components",
+				value: Math.round(this._sumComponentValue(allComponents, "currentTemperature"))
 			},
 			{
 				name: "Total Shields",
@@ -1729,6 +1814,9 @@ var componentDisplay = Vue.component("component-display", {
 		reference: function () {
 			return allItems[this.referenceName];
 		}
+	},
+	methods: {
+		formatNumber: formatNumber
 	}
 });
 
@@ -2491,6 +2579,19 @@ var shipDetails = Vue.component('ship-details', {
 			powerColumns: [
 				{
 					title: "Power",
+					key: "name",
+					render: this.renderRowTooltip
+				},
+				{
+					title: " ",
+					key: "value",
+					align: "right",
+					width: 75
+				}
+			],
+			heatColumns: [
+				{
+					title: "Heat",
 					key: "name",
 					render: this.renderRowTooltip
 				},

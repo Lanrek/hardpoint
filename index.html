@@ -237,6 +237,7 @@
 					</i-col>
 					<i-col span="7" class="summary-tables">
 						<i-table :columns="powerColumns" :data="selectedCustomization.getAttributes('Power')"></i-table>
+						<i-table :columns="heatColumns" :data="selectedCustomization.getAttributes('Heat')"></i-table>
 						<coverage-display v-if="showTurretCoverage"
 							:customization="selectedCustomization">
 						</coverage-display>
@@ -270,9 +271,14 @@
 					</i-col>
 					<i-col span="12" class="right">
 						<span>
-							{{component.getCurrentPower(bindings[0])}}<icon type="ios-flash" size="14" color="LightSeaGreen" />
+							{{formatNumber(component.getCurrentPower(bindings[0]))}}<icon type="ios-flash" size="14" color="LightSeaGreen" />
 						</span>
-						<!--<span>50<icon type="ios-flame" size="14" color="DarkRed" /></span>-->
+						<span>
+							{{formatNumber(component.getCurrentTemperature(bindings[0]))}}<icon type="ios-flame" size="14" color="DarkRed" />
+						</span>
+						<span>
+							{{formatNumber(component.getCurrentCooling(bindings[0]))}}<icon type="ios-snow" size="14" color="SteelBlue" />
+						</span>
 					</i-col>
 				</row>
 			</i-button>
