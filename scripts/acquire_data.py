@@ -207,6 +207,7 @@ filters = {
 		"connections.[].coolingCoefficient": None,
 		"connections.[].maximumTemperature": None,
 		"connections.[].overheatTemperatureRatio": None,
+		"connections.[].temperatureToIR": None,
 		"components.[].name": None,
 		"components.[].ammo.speed": None,
 		"components.[].ammo.lifetime": None,

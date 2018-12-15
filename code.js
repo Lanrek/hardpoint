@@ -420,6 +420,7 @@ class DataforgeComponent {
 			"quantumCooldown",
 			"missileLockTime",
 			"powerToEm",
+			"temperatureToIr",
 			"flightAngularPower",
 			"flightLinearPower"
 		];
@@ -834,6 +835,10 @@ class DataforgeComponent {
 		return _.get(this._components, "flightController.powerUsage.linearAccelerationPowerAmount", 0);
 	}
 
+	getTemperatureToIr(binding) {
+		return _.get(this._connections, "HEAT.temperatureToIR", 0);
+	}
+
 	getCoolingCoefficient(binding) {
 		return _.get(this._connections, "HEAT.coolingCoefficient", 0);
 	}
@@ -897,6 +902,15 @@ class DataforgeComponent {
 	getCoolingAvailable(binding) {
 		// Divide by two to get heat cooled per second.
 		return _.get(this._components, "cooler.heatSinkMaxCapacityContribution", 0) / 2;
+	}
+
+	getEmSignature(binding) {
+		const powerFlow = (this.getPowerGeneration(binding) + this.getPowerUsage(binding));
+		return powerFlow * this.getPowerToEm(binding);
+	}
+
+	getIrSignature(binding) {
+		return this.getCurrentTemperature(binding) * this.getTemperatureToIr(binding);
 	}
 
 	getSummary(binding) {
@@ -1602,6 +1616,18 @@ class ShipCustomization {
 				description: "Gigameters of quantum travel range based on fuel capacity",
 				category: "Travel",
 				value: Math.round(quantumFuel / quantumEfficiency) || 0
+			},
+			{
+				name: "EM Signature",
+				description: "Total EM signature emitted by the vehicle",
+				category: "Signature",
+				value: Math.round(this._sumComponentValue(allComponents, "emSignature"))
+			},
+			{
+				name: "IR Signature",
+				description: "Total IR signature emitted by the vehicle",
+				category: "Signature",
+				value: Math.round(this._sumComponentValue(allComponents, "irSignature"))
 			}
 		]);
 
@@ -2767,12 +2793,15 @@ var shipDetails = Vue.component('ship-details', {
 			const burstDps = attributes.find(n => n.name == "Total Burst DPS");
 			const sustainedDps = attributes.find(n => n.name == "Total Sustained DPS");
 
+			const emSignature = attributes.find(n => n.name == "EM Signature");
+			const irSignature = attributes.find(n => n.name == "IR Signature");
+
 			return [
 				{
 					name1: "Power",
 					value1: powerSummary,
 					name2: "EM Signature",
-					value2: "Unknown",
+					value2: formatNumber(emSignature.value),
 					name3: "Burst DPS",
 					value3: formatNumber(burstDps.value)
 				},
@@ -2780,7 +2809,7 @@ var shipDetails = Vue.component('ship-details', {
 					name1: "Cooling",
 					value1: coolingSummary,
 					name2: "IR Signature",
-					value2: "Unknown",
+					value2: formatNumber(irSignature.value),
 					name3: "Sustained DPS",
 					value3: formatNumber(sustainedDps.value)
 				}
