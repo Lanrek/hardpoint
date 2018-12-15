@@ -164,7 +164,7 @@ class ShipSpecification {
 		return this._data["cargoCapacity"];
 	}
 
-	getAttributes() {
+	get attributes() {
 		const ifcsStates = _.keyBy(this._data["vehicleSpecification"]["movement"]["ifcsStates"], "state");
 		const scmVelocity = _.get(ifcsStates, "flightSpace.scmMode.maxVelocity", 0);
 		const cruiseVelocity = _.get(ifcsStates, "flightSpace.ab2CruMode.criuseSpeed", 0);
@@ -580,7 +580,7 @@ class DataforgeComponent {
 	getGunFireRate(binding) {
 		// TODO Support multiple firing modes and figure out the nested fireAction for CHARGE.
 		const inner = _.get(this._components, "weapon.fireActions[0].fireAction.fireRate", 0);
-		return inner ||  _.get(this._components, "weapon.fireActions[0].fireRate", 0);
+		return inner || _.get(this._components, "weapon.fireActions[0].fireRate", 0);
 	}
 
 	getGunBurstDps(binding) {
@@ -604,49 +604,47 @@ class DataforgeComponent {
 			return heat * Math.exp(-1 * seconds * this.getCoolingCoefficient(binding));
 		};
 
-		const secondsPerShot  = 60.0 / this.getGunFireRate(binding);
+		const secondsPerShot = 60.0 / this.getGunFireRate(binding);
 		const overheatTemperature = this.getOverheatTemperature(binding);
 		return overheatTemperature - cool(overheatTemperature, secondsPerShot);
 	}
 
 	getGunSustainedDps(binding) {
-		if (this.getGunMaxCoolingPerShot(binding) >= this.getGunHeatPerShot(binding)) {
-			return this.getGunBurstDps(binding);
-		}
+		// This isn't exact because cooling is non-linear, but the rounding errors are fairly small.
+		const coolingPerShot = this.getGunMaxCoolingPerShot(binding) * this.getCoolingEfficiency(binding);
+		let fireRate = this.getGunFireRate(binding);
+		fireRate *= Math.min(1, coolingPerShot / this.getGunHeatPerShot(binding));
 
-		const target = this.getOverheatTemperature(binding) - this.getGunHeatPerShot(binding);
-		const ratio = target / this.getOverheatTemperature(binding);
-		const secondsPerShot = Math.log(ratio) / (-1 * this.getCoolingCoefficient(binding));
-
-		const scaled = this.getGunAlpha(binding).scale(this.getBulletCount(binding) / secondsPerShot);
+		const scaled = this.getGunAlpha(binding).scale(this.getBulletCount(binding) * fireRate / 60.0);
 		return scaled;
 	}
 
 	getGunContinuousDuration(binding) {
-		if (this.getGunMaxCoolingPerShot(binding) >= this.getGunHeatPerShot(binding)) {
+		if (this.getGunSustainedDps(binding).total == this.getGunBurstDps(binding).total) {
 			return undefined;
 		}
 
+		const efficiency = this.getCoolingEfficiency(binding);
 		const cool = (heat, seconds) => {
 			// Newton's law of cooling; ambient temperature deduced to be 0.
-			return heat * Math.exp(-1 * seconds * this.getCoolingCoefficient(binding));
+			const loss = heat - heat * Math.exp(-1 * seconds * this.getCoolingCoefficient(binding));
+			return heat - loss * efficiency;
 		};
 
 		// Quick and dirty simulation although there's probably an analytical solution.
 		// Limit the number of iterations to prevent infinite loops if there are bugs.
 		let shots = 0;
 		let heat = this.getGunStandbyHeat(binding);
-		const secondsPerShot  = 60.0 / this.getGunFireRate(binding);
+		const secondsPerShot = 60.0 / this.getGunFireRate(binding);
 		heat = cool(heat, 1);
 		while (shots < 100) {
 			shots += 1;
 			heat += this.getGunHeatPerShot(binding);
+			heat = cool(heat, secondsPerShot);
 
 			if (heat >= this.getOverheatTemperature(binding)) {
 				return shots * secondsPerShot;
 			}
-
-			heat = cool(heat, secondsPerShot);
 		}
 
 		return undefined;
@@ -865,7 +863,7 @@ class DataforgeComponent {
 
 		if (this.type == "WeaponGun") {
 			if (binding.powerSelector == "Active") {
-				// TODO Not correct!
+				// TODO Not correct for weapons that won't ever inherently overheat.
 				return this.getOverheatTemperature(binding);
 			}
 
@@ -904,6 +902,10 @@ class DataforgeComponent {
 		return _.get(this._components, "cooler.heatSinkMaxCapacityContribution", 0) / 2;
 	}
 
+	getCoolingEfficiency(binding) {
+		return Math.min(1, 1 / binding.customization.coolingUsageRatio);
+	}
+
 	getEmSignature(binding) {
 		const powerFlow = (this.getPowerGeneration(binding) + this.getPowerUsage(binding));
 		return powerFlow * this.getPowerToEm(binding);
@@ -922,12 +924,13 @@ class DataforgeComponent {
 
 			let summary = new SummaryText([
 				"{gunBurstDps.total} dps = " + damage + " {gunAlpha.type} damage X {gunFireRate} rpm",
-				"{gunSustainedDps.total} sustained dps ({gunHeatPerShot} heat/shot with {gunMaxCoolingPerShot} max cooling/shot)"],
+				"{gunSustainedDps.total} sustained dps ({gunHeatPerShot} heat/shot; {gunMaxCoolingPerShot} max cooling/shot X {coolingEfficiency} efficiency)"],
 				this, binding);
 
-			if (this.getGunContinuousDuration(binding)) {
-				summary.patterns.push("{gunContinuousDuration} seconds of continuous fire before overheating");
-			}
+			// TODO This doesn't work with vehicle-wide cooling limitations yet.
+			// if (this.getGunContinuousDuration(binding)) {
+			// 	summary.patterns.push("{gunContinuousDuration} seconds of continuous fire before overheating");
+			// }
 
 			summary.patterns.push("{bulletRange} meter range = {bulletSpeed} m/s projectile speed X {bulletDuration} seconds");
 
@@ -1357,6 +1360,8 @@ class ShipCustomization {
 
 		this.childGroups = ItemBindingGroup.findGroups(Object.values(this.childBindings));
 
+		this.calculateDerivedValues();
+
 		// TODO Not really the right spot for this, but it's quick and convenient...
 		this.hoveredBindings = [];
 	}
@@ -1495,16 +1500,16 @@ class ShipCustomization {
 		return this._specification.tags;
 	}
 
-	get powerUsageRatio() {
-		const allComponents = this._getAllComponentBindings();
-		const powerUsage = this._sumComponentValue(allComponents, "powerUsage");
-		const powerAvailable = this._sumComponentValue(allComponents, "powerAvailable");
-
-		return powerUsage / powerAvailable;
+	// TODO This is a terrible pattern; need a more general solution to data caching outside components.
+	calculateDerivedValues() {
+		// Avoids infinite loops because these are scalars and Vue can detect when they don't change.
+		// The ordering of these operations is critical since they build on each other.
+		this.powerUsageRatio = this._getPowerUsageRatio();
+		this.coolingUsageRatio = this._getCoolingUsageRatio();
 	}
 
-	getAttributes(category=undefined) {
-		const allComponents = this._getAllComponentBindings();
+	get attributes() {
+		const allComponents = this._allComponentBindings;
 		const activeComponents = allComponents.filter(n => n.powerSelector == "Active");
 
 		const quantumFuel = this._sumComponentValue(allComponents, "quantumFuel");
@@ -1517,7 +1522,7 @@ class ShipCustomization {
 		const coolingUsage = this._sumComponentValue(allComponents, "coolingUsage");
 		const coolingAvailable = this._sumComponentValue(allComponents, "coolingAvailable");
 
-		let attributes = this._specification.getAttributes();
+		let attributes = this._specification.attributes;
 		attributes = attributes.concat([
 			{
 				name: "Loadout Name",
@@ -1643,9 +1648,6 @@ class ShipCustomization {
 			Object.keys(overrides).forEach(k => attributes.find(a => a.name == k).value = overrides[k]);
 		}
 
-		if (category) {
-			attributes = attributes.filter(n => n.category == category && !n.comparison);
-		}
 		return attributes;
 	}
 
@@ -1653,11 +1655,7 @@ class ShipCustomization {
 		return allVehicles[this.shipId.combinedId];
 	}
 
-	_sumComponentValue(components, name) {
-		return components.reduce((total, x) => total + x.selectedComponent.getValue(name, x), 0);
-	}
-
-	_getAllComponentBindings() {
+	get _allComponentBindings() {
 		const traverse = (binding) => {
 			let result = [binding];
 			for (const child of Object.values(binding.childBindings)) {
@@ -1674,6 +1672,26 @@ class ShipCustomization {
 
 		result = result.filter(n => n.selectedComponent);
 		return result;
+	}
+
+	_sumComponentValue(components, name) {
+		return components.reduce((total, x) => total + x.selectedComponent.getValue(name, x), 0);
+	}
+
+	_getPowerUsageRatio() {
+		const allComponents = this._allComponentBindings;
+		const powerUsage = this._sumComponentValue(allComponents, "powerUsage");
+		const powerAvailable = this._sumComponentValue(allComponents, "powerAvailable");
+
+		return powerUsage / powerAvailable;
+	}
+
+	_getCoolingUsageRatio() {
+		const allComponents = this._allComponentBindings;
+		const coolingUsage = this._sumComponentValue(allComponents, "coolingUsage");
+		const coolingAvailable = this._sumComponentValue(allComponents, "coolingAvailable");
+
+		return coolingUsage / coolingAvailable;
 	}
 }
 
@@ -2494,8 +2512,7 @@ var shipList = Vue.component('ship-list', {
 				const searchable = (c.displayName + " " + c.name).toLowerCase();
 				return searchable.includes(this.searchInput.toLowerCase());
 			}).map(c => {
-				const attributes = c.getAttributes();
-				let reduced = attributes.reduce((total, a) => {
+				let reduced = c.attributes.reduce((total, a) => {
 					total[a.name] = a.value;
 					return total;
 				}, {});
@@ -2515,7 +2532,7 @@ var shipList = Vue.component('ship-list', {
 			});
 		},
 		shipAttributeDescriptions: function() {
-			return defaultShipCustomizations[0].getAttributes().reduce((total, a) => {
+			return defaultShipCustomizations[0].attributes.reduce((total, a) => {
 				total[a.name] = a.description;
 				return total;
 			}, {});
@@ -2552,7 +2569,7 @@ var shipList = Vue.component('ship-list', {
 			sendEvent("Comparison", "Filter", event.key);
 		},
 		getAttributeFilter(key) {
-			const unique = [...new Set(defaultShipCustomizations.map(c => c.getAttributes().find(e => e.name == key).value))];
+			const unique = [...new Set(defaultShipCustomizations.map(c => c.attributes.find(e => e.name == key).value))];
 			return unique.sort().map(x => {
 				return {label: x, value: x}});
 		},
@@ -2714,6 +2731,8 @@ var shipDetails = Vue.component('ship-details', {
 	watch: {
 		selectedCustomization: {
 			handler: function(val) {
+				val.calculateDerivedValues();
+
 				const serialized = val.serialize();
 
 				let url = new URL(location.href);
@@ -2761,12 +2780,14 @@ var shipDetails = Vue.component('ship-details', {
 
 			return turrets.length > 0;
 		},
+		attributes: function() {
+			return this.selectedCustomization.attributes;
+		},
 		summaryData: function() {
-			const attributes = this.selectedCustomization.getAttributes();
 			const usageSummary = (usageName, availableName, ratioName) => {
-				const usage = attributes.find(n => n.name == usageName);
-				const available = attributes.find(n => n.name == availableName);
-				const ratio = attributes.find(n => n.name == ratioName);
+				const usage = this.attributes.find(n => n.name == usageName);
+				const available = this.attributes.find(n => n.name == availableName);
+				const ratio = this.attributes.find(n => n.name == ratioName);
 				const summary = formatNumber(usage.value) + " / " + formatNumber(available.value);
 				return summary + " (" + ratio.value + ")";
 			};
@@ -2774,11 +2795,11 @@ var shipDetails = Vue.component('ship-details', {
 			const powerSummary = usageSummary("Power Usage", "Power Generation", "Power Usage Ratio");
 			const coolingSummary = usageSummary("Cooling Usage", "Cooling Available", "Cooling Usage Ratio");
 
-			const burstDps = attributes.find(n => n.name == "Total Burst DPS");
-			const sustainedDps = attributes.find(n => n.name == "Total Sustained DPS");
+			const burstDps = this.attributes.find(n => n.name == "Total Burst DPS");
+			const sustainedDps = this.attributes.find(n => n.name == "Total Sustained DPS");
 
-			const emSignature = attributes.find(n => n.name == "EM Signature");
-			const irSignature = attributes.find(n => n.name == "IR Signature");
+			const emSignature = this.attributes.find(n => n.name == "EM Signature");
+			const irSignature = this.attributes.find(n => n.name == "IR Signature");
 
 			return [
 				{
@@ -2815,6 +2836,9 @@ var shipDetails = Vue.component('ship-details', {
 		}
 	},
 	methods: {
+		getAttributes(category) {
+			return this.attributes.filter(n => n.category == category && !n.comparison);
+		},
 		getSectionBindingGroups: function(sectionName) {
 			const sectionIndex = Object.keys(this.sectionDefinitions).indexOf(sectionName);
 			let excludedTypes = [];
