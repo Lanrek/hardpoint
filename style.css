@@ -6,6 +6,9 @@
 	--iview-background: #f8f8f9;
 
 	--title-text: rgba(255,255,255,.7);
+
+	--min-width: 920px;
+	--max-width: 1200px;
 }
 
 .large-icon-button {
@@ -246,6 +249,10 @@
 	float: right;
 }
 
+.ivu-menu-horizontal > .ivu-menu-item:first-child {
+	padding-right: 0px;
+}
+
 .ivu-menu-horizontal > .ivu-menu-submenu {
 	float: right;
 }
@@ -259,17 +266,19 @@
 }
 
 .centered-narrow {
-	min-width: 768px;
-	max-width: 1200px;
+	min-width: var(--min-width);
+	max-width: var(--max-width);
 	margin-left: auto;
 	margin-right: auto;
+	padding-left: 16px;
+	padding-right: 16px;
 }
 
 .header {
+	min-width: var(--min-width);
 	height: 60px;
 	background-color: var(--iview-title);
 	line-height: normal;
-	padding: 0px 16px 0px 16px;
 }
 
 .header h1 a {
@@ -283,7 +292,8 @@
 }
 
 .content {
-	padding: 16px;
+	padding-top: 16px;
+	padding-bottom: 16px;
 }
 
 .not-footer {
@@ -291,11 +301,13 @@
 }
 
 .footer {
+	min-width: var(--min-width);
 	height: 52px;
 	background-color: var(--iview-title);
 	color: var(--title-text);
 	text-align: center;
-	padding: 8px 16px 8px 16px;
+	padding-top: 8px;
+	padding-bottom: 8px;
 }
 
 .footer a, .footer .ivu-tooltip {
