@@ -30,9 +30,21 @@
 	margin-right: 0px;
 }
 
-.spaced-row + .spaced-row {
-	padding-top: 16px;
+.sticky {
+	position: -webkit-sticky;
+	position: sticky;
+	top: 0;
+	z-index: 101;
+	background-color: white;
 }
+
+.spaced-row {
+	padding-bottom: 16px;
+}
+
+ .spaced-row:last-child {
+	padding-bottom: 0px;
+ }
 
 .ship-list-controls {
 	height: 32px;
@@ -74,7 +86,6 @@
 
 /* 3D turret coverage display canvas and container. */
 .coverage-display {
-	margin-top: 16px;
 	border: 1px solid #dcdee2;
 	text-align: center;
 }

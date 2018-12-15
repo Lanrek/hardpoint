@@ -769,10 +769,10 @@ class DataforgeComponent {
 			return this.getPowerGeneration(binding) * binding.customization.powerUsageRatio;
 		}
 
-		return -1 * this.getPowerConsumption(binding);
+		return -1 * this.getPowerUsage(binding);
 	}
 
-	getPowerConsumption(binding) {
+	getPowerUsage(binding) {
 		if (binding.powerSelector == "Active") {
 			if (this.type == "FlightController") {
 				// TODO This is a fairly basic activity approximation used for both power and heat calculations.
@@ -888,10 +888,19 @@ class DataforgeComponent {
 	}
 
 	getCurrentCooling(binding) {
+		return this.getCoolingAvailable(binding) - this.getCoolingUsage(binding);
+	}
+
+	getCoolingUsage(binding) {
 		const temperature = this.getCurrentTemperature(binding);
 		const rate = Math.exp(-1 * this.getCoolingCoefficient(binding));
 
-		return temperature * rate - temperature;
+		return temperature - temperature * rate;
+	}
+
+	getCoolingAvailable(binding) {
+		// Divide by two to get heat cooled per second.
+		return _.get(this._components, "cooler.heatSinkMaxCapacityContribution", 0) / 2;
 	}
 
 	getSummary(binding) {
@@ -1478,10 +1487,10 @@ class ShipCustomization {
 
 	get powerUsageRatio() {
 		const allComponents = this._getAllComponentBindings();
-		const powerConsumption = this._sumComponentValue(allComponents, "powerConsumption");
+		const powerUsage = this._sumComponentValue(allComponents, "powerUsage");
 		const powerGeneration = this._sumComponentValue(allComponents, "powerGeneration");
 
-		return powerConsumption / powerGeneration;
+		return powerUsage / powerGeneration;
 	}
 
 	getAttributes(category=undefined) {
@@ -1491,8 +1500,11 @@ class ShipCustomization {
 		const quantumEfficiency = this._sumComponentValue(allComponents, "quantumEfficiency");
 		const containerCapacity = this._sumComponentValue(allComponents, "containerCapacity");
 
-		const powerConsumption = this._sumComponentValue(allComponents, "powerConsumption");
+		const powerUsage = this._sumComponentValue(allComponents, "powerUsage");
 		const powerGeneration = this._sumComponentValue(allComponents, "powerGeneration");
+
+		const coolingUsage = this._sumComponentValue(allComponents, "coolingUsage");
+		const coolingAvailable = this._sumComponentValue(allComponents, "coolingAvailable");
 
 		let attributes = this._specification.getAttributes();
 		attributes = attributes.concat([
@@ -1524,28 +1536,34 @@ class ShipCustomization {
 				value: Math.round(powerGeneration)
 			},
 			{
-				name: "Standby Power Usage",
-				category: "Power",
-				description: "Total power consumption of all components in standby mode",
-				value: Math.round(this._sumComponentValue(allComponents, "powerBase"))
-			},
-			{
-				name: "Current Power Usage",
+				name: "Power Usage",
 				category: "Power",
 				description: "Sum of the power consumption of all components in their current state",
-				value: Math.round(powerConsumption)
+				value: Math.round(powerUsage)
 			},
 			{
-				name: "Current Usage Ratio",
+				name: "Power Usage Ratio",
 				category: "Power",
 				description: "Percentage of power generation capacity used by current settings",
-				value: Math.round(100 * (powerConsumption) / powerGeneration) + "%"
+				value: Math.round(100 * (powerUsage) / powerGeneration) + "%"
 			},
 			{
-				name: "Current Heat",
-				category: "Heat",
+				name: "Cooling Available",
+				category: "Cooling",
 				description: "Total heat of all components",
-				value: Math.round(this._sumComponentValue(allComponents, "currentTemperature"))
+				value: Math.round(coolingAvailable)
+			},
+			{
+				name: "Cooling Usage",
+				category: "Cooling",
+				description: "Total heat of all components",
+				value: Math.round(coolingUsage)
+			},
+			{
+				name: "Cooling Usage Ratio",
+				category: "Cooling",
+				description: "Percentage of power generation capacity used by current settings",
+				value: Math.round(100 * (coolingUsage) / coolingAvailable) + "%"
 			},
 			{
 				name: "Total Shields",
@@ -2576,6 +2594,37 @@ var shipDetails = Vue.component('ship-details', {
 				"Flight": ["FlightController"]
 			},
 
+			summaryColumns: [
+				{
+					title: "Summary",
+					key: "name1",
+					width: 70
+				},
+				{
+					title: " ",
+					key: "value1",
+				},
+				{
+					title: " ",
+					key: "name2",
+					width: 100
+				},
+				{
+					title: " ",
+					key: "value2"
+				},
+				{
+					title: " ",
+					key: "name3",
+					width: 110
+				},
+				{
+					title: " ",
+					key: "value3",
+					width: 60
+				}
+			],
+
 			powerColumns: [
 				{
 					title: "Power",
@@ -2705,6 +2754,41 @@ var shipDetails = Vue.component('ship-details', {
 				n => turretTypes.includes(_.get(n, "selectedComponent.type")));
 
 			return turrets.length > 0;
+		},
+		summaryData: function() {
+			const attributes = this.selectedCustomization.getAttributes();
+			const usageSummary = (usageName, availableName, ratioName) => {
+				const usage = attributes.find(n => n.name == usageName);
+				const available = attributes.find(n => n.name == availableName);
+				const ratio = attributes.find(n => n.name == ratioName);
+				const summary = formatNumber(usage.value) + " / " + formatNumber(available.value);
+				return summary + " (" + ratio.value + ")";
+			};
+
+			const powerSummary = usageSummary("Power Usage", "Power Generation", "Power Usage Ratio");
+			const coolingSummary = usageSummary("Cooling Usage", "Cooling Available", "Cooling Usage Ratio");
+
+			const burstDps = attributes.find(n => n.name == "Total Burst DPS");
+			const sustainedDps = attributes.find(n => n.name == "Total Sustained DPS");
+
+			return [
+				{
+					name1: "Power",
+					value1: powerSummary,
+					name2: "EM Signature",
+					value2: "Unknown",
+					name3: "Burst DPS",
+					value3: formatNumber(burstDps.value)
+				},
+				{
+					name1: "Cooling",
+					value1: coolingSummary,
+					name2: "IR Signature",
+					value2: "Unknown",
+					name3: "Sustained DPS",
+					value3: formatNumber(sustainedDps.value)
+				}
+			];
 		}
 	},
 	methods: {

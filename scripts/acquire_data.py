@@ -253,6 +253,7 @@ filters = {
 		"components.[].heatGeneration.minHeatAmount": None,
 		"components.[].heatGeneration.angularAccelerationHeatAmount": None,
 		"components.[].heatGeneration.linearAccelerationHeatAmount": None,
+		"components.[].heatSinkMaxCapacityContribution": None,
 		"ports.[]": "port"
 	},
 	"port": {
