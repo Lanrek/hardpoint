@@ -606,7 +606,7 @@ class DataforgeComponent {
 
 	getGunSustainedDps(binding) {
 		// This isn't exact because cooling is non-linear, but the rounding errors are fairly small.
-		const coolingPerShot = this.getGunMaxCoolingPerShot(binding) * this.getCoolingEfficiency(binding);
+		const coolingPerShot = this.getGunMaxCoolingPerShot(binding) * binding.customization.coolingEfficiency;
 		let fireRate = this.getGunFireRate(binding);
 		fireRate *= Math.min(1, coolingPerShot / this.getGunHeatPerShot(binding));
 
@@ -619,7 +619,7 @@ class DataforgeComponent {
 			return undefined;
 		}
 
-		const efficiency = this.getCoolingEfficiency(binding);
+		const efficiency = binding.customization.coolingEfficiency;
 
 		// Quick and dirty simulation although there's probably an analytical solution.
 		// Limit the number of iterations to prevent infinite loops if there are bugs.
@@ -882,7 +882,7 @@ class DataforgeComponent {
 
 	getDelayedTemperature(binding) {
 		// For reasons unknown, the temperature and derived values shown in-game have one second of cooling applied.
-		const efficiency = this.getCoolingEfficiency(binding);
+		const efficiency = binding.customization.coolingEfficiency;
 		const initial = this.getCurrentTemperature(binding);
 		return this._temperatureAfter(initial, 1, efficiency);
 	}
@@ -904,7 +904,7 @@ class DataforgeComponent {
 	}
 
 	getCoolingEfficiency(binding) {
-		return Math.min(1, 1 / binding.customization.coolingUsageRatio);
+		return binding.customization.coolingEfficiency;
 	}
 
 	getEmSignature(binding) {
@@ -1507,6 +1507,14 @@ class ShipCustomization {
 		return this._specification.tags;
 	}
 
+	get coolingEfficiency() {
+		return Math.min(1, 1 / this.coolingUsageRatio);
+	}
+
+	get powerEfficiency() {
+		return Math.min(1, 1 / this.powerUsageRatio);
+	}
+
 	// TODO This is a terrible pattern; need a more general solution to data caching outside components.
 	calculateDerivedValues() {
 		// Avoids infinite loops because these are scalars and Vue can detect when they don't change.
@@ -1571,6 +1579,12 @@ class ShipCustomization {
 				value: Math.round(100 * (powerUsage) / powerAvailable) + "%"
 			},
 			{
+				name: "Power Efficiency",
+				category: "Power",
+				description: "Reduced effectiveness of components because of insufficient power",
+				value: Math.round(100 * this.powerEfficiency) + "%"
+			},
+			{
 				name: "Cooling Available",
 				category: "Cooling",
 				description: "Total heat of all components",
@@ -1587,6 +1601,12 @@ class ShipCustomization {
 				category: "Cooling",
 				description: "Percentage of power generation capacity used by current settings",
 				value: Math.round(100 * (coolingUsage) / coolingAvailable) + "%"
+			},
+			{
+				name: "Cooling Efficiency",
+				category: "Cooling",
+				description: "Reduced effectiveness of components because of insufficient cooling",
+				value: Math.round(100 * this.coolingEfficiency) + "%"
 			},
 			{
 				name: "Total Shields",
@@ -2801,11 +2821,11 @@ var shipDetails = Vue.component('ship-details', {
 				const available = this.attributes.find(n => n.name == availableName);
 				const ratio = this.attributes.find(n => n.name == ratioName);
 				const summary = formatNumber(usage.value) + " / " + formatNumber(available.value);
-				return summary + " (" + ratio.value + ")";
+				return summary + " (" + ratio.value + " efficiency)";
 			};
 
-			const powerSummary = usageSummary("Power Usage", "Power Generation", "Power Usage Ratio");
-			const coolingSummary = usageSummary("Cooling Usage", "Cooling Available", "Cooling Usage Ratio");
+			const powerSummary = usageSummary("Power Usage", "Power Generation", "Power Efficiency");
+			const coolingSummary = usageSummary("Cooling Usage", "Cooling Available", "Cooling Efficiency");
 
 			const burstDps = this.attributes.find(n => n.name == "Total Burst DPS");
 			const sustainedDps = this.attributes.find(n => n.name == "Total Sustained DPS");
@@ -2819,7 +2839,8 @@ var shipDetails = Vue.component('ship-details', {
 					iconType1: "md-flash",
 					iconColor1: "LightSeaGreen",
 					value1: powerSummary,
-					description1: "Total power used by all components compared to total power available",
+					description1: "Total power used by all components compared to total power available" +
+						" -- exceeding power capacity inhibits or disables impacted components",
 					name2: "EM Signature",
 					iconType2: "ios-magnet",
 					iconColor2: "rgb(190,85,4)",
@@ -2834,7 +2855,8 @@ var shipDetails = Vue.component('ship-details', {
 					iconType1: "ios-snow",
 					iconColor1: "SteelBlue",
 					value1: coolingSummary,
-					description1: "Total cooling used by all components compared to total cooling available",
+					description1: "Total cooling used by all components compared to total cooling available" +
+						" -- exceeding cooling capacity causes components to cool at a reduced rate",
 					name2: "IR Signature",
 					iconType2: "ios-flame",
 					iconColor2: "DarkRed",
