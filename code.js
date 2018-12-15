@@ -954,7 +954,8 @@ class DataforgeComponent {
 			return new SummaryText([
 				"{shieldCapacity} shield capacity",
 				"Regenerates {shieldRegeneration} capacity/second with a {shieldDownDelay} second delay after dropping",
-				"{powerBase} power/second in standby and an additional {powerIncrease} when recharging"],
+				"{powerBase} power/second in standby and an additional {powerIncrease} when recharging",
+				"{powerToEm} EM signature per power and {temperatureToIr} IR signature per heat"],
 				this, binding);
 		}
 
@@ -963,7 +964,8 @@ class DataforgeComponent {
 				"{quantumRange} gigameter jump distance at {quantumSpeed} megameters/sec",
 				"Consumes {quantumEfficiency} fuel per gigameter",
 				"Calibrates in no less than {quantumCalibrationTime} seconds and spools in {quantumSpoolTime} seconds",
-				"{quantumCooldown} second cooldown after jumping"],
+				"{quantumCooldown} second cooldown after jumping",
+				"{powerToEm} EM signature per power and {temperatureToIr} IR signature per heat"],
 				this, binding);
 		}
 
@@ -983,7 +985,7 @@ class DataforgeComponent {
 		if (this.type == "PowerPlant") {
 			return new SummaryText([
 				"{powerAvailable} maximum power generation per second",
-				"{powerToEm} increase in EM signature per power generated"],
+				"{powerToEm} EM signature per power and {temperatureToIr} IR signature per heat"],
 				this, binding);
 		}
 
@@ -992,6 +994,10 @@ class DataforgeComponent {
 				"{flightAngularPower} power/second when accelerating rotationally",
 				"{flightLinearPower} power/second when accelerating linearly"],
 				this, binding);
+		}
+
+		if (this.type == "Cooler") {
+			return new SummaryText(["{coolingAvailable} max cooling / second"], this, binding);
 		}
 
 		return new SummaryText();
