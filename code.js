@@ -895,8 +895,12 @@ class DataforgeComponent {
 	}
 
 	getCoolingAvailable(binding) {
-		// Divide by two to get heat cooled per second.
-		return _.get(this._components, "cooler.heatSinkMaxCapacityContribution", 0) / 2;
+		if (this.type == "Cooler" && binding.powerSelector != "Off") {
+			// Divide by two to get heat cooled per second.
+			return _.get(this._components, "cooler.heatSinkMaxCapacityContribution", 0) / 2;
+		}
+
+		return 0;
 	}
 
 	getCoolingEfficiency(binding) {
@@ -1266,7 +1270,7 @@ class ItemBinding {
 
 		this._setSelectedComponent(this.defaultComponent, defaultItems);
 
-		const defaultActiveTypes = ["Turret", "TurretBase", "WeaponGun", "Cooler", "FlightController"];
+		const defaultActiveTypes = ["Turret", "TurretBase", "WeaponGun", "PowerPlant", "Cooler", "FlightController"];
 		this._powerSelector = "Standby";
 		if (this.selectedComponent && defaultActiveTypes.includes(this.selectedComponent.type)) {
 			this._powerSelector = "Active";
@@ -1923,9 +1927,6 @@ var componentSelector = Vue.component('component-selector', {
 		},
 		activePowerName: function() {
 			const type = _.get(this.bindings[0].selectedComponent, "type");
-			if (type == "Container" || type == "PowerPlant") {
-				return undefined;
-			}
 			if (type == "WeaponGun" || type == "WeaponMissile" || type == "Turret" || type == "TurretBase") {
 				return "Firing";
 			}
@@ -1940,6 +1941,14 @@ var componentSelector = Vue.component('component-selector', {
 			}
 
 			return "Active";
+		},
+		hasStandby: function() {
+			const type = _.get(this.bindings[0].selectedComponent, "type");
+			if (type == "PowerPlant" || type == "Cooler") {
+				return false;
+			}
+
+			return true;
 		}
 	},
 	methods: {

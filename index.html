@@ -307,8 +307,8 @@
 							type="button"
 							size="small">
 							<radio label="Off">Off</radio>
-							<radio label="Standby">Standby</radio>
-							<radio label="Active" v-if="activePowerName">{{activePowerName}}</radio>
+							<radio label="Standby" v-if="hasStandby">Standby</radio>
+							<radio label="Active">{{activePowerName}}</radio>
 						</radio-group>
 					</span>
 				</p>
