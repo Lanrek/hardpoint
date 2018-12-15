@@ -30,19 +30,11 @@
 	margin-right: 0px;
 }
 
-.sticky {
-	position: -webkit-sticky;
-	position: sticky;
-	top: 0;
-	z-index: 101;
-	background-color: white;
-}
-
 .spaced-row {
 	padding-bottom: 16px;
 }
 
- .spaced-row:last-child {
+.spaced-row:last-child {
 	padding-bottom: 0px;
  }
 
@@ -86,6 +78,24 @@
 
 .component-details {
 	padding-top: 8px;
+}
+
+/* Sticky summary table on the ship details page. */
+.sticky {
+	position: -webkit-sticky;
+	position: sticky;
+	top: 0;
+	z-index: 101;
+	background-color: white;
+}
+
+.sticky tr td {
+	border-bottom: 0px;
+}
+
+.sticky .ivu-table-cell .ivu-tooltip-rel {
+	padding-top: 15px;
+	padding-bottom: 15px;
 }
 
 /* 3D turret coverage display canvas and container. */
@@ -148,8 +158,7 @@
 	padding-bottom: 8px;
 }
 
-.summary-tables .ivu-table-cell .ivu-tooltip-rel,
-.sticky .ivu-table-cell .ivu-tooltip-rel {
+.summary-tables .ivu-table-cell .ivu-tooltip-rel {
 	padding-top: 15px;
 	padding-bottom: 15px;
 	padding-left: 4px;

@@ -2627,7 +2627,7 @@ var shipDetails = Vue.component('ship-details', {
 				{
 					title: "Summary",
 					key: "name1",
-					render: (h, p) => this.renderNameCell(h, p, "1", "bottom"),
+					render: (h, p) => this.renderNameCell(h, p, "1", "bottom", -16),
 					width: 85
 				},
 				{
@@ -2637,7 +2637,7 @@ var shipDetails = Vue.component('ship-details', {
 				{
 					title: " ",
 					key: "name2",
-					render: (h, p) => this.renderNameCell(h, p, "2", "bottom"),
+					render: (h, p) => this.renderNameCell(h, p, "2", "bottom", -16),
 					width: 115
 				},
 				{
@@ -2647,7 +2647,7 @@ var shipDetails = Vue.component('ship-details', {
 				{
 					title: " ",
 					key: "name3",
-					render: (h, p) => this.renderNameCell(h, p, "3", "bottom"),
+					render: (h, p) => this.renderNameCell(h, p, "3", "bottom", -16),
 					width: 110
 				},
 				{
@@ -2886,7 +2886,7 @@ var shipDetails = Vue.component('ship-details', {
 		onMouseLeave: function() {
 			this.selectedCustomization.hoveredBindings = [];
 		},
-		renderNameCell(h, params, suffix="", placement="left") {
+		renderNameCell(h, params, suffix = "", placement = "left", offset = "0") {
 			let name = params.row["name" + suffix];
 			const iconType = params.row["iconType" + suffix];
 			if (iconType) {
@@ -2907,7 +2907,15 @@ var shipDetails = Vue.component('ship-details', {
 					props: {
 						content: params.row["description" + suffix],
 						placement: placement,
-						transfer: true
+						transfer: true,
+						offset: "0, " + offset,
+						options: {
+							modifiers: {
+								flip: {
+									enabled: false
+								}
+							}
+						}
 					}
 				},
 				name);
