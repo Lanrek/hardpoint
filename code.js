@@ -1505,6 +1505,7 @@ class ShipCustomization {
 
 	getAttributes(category=undefined) {
 		const allComponents = this._getAllComponentBindings();
+		const activeComponents = allComponents.filter(n => n.powerSelector == "Active");
 
 		const quantumFuel = this._sumComponentValue(allComponents, "quantumFuel");
 		const quantumEfficiency = this._sumComponentValue(allComponents, "quantumEfficiency");
@@ -1585,13 +1586,13 @@ class ShipCustomization {
 				name: "Total Burst DPS",
 				category: "Damage",
 				description: "Total gun DPS without considering heat, power, or ammo",
-				value: Math.round(this._sumComponentValue(allComponents, "gunBurstDps.total"))
+				value: Math.round(this._sumComponentValue(activeComponents, "gunBurstDps.total"))
 			},
 			{
 				name: "Total Sustained DPS",
 				description: "Total gun DPS that can be sustained without overheating",
 				category: "Damage",
-				value: Math.round(this._sumComponentValue(allComponents, "gunSustainedDps.total"))
+				value: Math.round(this._sumComponentValue(activeComponents, "gunSustainedDps.total"))
 			},
 			{
 				name: "Total Missile Damage",
