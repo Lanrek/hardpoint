@@ -31,11 +31,11 @@
 }
 
 .spaced-row {
-	padding-bottom: 16px;
+	margin-bottom: 16px;
 }
 
 .spaced-row:last-child {
-	padding-bottom: 0px;
+	margin-bottom: 0px;
  }
 
 .ship-list-controls {
@@ -81,7 +81,8 @@
 }
 
 /* Sticky summary table on the ship details page. */
-.sticky {
+.sticky-summary {
+	padding-bottom: 16px;
 	position: -webkit-sticky;
 	position: sticky;
 	top: 0;
@@ -89,11 +90,11 @@
 	background-color: white;
 }
 
-.sticky tr td {
+.sticky-summary tr td {
 	border-bottom: 0px;
 }
 
-.sticky .ivu-table-cell .ivu-tooltip-rel {
+.sticky-summary .ivu-table-cell .ivu-tooltip-rel {
 	padding-top: 15px;
 	padding-bottom: 15px;
 }
