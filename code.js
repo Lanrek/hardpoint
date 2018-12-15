@@ -764,14 +764,6 @@ class DataforgeComponent {
 		return 0;
 	}
 
-	getCurrentPower(binding) {
-		if (this.type == "PowerPlant") {
-			return this.getPowerGeneration(binding) * binding.customization.powerUsageRatio;
-		}
-
-		return -1 * this.getPowerUsage(binding);
-	}
-
 	getPowerUsage(binding) {
 		if (binding.powerSelector == "Active") {
 			if (this.type == "FlightController") {
@@ -814,9 +806,17 @@ class DataforgeComponent {
 		return this.getPowerDraw(binding) - this.getPowerBase(binding);
 	}
 
-	getPowerGeneration(binding) {
+	getPowerAvailable(binding) {
 		if (this.type == "PowerPlant" && binding.powerSelector != "Off") {
 			return _.get(this._connections, "POWER.powerDraw", 0);
+		}
+
+		return 0;
+	}
+
+	getPowerGeneration(binding) {
+		if (this.type == "PowerPlant") {
+			return this.getPowerAvailable(binding) * binding.customization.powerUsageRatio;
 		}
 
 		return 0;
@@ -884,11 +884,7 @@ class DataforgeComponent {
 			}
 		}
 
-		return factor * Math.abs(this.getCurrentPower(binding));
-	}
-
-	getCurrentCooling(binding) {
-		return this.getCoolingAvailable(binding) - this.getCoolingUsage(binding);
+		return factor * (this.getPowerGeneration(binding) + this.getPowerUsage(binding));
 	}
 
 	getCoolingUsage(binding) {
@@ -972,7 +968,7 @@ class DataforgeComponent {
 
 		if (this.type == "PowerPlant") {
 			return new SummaryText([
-				"{powerGeneration} maximum power generation per second",
+				"{powerAvailable} maximum power generation per second",
 				"{powerToEm} increase in EM signature per power generated"],
 				this, binding);
 		}
@@ -1488,9 +1484,9 @@ class ShipCustomization {
 	get powerUsageRatio() {
 		const allComponents = this._getAllComponentBindings();
 		const powerUsage = this._sumComponentValue(allComponents, "powerUsage");
-		const powerGeneration = this._sumComponentValue(allComponents, "powerGeneration");
+		const powerAvailable = this._sumComponentValue(allComponents, "powerAvailable");
 
-		return powerUsage / powerGeneration;
+		return powerUsage / powerAvailable;
 	}
 
 	getAttributes(category=undefined) {
@@ -1501,7 +1497,7 @@ class ShipCustomization {
 		const containerCapacity = this._sumComponentValue(allComponents, "containerCapacity");
 
 		const powerUsage = this._sumComponentValue(allComponents, "powerUsage");
-		const powerGeneration = this._sumComponentValue(allComponents, "powerGeneration");
+		const powerAvailable = this._sumComponentValue(allComponents, "powerAvailable");
 
 		const coolingUsage = this._sumComponentValue(allComponents, "coolingUsage");
 		const coolingAvailable = this._sumComponentValue(allComponents, "coolingAvailable");
@@ -1533,7 +1529,7 @@ class ShipCustomization {
 				name: "Power Generation",
 				category: "Power",
 				description: "Total power generating capacity of all power plants",
-				value: Math.round(powerGeneration)
+				value: Math.round(powerAvailable)
 			},
 			{
 				name: "Power Usage",
@@ -1545,7 +1541,7 @@ class ShipCustomization {
 				name: "Power Usage Ratio",
 				category: "Power",
 				description: "Percentage of power generation capacity used by current settings",
-				value: Math.round(100 * (powerUsage) / powerGeneration) + "%"
+				value: Math.round(100 * (powerUsage) / powerAvailable) + "%"
 			},
 			{
 				name: "Cooling Available",
