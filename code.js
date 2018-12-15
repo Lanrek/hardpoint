@@ -2626,7 +2626,8 @@ var shipDetails = Vue.component('ship-details', {
 				{
 					title: "Summary",
 					key: "name1",
-					width: 70
+					render: (h, p) => this.renderNameCell(h, p, "1", "bottom"),
+					width: 85
 				},
 				{
 					title: " ",
@@ -2635,7 +2636,8 @@ var shipDetails = Vue.component('ship-details', {
 				{
 					title: " ",
 					key: "name2",
-					width: 100
+					render: (h, p) => this.renderNameCell(h, p, "2", "bottom"),
+					width: 115
 				},
 				{
 					title: " ",
@@ -2644,6 +2646,7 @@ var shipDetails = Vue.component('ship-details', {
 				{
 					title: " ",
 					key: "name3",
+					render: (h, p) => this.renderNameCell(h, p, "3", "bottom"),
 					width: 110
 				},
 				{
@@ -2657,7 +2660,7 @@ var shipDetails = Vue.component('ship-details', {
 				{
 					title: "Power",
 					key: "name",
-					render: this.renderRowTooltip
+					render: this.renderNameCell
 				},
 				{
 					title: " ",
@@ -2670,7 +2673,7 @@ var shipDetails = Vue.component('ship-details', {
 				{
 					title: "Heat",
 					key: "name",
-					render: this.renderRowTooltip
+					render: this.renderNameCell
 				},
 				{
 					title: " ",
@@ -2683,7 +2686,7 @@ var shipDetails = Vue.component('ship-details', {
 				{
 					title: "Damage",
 					key: "name",
-					render: this.renderRowTooltip
+					render: this.renderNameCell
 				},
 				{
 					title: " ",
@@ -2696,7 +2699,7 @@ var shipDetails = Vue.component('ship-details', {
 				{
 					title: "Maneuverability",
 					key: "name",
-					render: this.renderRowTooltip
+					render: this.renderNameCell
 				},
 				{
 					title: " ",
@@ -2709,7 +2712,7 @@ var shipDetails = Vue.component('ship-details', {
 				{
 					title: "Survivability",
 					key: "name",
-					render: this.renderRowTooltip
+					render: this.renderNameCell
 				},
 				{
 					title: " ",
@@ -2722,7 +2725,7 @@ var shipDetails = Vue.component('ship-details', {
 				{
 					title: "Travel",
 					key: "name",
-					render: this.renderRowTooltip
+					render: this.renderNameCell
 				},
 				{
 					title: " ",
@@ -2805,19 +2808,33 @@ var shipDetails = Vue.component('ship-details', {
 			return [
 				{
 					name1: "Power",
+					iconType1: "md-flash",
+					iconColor1: "LightSeaGreen",
 					value1: powerSummary,
+					description1: "Total power used by all components compared to total power available",
 					name2: "EM Signature",
+					iconType2: "ios-magnet",
+					iconColor2: "rgb(190,85,4)",
 					value2: formatNumber(emSignature.value),
+					description2: emSignature.description,
 					name3: "Burst DPS",
-					value3: formatNumber(burstDps.value)
+					value3: formatNumber(burstDps.value),
+					description3: burstDps.description
 				},
 				{
 					name1: "Cooling",
+					iconType1: "ios-snow",
+					iconColor1: "SteelBlue",
 					value1: coolingSummary,
+					description1: "Total cooling used by all components compared to total cooling available",
 					name2: "IR Signature",
+					iconType2: "ios-flame",
+					iconColor2: "DarkRed",
 					value2: formatNumber(irSignature.value),
+					description2: irSignature.description,
 					name3: "Sustained DPS",
-					value3: formatNumber(sustainedDps.value)
+					value3: formatNumber(sustainedDps.value),
+					description3: sustainedDps.description
 				}
 			];
 		}
@@ -2894,16 +2911,31 @@ var shipDetails = Vue.component('ship-details', {
 		onMouseLeave: function() {
 			this.selectedCustomization.hoveredBindings = [];
 		},
-		renderRowTooltip(h, params) {
+		renderNameCell(h, params, suffix="", placement="left") {
+			let name = params.row["name" + suffix];
+			const iconType = params.row["iconType" + suffix];
+			if (iconType) {
+				icon = h(
+					"icon", {
+						props: {
+							type: iconType,
+							size: 14,
+							color: params.row["iconColor" + suffix]
+						}
+					}
+				);
+				name = [icon, name];
+			}
+
 			const tooltip = h(
 				"Tooltip", {
 					props: {
-						content: params.row.description,
-						placement: "left",
+						content: params.row["description" + suffix],
+						placement: placement,
 						transfer: true
 					}
 				},
-				params.row.name);
+				name);
 
 			return tooltip;
 		}
