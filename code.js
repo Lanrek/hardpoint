@@ -1584,20 +1584,26 @@ class ShipCustomization {
 			},
 			{
 				name: "Total Burst DPS",
-				category: "Damage",
+				category: "Guns",
 				description: "Total gun DPS without considering heat, power, or ammo",
 				value: Math.round(this._sumComponentValue(activeComponents, "gunBurstDps.total"))
 			},
 			{
 				name: "Total Sustained DPS",
 				description: "Total gun DPS that can be sustained without overheating",
-				category: "Damage",
+				category: "Guns",
 				value: Math.round(this._sumComponentValue(activeComponents, "gunSustainedDps.total"))
+			},
+			{
+				name: "Missile Count",
+				description: "Number of missiles equipped",
+				category: "Missiles",
+				value: allComponents.filter(n => n.selectedComponent.type == "Ordinance").length
 			},
 			{
 				name: "Total Missile Damage",
 				description: "Total potential damage of all missiles",
-				category: "Damage",
+				category: "Missiles",
 				value: Math.round(this._sumComponentValue(allComponents, "missileDamage.total"))
 			},
 			{
@@ -2651,35 +2657,9 @@ var shipDetails = Vue.component('ship-details', {
 				}
 			],
 
-			powerColumns: [
+			missileColumns: [
 				{
-					title: "Power",
-					key: "name",
-					render: this.renderNameCell
-				},
-				{
-					title: " ",
-					key: "value",
-					align: "right",
-					width: 75
-				}
-			],
-			heatColumns: [
-				{
-					title: "Heat",
-					key: "name",
-					render: this.renderNameCell
-				},
-				{
-					title: " ",
-					key: "value",
-					align: "right",
-					width: 75
-				}
-			],
-			damageColumns: [
-				{
-					title: "Damage",
+					title: "Missiles",
 					key: "name",
 					render: this.renderNameCell
 				},

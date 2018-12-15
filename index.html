@@ -244,7 +244,7 @@
 						<coverage-display v-if="showTurretCoverage"
 							:customization="selectedCustomization">
 						</coverage-display>
-						<i-table :columns="damageColumns" :data="selectedCustomization.getAttributes('Damage')"></i-table>
+						<i-table :columns="missileColumns" :data="selectedCustomization.getAttributes('Missiles')"></i-table>
 						<i-table :columns="maneuverabilityColumns" :data="selectedCustomization.getAttributes('Maneuverability')"></i-table>
 						<i-table :columns="survivabilityColumns" :data="selectedCustomization.getAttributes('Survivability')"></i-table>
 						<i-table :columns="travelColumns" :data="selectedCustomization.getAttributes('Travel')"></i-table>
