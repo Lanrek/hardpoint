@@ -599,14 +599,9 @@ class DataforgeComponent {
 	}
 
 	getGunMaxCoolingPerShot(binding) {
-		const cool = (heat, seconds) => {
-			// Newton's law of cooling; ambient temperature deduced to be 0.
-			return heat * Math.exp(-1 * seconds * this.getCoolingCoefficient(binding));
-		};
-
 		const secondsPerShot = 60.0 / this.getGunFireRate(binding);
 		const overheatTemperature = this.getOverheatTemperature(binding);
-		return overheatTemperature - cool(overheatTemperature, secondsPerShot);
+		return overheatTemperature - this._temperatureAfter(overheatTemperature, secondsPerShot);
 	}
 
 	getGunSustainedDps(binding) {
@@ -625,22 +620,17 @@ class DataforgeComponent {
 		}
 
 		const efficiency = this.getCoolingEfficiency(binding);
-		const cool = (heat, seconds) => {
-			// Newton's law of cooling; ambient temperature deduced to be 0.
-			const loss = heat - heat * Math.exp(-1 * seconds * this.getCoolingCoefficient(binding));
-			return heat - loss * efficiency;
-		};
 
 		// Quick and dirty simulation although there's probably an analytical solution.
 		// Limit the number of iterations to prevent infinite loops if there are bugs.
 		let shots = 0;
 		let heat = this.getGunStandbyHeat(binding);
 		const secondsPerShot = 60.0 / this.getGunFireRate(binding);
-		heat = cool(heat, 1);
+		heat = this._temperatureAfter(heat, 1, efficiency);
 		while (shots < 100) {
 			shots += 1;
 			heat += this.getGunHeatPerShot(binding);
-			heat = cool(heat, secondsPerShot);
+			heat = this._temperatureAfter(heat, secondsPerShot, efficiency);
 
 			if (heat >= this.getOverheatTemperature(binding)) {
 				return shots * secondsPerShot;
@@ -837,7 +827,7 @@ class DataforgeComponent {
 		return _.get(this._connections, "HEAT.temperatureToIR", 0);
 	}
 
-	getCoolingCoefficient(binding) {
+	get coolingCoefficient() {
 		return _.get(this._connections, "HEAT.coolingCoefficient", 0);
 	}
 
@@ -890,9 +880,16 @@ class DataforgeComponent {
 		return factor * (this.getPowerGeneration(binding) + this.getPowerUsage(binding));
 	}
 
+	getDelayedTemperature(binding) {
+		// For reasons unknown, the temperature and derived values shown in-game have one second of cooling applied.
+		const efficiency = this.getCoolingEfficiency(binding);
+		const initial = this.getCurrentTemperature(binding);
+		return this._temperatureAfter(initial, 1, efficiency);
+	}
+
 	getCoolingUsage(binding) {
 		const temperature = this.getCurrentTemperature(binding);
-		const rate = Math.exp(-1 * this.getCoolingCoefficient(binding));
+		const rate = Math.exp(-1 * this.coolingCoefficient);
 
 		return temperature - temperature * rate;
 	}
@@ -912,7 +909,7 @@ class DataforgeComponent {
 	}
 
 	getIrSignature(binding) {
-		return this.getCurrentTemperature(binding) * this.getTemperatureToIr(binding);
+		return this.getDelayedTemperature(binding) * this.getTemperatureToIr(binding);
 	}
 
 	getSummary(binding) {
@@ -998,6 +995,12 @@ class DataforgeComponent {
 		}
 
 		return new SummaryText();
+	}
+
+	_temperatureAfter(heat, seconds, efficiency = 1) {
+		// Newton's law of cooling; ambient temperature deduced to be 0.
+		const loss = heat - heat * Math.exp(-1 * seconds * this.coolingCoefficient);
+		return heat - loss * efficiency;
 	}
 
 	_getTurretRotationLimit(axis, limit) {
