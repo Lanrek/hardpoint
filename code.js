@@ -817,7 +817,7 @@ class DataforgeComponent {
 
 	getPowerGeneration(binding) {
 		if (this.type == "PowerPlant") {
-			return this.getPowerAvailable(binding) * binding.customization.powerUsageRatio;
+			return this.getPowerAvailable(binding) * binding.customization.powerUsageRatio || 0;
 		}
 
 		return 0;
@@ -935,8 +935,6 @@ class DataforgeComponent {
 				summary.patterns.push("{gunMaximumAmmo} rounds deplete in {gunMagazineDuration} seconds for potentially {gunMagazineDamage.total} damage");
 			}
 
-			summary.patterns.push("{powerBase} power/second in standby and an additional {powerIncrease} when firing");
-
 			return summary;
 		}
 
@@ -953,9 +951,7 @@ class DataforgeComponent {
 		if (this.type == "Shield") {
 			return new SummaryText([
 				"{shieldCapacity} shield capacity",
-				"Regenerates {shieldRegeneration} capacity/second with a {shieldDownDelay} second delay after dropping",
-				"{powerBase} power/second in standby and an additional {powerIncrease} when recharging",
-				"{powerToEm} EM signature per power and {temperatureToIr} IR signature per heat"],
+				"Regenerates {shieldRegeneration} capacity/second with a {shieldDownDelay} second delay after dropping"],
 				this, binding);
 		}
 
@@ -964,8 +960,7 @@ class DataforgeComponent {
 				"{quantumRange} gigameter jump distance at {quantumSpeed} megameters/sec",
 				"Consumes {quantumEfficiency} fuel per gigameter",
 				"Calibrates in no less than {quantumCalibrationTime} seconds and spools in {quantumSpoolTime} seconds",
-				"{quantumCooldown} second cooldown after jumping",
-				"{powerToEm} EM signature per power and {temperatureToIr} IR signature per heat"],
+				"{quantumCooldown} second cooldown after jumping"],
 				this, binding);
 		}
 
@@ -984,8 +979,7 @@ class DataforgeComponent {
 
 		if (this.type == "PowerPlant") {
 			return new SummaryText([
-				"{powerAvailable} maximum power generation per second",
-				"{powerToEm} EM signature per power and {temperatureToIr} IR signature per heat"],
+				"{powerAvailable} maximum power generation per second"],
 				this, binding);
 		}
 

@@ -270,15 +270,27 @@
 				</row>
 				<row v-if="componentName" :gutter="16">
 					<i-col span="12">
-						<span v-html="component.getSummary(bindings[0]).render(reference)"></span>
-					</i-col>
-					<i-col span="12" class="right">
+						Requires
 						<span>
 							{{formatNumber(component.getPowerUsage(bindings[0]))}}<icon type="md-flash" size="14" color="LightSeaGreen" />
 						</span>
 						<span>
 							{{formatNumber(component.getCoolingUsage(bindings[0]))}}<icon type="ios-snow" size="14" color="SteelBlue" />
 						</span>
+					</i-col>
+					<i-col span="12" class="right">
+						Emits
+						<span>
+							{{formatNumber(component.getEmSignature(bindings[0]))}}<icon type="ios-magnet" size="14" color="rgb(190,85,4)" />
+						</span>
+						<span>
+							{{formatNumber(component.getIrSignature(bindings[0]))}}<icon type="ios-flame" size="14" color="DarkRed" />
+						</span>
+					</i-col>
+				</row>
+				<row class="component-details" v-if="componentName" :gutter="16">
+					<i-col span="24">
+						<span v-html="component.getSummary(bindings[0]).render(reference)"></span>
 					</i-col>
 				</row>
 			</i-button>
