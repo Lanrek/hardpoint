@@ -2235,8 +2235,8 @@ var coverageDisplay = Vue.component("coverage-display", {
 			width / -2, width / 2, height / 2, height / -2, near, far);
 		this.positionCamera();
 
-		this.controls = new THREE.TrackballControls(this.camera);
-		this.controls.rotateSpeed = 5.0;
+		this.controls = new THREE.TrackballControls(this.camera, this.$refs.canvas);
+		this.controls.rotateSpeed = 1.5;
 		this.controls.noZoom = true;
 		this.controls.noPan = true;
 		this.controls.staticMoving = true;
