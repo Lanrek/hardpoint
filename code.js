@@ -2367,17 +2367,24 @@ var shipList = Vue.component('ship-list', {
 					minWidth: 55,
 					align: "center",
 					render: (h, params) => {
-						return h('Button', {
+						let destination = {name: "customize", params: {serialized: params.row.serialized}};
+						if (params.row.storageKey) {
+							destination.name = "loadout";
+							destination.params.storageKey = params.row.storageKey;
+						}
+
+						const edit = h("Button", {
 							props: {
 								type: "primary",
 								size: "small"
-							},
-							on: {
-								click: () => {
-									this.customize(params.row.serialized, params.row.storageKey)
-								}
 							}
 						}, "Edit");
+
+						return h("router-link", {
+							props: {
+								to: destination
+							}
+						}, [edit]);
 					}
 				},
 				{
@@ -2571,14 +2578,6 @@ var shipList = Vue.component('ship-list', {
 		}
 	},
 	methods: {
-		customize(serialized, storageKey = undefined) {
-			if (storageKey) {
-				this.$router.push({ name: "loadout", params: {storageKey: storageKey, serialized: serialized}});
-			}
-			else {
-				this.$router.push({ name: "customize", params: {serialized: serialized}});
-			}
-		},
 		getTableHeight() {
 			// TODO This is a terribly sad hack, but it's good enough for now.
 			const headerHeight = 60;
