@@ -59,25 +59,30 @@
 								<p>Game Data Version {{ gameDataVersion }}</p>
 							</i-col>
 							<i-col span="16">
-								<i-menu mode="horizontal" theme="dark" @on-select="onNavigationSelect">
-									<menu-item name="comparison">
-										Ship Comparison
-									</menu-item>
-									<menu-item name="saved">
-										Saved Loadouts
-									</menu-item>
-									<submenu name="new-loadout">
-										<template slot="title">
+								<div class="menu">
+									<dropdown>
+										<span class="dropdown-title">
 											New Loadout
-										</template>
-										<menu-item
-											v-for="customization in shipCustomizations"
-											:key="customization.serialize()"
-											:name="customization.serialize()">
-											{{customization.displayName}}
-										</menu-item>
-									</submenu>
-								</i-menu>
+											<icon type="ios-arrow-down"></icon>
+										</span>
+										<dropdown-menu slot="list">
+											<dropdown-item
+												v-for="customization in shipCustomizations"
+												:key="customization.serialize()">
+												<router-link
+													:to="{name: 'customize', params: {serialized: customization.serialize()}}">
+													{{customization.displayName}}
+												</router-link>
+											</dropdown-item>
+										</dropdown-menu>
+									</dropdown>
+									<router-link :to="{name: 'saved'}">
+										Saved Loadouts
+									</router-link>
+									<router-link :to="{name: 'list'}" class="rightmost">
+										Ship Comparison
+									</router-link>
+								</div>
 							</i-col>
 						</row>
 					</div>

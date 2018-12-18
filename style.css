@@ -1,11 +1,13 @@
 :root {
 	--iview-primary: #2d8cf0;
 	--iview-primary-light: #5cadff;
-	--iview-title: #1c2438;
-	--iview-content: #495060;
+	--iview-content: #515a6e;
 	--iview-background: #f8f8f9;
 
+	--title-background: #1c2438;
 	--title-text: rgba(255,255,255,.7);
+
+	--section-header-background: #495060;
 
 	--min-width: 920px;
 	--max-width: 1200px;
@@ -65,7 +67,7 @@
 }
 
 .summary-value-equal {
-	color: #515a6e;
+	color: var(--iview-content);
 	font-weight: bolder;
 }
 
@@ -110,7 +112,7 @@
 
 .coverage-display .title {
 	text-align: left;
-	background-color: var(--iview-content);
+	background-color: var(--section-header-background);
 	height: 38px;
 	border-bottom: 1px solid #e8eaec;
 	padding-left: 8px;
@@ -244,27 +246,51 @@
 	font-size: 2em;
 }
 
-/* Main layout specification. */
-.ivu-menu-horizontal > .ivu-menu-item {
-	float: right;
+/* Navigational menu in the header */
+.menu {
+	text-align: right;
 }
 
-.ivu-menu-horizontal > .ivu-menu-item:first-child {
-	padding-right: 0px;
+.menu .rightmost {
+	margin-right: 0px;
 }
 
-.ivu-menu-horizontal > .ivu-menu-submenu {
-	float: right;
-}
-
-.ivu-menu-dark.ivu-menu-horizontal .ivu-menu-item-active {
+.menu > a,
+.menu .dropdown-title {
+	display: inline-block;
+	margin-left: 20px;
+	margin-right: 20px;
+	line-height: 60px;
+	font-size: 14px;
 	color: var(--title-text);
 }
 
-.ivu-menu-dark {
-	background-color: var(--iview-title);
+.menu .dropdown-title {
+	transition: color .2s ease;
+	cursor: pointer;
 }
 
+.menu > a:hover,
+.menu .dropdown-title:hover {
+	color: white;
+}
+
+.menu .ivu-select-dropdown {
+	text-align: left;
+}
+
+.menu .ivu-dropdown-item {
+	padding: 0px;
+	font-size: 14px !important;
+}
+
+.menu .ivu-dropdown-item a {
+	display: list-item;
+	padding: 7px 16px;
+	color: var(--iview-content);
+}
+
+/* Main layout specification. */
 .centered-narrow {
 	min-width: var(--min-width);
 	max-width: var(--max-width);
@@ -277,7 +303,7 @@
 .header {
 	min-width: var(--min-width);
 	height: 60px;
-	background-color: var(--iview-title);
+	background-color: var(--title-background);
 	line-height: normal;
 }
 
@@ -303,7 +329,7 @@
 .footer {
 	min-width: var(--min-width);
 	height: 52px;
-	background-color: var(--iview-title);
+	background-color: var(--title-background);
 	color: var(--title-text);
 	text-align: center;
 	padding-top: 8px;
@@ -316,13 +342,13 @@
 
 /* Color the section headers differently from the buttons. */
 .ivu-collapse-header {
-	background-color: var(--iview-content);
+	background-color: var(--section-header-background);
 	color: white !important;
 	font-weight: bold;
 }
 
 .ivu-table th {
-	background-color: var(--iview-content);
+	background-color: var(--section-header-background);
 	color: white !important;
 }
 
