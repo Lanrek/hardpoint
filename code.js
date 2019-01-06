@@ -805,7 +805,7 @@ class DataforgeComponent {
 
 	getPowerGeneration(binding) {
 		if (this.type == "PowerPlant") {
-			return this.getPowerAvailable(binding) * binding.customization.powerUsageRatio || 0;
+			return this.getPowerAvailable(binding) * Math.min(1, binding.customization.powerUsageRatio || 0);
 		}
 
 		return 0;
