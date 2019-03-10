@@ -55,11 +55,27 @@ var decodeSmallInt = function(str) {
 }
 
 var nullifySentinel = function(str) {
-	if (str.startsWith("<=")) {
+	if (str && str.startsWith("<=")) {
 		return null;
 	}
 
 	return str;
+}
+
+var elementArray = function(value) {
+	if (Array.isArray(value)) {
+		return value;
+	}
+
+	return [value];
+}
+
+var splitTags = function(value) {
+	if (value) {
+		return value.split(" ");
+	}
+
+	return [];
 }
 
 var roundThreeFigures = function(num) {
@@ -137,7 +153,8 @@ class ShipId {
 }
 
 class ShipSpecification {
-	constructor(data) {
+	constructor(key, data) {
+		this.name = key;
 		this._data = data;
 
 		this.itemPorts = this._findItemPorts();
@@ -145,39 +162,35 @@ class ShipSpecification {
 	}
 
 	get tags() {
-		return this._data["vehicleSpecification"]["itemPortTags"] || [];
+		return splitTags(this._data["@itemPortTags"]);
 	}
 
 	get shipId() {
 		return new ShipId(
-			this._data["vehicleSpecification"]["baseName"],
-			this._data["vehicleSpecification"]["variant"]);
+			this._data["@name"],
+			this._data["#modification"]);
 	}
 
 	get displayName() {
-		return nullifySentinel(this._data["displayName"]) ||
-			this._data["vehicleSpecification"]["displayName"] ||
-			this.shipId.combinedId;
-	}
-
-	get cargoCapacity() {
-		return this._data["cargoCapacity"];
+		return nullifySentinel(allStrings[this._data["#vehicleName"]]) || this.shipId.combinedId;
 	}
 
 	get attributes() {
-		const ifcsStates = _.keyBy(this._data["vehicleSpecification"]["movement"]["ifcsStates"], "state");
-		const scmVelocity = _.get(ifcsStates, "flightSpace.scmMode.maxVelocity", 0);
-		const cruiseVelocity = _.get(ifcsStates, "flightSpace.ab2CruMode.criuseSpeed", 0);
+		const ifcsStates = _.keyBy(elementArray(_.get(this._data, "MovementParams.Spaceship.IFCS.states.state", [])), "@name");
+		const scmVelocity = _.get(ifcsStates, "flightSpace.tuning.@SCMVelocity", 0);
+		const cruiseVelocity = _.get(ifcsStates, "flightSpace.afterburner.@CruiseSpeed", 0);
 
-		const rotationalAxes = _.keyBy(_.get(ifcsStates, "flightSpace.rotationalAxes", {}), "axis");
-		const maxYaw = _.get(rotationalAxes, "YAW.maxSpeed", 0);
-		const maxPitch = _.get(rotationalAxes, "PITCH.maxSpeed", 0);
-		const maxRoll = _.get(rotationalAxes, "ROLL.maxSpeed", 0);
+		const angularVelocity = _.get(ifcsStates, "flightSpace.tuning.@AngVelocity", "");
+		const [maxPitch = 0, maxRoll = 0, maxYaw = 0] = angularVelocity.split(",").map(x => Number(x.trim()));
 		const maxTurn = Math.max(maxYaw, maxPitch);
+
+		const seats = this.itemPorts.filter(p => p.matchesType("Seat"));
+		const crewSeats = seats.filter(
+			s => _.get(elementArray(_.get(s._data, "ItemPort.ControllerDef")), "[0].UserDef.Observerables.Observerable"), []);
 
 		const mannedTurrets = this.itemPorts.filter(p => p.matchesType("TurretBase", "MannedTurret"));
 
-		const size = this._data["size"];
+		const size = this._data["@size"];
 		let sizeCategory = "Small";
 		if (!scmVelocity) {
 			sizeCategory = "Ground";
@@ -200,7 +213,7 @@ class ShipSpecification {
 				name: "Crew",
 				category: "Description",
 				description: "Seats with controls plus manned turrets",
-				value: this._data["crewStations"] + mannedTurrets.length
+				value: crewSeats.length + mannedTurrets.length
 			},
 			{
 				name: "Normal Speed",
@@ -243,47 +256,52 @@ class ShipSpecification {
 				name: "Total Hitpoints",
 				category: "Survivability",
 				description: "Total hitpoints of all ship parts",
-				value: this._findParts().reduce((total, x) => total + (x["damageMax"] || 0), 0)
+				value: this._findParts().reduce((total, x) => total + (x["@damageMax"] || 0), 0)
 			}
 		];
 	}
 
-	_findParts() {
-		let unsearched = this._data["vehicleSpecification"]["parts"].slice();
+	_findParts(className = undefined) {
+		let unsearched = elementArray(_.get(this._data, "Parts.Part", [])).slice();
 		let result = [];
 		while (unsearched.length > 0) {
 			let potential = unsearched.pop();
-			result.push(potential);
-			potential["parts"].forEach(n => unsearched.push(n));
+			if (potential["@class"] == className || !className) {
+				result.push(potential);
+			}
+
+			const inside = elementArray(_.get(potential, "Parts.Part", []))
+			inside.forEach(n => unsearched.push(n));
 		}
 
 		return result;
 	}
 
 	_findItemPorts() {
-		return this._data["vehicleSpecification"]["ports"].map(x => new DataforgeItemPort(x));
+		return this._findParts("ItemPort").map(x => new VehicleItemPort(x));
 	}
 
 	_makeDefaultItems() {
-		const loadout = allLoadouts[this._data["name"]];
+		const loadout = allLoadouts[this.name];
 
-		const makeStructure = function(hardpoints) {
+		const makeStructure = function(root) {
 			let result = {};
-			if (hardpoints) {
-				for (const hardpoint of hardpoints) {
-					const itemName = _.get(hardpoint, "equipped.name");
+			const items = elementArray(_.get(root, "Items.Item", []));
+			if (items.length > 0) {
+				for (const item of items) {
+					const itemName = _.get(item, "@itemName");
 					if (itemName) {
 						let entry = {};
 						entry.itemName = itemName;
-						entry.children = makeStructure(hardpoint.hardpoints);
-						result[hardpoint.name] = entry;
+						entry.children = makeStructure(item);
+						result[_.get(item, "@portName")] = entry;
 					}
 				}
 			}
 			return result;
 		};
 
-		const structure = makeStructure(loadout["hardpoints"]);
+		const structure = makeStructure(loadout["Loadout"]);
 		return structure;
 	}
 }
@@ -399,10 +417,19 @@ class SummaryText {
 }
 
 class DataforgeComponent {
-	constructor(data) {
+	constructor(key, data) {
+		this.name = key
+
 		this._data = data;
-		this._components = _.keyBy(this._data["components"], "name");
-		this._connections = _.keyBy(this._data["connections"], "pipeClass");
+
+		// TODO Support multiple firing modes.
+		this._defaultFireAction = elementArray(_.get(this._data, "Components.SCItemWeaponComponentParams.fireActions", []))[0];
+
+		// TODO Figure out firing action sequences.
+		const sequence = elementArray(_.get(
+			this._defaultFireAction,
+			"SWeaponActionSequenceParams.sequenceEntries.SWeaponSequenceEntryParams", []));
+		this._defaultFireAction = _.get(sequence, "[0].weaponAction", this._defaultFireAction);
 
 		this.itemPorts = this._findItemPorts();
 		this._pitchLimits = this._makePitchLimits();
@@ -427,27 +454,24 @@ class DataforgeComponent {
 	}
 
 	get displayName() {
-		return nullifySentinel(this._data["displayName"]) || this.name;
-	}
-
-	get name() {
-		return this._data["name"];
+		const key = _.get(this._data, "Components.SAttachableComponentParams.AttachDef.Localization.@Name");
+		return nullifySentinel(allStrings[key]) || this.name;
 	}
 
 	get type() {
-		return this._data["type"]["type"];
+		return _.get(this._data, "Components.SAttachableComponentParams.AttachDef.@Type");
 	}
 
 	get subtype() {
-		return this._data["type"]["subType"];
+		return _.get(this._data, "Components.SAttachableComponentParams.AttachDef.@SubType");
 	}
 
 	get size() {
-		return this._data["size"];
+		return _.get(this._data, "Components.SAttachableComponentParams.AttachDef.@Size");
 	}
 
 	get requiredTags() {
-		return this._data["itemRequiredTags"];
+		return splitTags(_.get(this._data, "Components.SAttachableComponentParams.AttachDef.@RequiredTags"));
 	}
 
 	get turretInflections() {
@@ -467,14 +491,14 @@ class DataforgeComponent {
 			// Limits in game data appear normalized to [0, 360].
 			const normalizedYaw = (360 + yaw % 360) % 360;
 
-			const upperIndex = _.findIndex(this._pitchLimits, x => x["turretRotation"] > normalizedYaw);
+			const upperIndex = _.findIndex(this._pitchLimits, x => x["@TurretRotation"] > normalizedYaw);
 			const upper = this._pitchLimits[upperIndex];
 			const lower = this._pitchLimits[upperIndex - 1];
 
 			// Interpolate between the surrounding points.
-			const alpha = (normalizedYaw - lower["turretRotation"]) / (upper["turretRotation"] - lower["turretRotation"]);
-			const lowerLimit = lower["lowerLimit"] * (1 - alpha) + upper["lowerLimit"] * alpha;
-			const upperLimit = lower["upperLimit"] * (1 - alpha) + upper["upperLimit"] * alpha;
+			const alpha = (normalizedYaw - lower["@TurretRotation"]) / (upper["@TurretRotation"] - lower["@TurretRotation"]);
+			const lowerLimit = lower["@LowestAngle"] * (1 - alpha) + upper["@LowestAngle"] * alpha;
+			const upperLimit = lower["@HighestAngle"] * (1 - alpha) + upper["@HighestAngle"] * alpha;
 
 			result.min = Math.max(result.min, lowerLimit);
 			result.max = Math.min(result.max, upperLimit);
@@ -508,7 +532,7 @@ class DataforgeComponent {
 	getTurretMinYaw(binding) {
 		let candidates = [-180];
 		candidates.push(binding.port.minYaw);
-		candidates.push(this._getTurretRotationLimit("YAW", "lowerLimit"));
+		candidates.push(this._getStandardTurretRotationLimit("yaw", "@LowestAngle"));
 
 		// Undefined will always sort to the end.
 		candidates.sort((a, b) => b - a);
@@ -518,7 +542,7 @@ class DataforgeComponent {
 	getTurretMaxYaw(binding) {
 		let candidates = [180];
 		candidates.push(binding.port.maxYaw);
-		candidates.push(this._getTurretRotationLimit("YAW", "upperLimit"));
+		candidates.push(this._getStandardTurretRotationLimit("yaw", "@HighestAngle"));
 
 		// Undefined will always sort to the end.
 		candidates.sort((a, b) => a - b);
@@ -528,7 +552,7 @@ class DataforgeComponent {
 	getTurretMinPitch(binding) {
 		let candidates = [-90];
 		candidates.push(binding.port.minPitch);
-		candidates.push(this._getTurretRotationLimit("PITCH", "lowerLimit"));
+		candidates.push(this._getStandardTurretRotationLimit("pitch", "@LowestAngle"));
 
 		// Undefined will always sort to the end.
 		candidates.sort((a, b) => b - a);
@@ -538,7 +562,7 @@ class DataforgeComponent {
 	getTurretMaxPitch(binding) {
 		let candidates = [90];
 		candidates.push(binding.port.maxPitch);
-		candidates.push(this._getTurretRotationLimit("PITCH", "upperLimit"));
+		candidates.push(this._getStandardTurretRotationLimit("pitch", "@HighestAngle"));
 
 		// Undefined will always sort to the end.
 		candidates.sort((a, b) => a - b);
@@ -546,11 +570,11 @@ class DataforgeComponent {
 	}
 
 	getBulletSpeed(binding) {
-		return _.get(this._components, "ammoContainer.ammo.speed", 0);
+		return _.get(this._data, "#ammoParams.@speed", 0);
 	}
 
 	getBulletDuration(binding) {
-		return _.get(this._components, "ammoContainer.ammo.lifetime", 0);
+		return _.get(this._data, "#ammoParams.@lifetime", 0);
 	}
 
 	getBulletRange(binding) {
@@ -558,29 +582,24 @@ class DataforgeComponent {
 	}
 
 	getBulletCount(binding) {
-		// TODO Support multiple firing modes and figure out the nested fireAction for CHARGE.
-		const inner = _.get(this._components, "weapon.fireActions[0].fireAction.pelletCount", 0);
-		return inner || _.get(this._components, "weapon.fireActions[0].pelletCount", 0);
+		return _.get(_.values(this._defaultFireAction)[0], "projectileLaunchParams.@pelletCount", 1);
 	}
 
 	getGunAlpha(binding) {
-		let damageInfo = _.get(this._components, "ammoContainer.ammo.areaDamage.damage");
-		if (!damageInfo) {
-			damageInfo = _.get(this._components, "ammoContainer.ammo.impactDamage.damage", []);
-		}
-		const damageMap = _.keyBy(damageInfo, "damageType");
+		let params = _.get(
+			this._data, "#ammoParams.projectileParams.BulletProjectileParams.detonationParams.ProjectileDetonationParams.explosionParams");
+		params = params || _.get(this._data, "#ammoParams.projectileParams.BulletProjectileParams");
+		const damageInfo = _.get(params, "damage.DamageInfo");
 
 		return new DamageQuantity(
-			_.get(damageMap, "DISTORTION.value", 0),
-			_.get(damageMap, "ENERGY.value", 0),
-			_.get(damageMap, "PHYSICAL.value", 0),
-			_.get(damageMap, "THERMAL.value", 0));
+			_.get(damageInfo, "@DamageDistortion", 0),
+			_.get(damageInfo, "@DamageEnergy", 0),
+			_.get(damageInfo, "@DamagePhysical", 0),
+			_.get(damageInfo, "@DamageThermal", 0));
 	}
 
 	getGunFireRate(binding) {
-		// TODO Support multiple firing modes and figure out the nested fireAction for CHARGE.
-		const inner = _.get(this._components, "weapon.fireActions[0].fireAction.fireRate", 0);
-		return inner || _.get(this._components, "weapon.fireActions[0].fireRate", 0);
+		return _.get(_.values(this._defaultFireAction)[0], "@fireRate", 0);
 	}
 
 	getGunBurstDps(binding) {
@@ -589,13 +608,11 @@ class DataforgeComponent {
 	}
 
 	getGunStandbyHeat(binding) {
-		return _.get(this._components, "weapon.connection.heatRateOnline", 0);
+		return _.get(this._data, "Components.SCItemWeaponComponentParams.connectionParams.@heatRateOnline", 0);
 	}
 
 	getGunHeatPerShot(binding) {
-		// TODO Support multiple firing modes and figure out the nested fireAction for CHARGE.
-		const inner = _.get(this._components, "weapon.fireActions[0].fireAction.heatPerShot", 0);
-		return inner || _.get(this._components, "weapon.fireActions[0].heatPerShot", 0);
+		return _.get(_.values(this._defaultFireAction)[0], "@heatPerShot", 0);
 	}
 
 	getGunMaxCoolingPerShot(binding) {
@@ -641,7 +658,7 @@ class DataforgeComponent {
 	}
 
 	getGunMaximumAmmo(binding) {
-		return _.get(this._components, "ammoContainer.maxAmmoCount", 0);
+		return _.get(this._data, "Components.SAmmoContainerComponentParams.@maxAmmoCount", 0);
 	}
 
 	getGunMagazineDuration(binding) {
@@ -653,38 +670,38 @@ class DataforgeComponent {
 	}
 
 	getMissileDamage(binding) {
-		const damageInfo = _.get(this._components, "missle.damage.damage", []);
-		const damageMap = _.keyBy(damageInfo, "damageType");
+		const damageInfo = _.get(this._data, "Components.SCItemMissileParams.explosionParams.damage.DamageInfo");
 
 		return new DamageQuantity(
-			_.get(damageMap, "DISTORTION.value", 0),
-			_.get(damageMap, "ENERGY.value", 0),
-			_.get(damageMap, "PHYSICAL.value", 0),
-			_.get(damageMap, "THERMAL.value", 0));
+			_.get(damageInfo, "@DamageDistortion", 0),
+			_.get(damageInfo, "@DamageEnergy", 0),
+			_.get(damageInfo, "@DamagePhysical", 0),
+			_.get(damageInfo, "@DamageThermal", 0));
 	}
 
 	getMissileRange(binding) {
-		return _.get(this._components, "missle.trackingDistanceMax", 0);
+		return _.get(this._data, "Components.SCItemMissileParams.GCSParams.@trackingDistanceMax", 0);
 	}
 
 	getMissileGuidance(binding) {
-		return _.capitalize(_.get(this._components, "missle.trackingSignalType")) || "CrossSection";
+		return _.get(this._data, "Components.SCItemMissileParams.GCSParams.@trackingSignalType", "CrossSection");
 	}
 
 	getMissileTrackingAngle(binding) {
-		return _.get(this._components, "missle.trackingAngle", 0);
+		return _.get(this._data, "Components.SCItemMissileParams.GCSParams.@trackingAngle", 0);
 	}
 
 	getMissileLockTime(binding) {
-		return _.get(this._components, "missle.lockTime", 0);
+		return _.get(this._data, "Components.SCItemMissileParams.GCSParams.@lockTime", 0);
 	}
 
 	getMissileMaximumSpeed(binding) {
-		return _.get(this._components, "missle.linearSpeed", 0);
+		return _.get(this._data, "Components.SCItemMissileParams.GCSParams.@linearSpeed", 0);
 	}
 
 	getMissileFlightTime(binding) {
-		return _.get(this._components, "missle.interceptTime", 0) + _.get(this._components, "missle.terminalTime", 0);
+		return _.get(this._data, "Components.SCItemMissileParams.GCSParams.@interceptTime", 0) +
+			_.get(this._data, "Components.SCItemMissileParams.GCSParams.@terminalTime", 0);
 	}
 
 	getMissileFlightRange(binding) {
@@ -692,65 +709,63 @@ class DataforgeComponent {
 	}
 
 	getShieldCapacity(binding) {
-		return _.get(this._components, "shieldGenerator.maxShieldHealth", 0);
+		return _.get(this._data, "Components.SCItemShieldGeneratorParams.@MaxShieldHealth", 0);
 	}
 
 	getShieldRegeneration(binding) {
-		return _.get(this._components, "shieldGenerator.maxShieldRegen", 0);
+		return _.get(this._data, "Components.SCItemShieldGeneratorParams.@MaxShieldRegen", 0);
 	}
 
 	getShieldDownDelay(binding) {
-		return _.get(this._components, "shieldGenerator.downedRegenDelay", 0);
+		return _.get(this._data, "Components.SCItemShieldGeneratorParams.@DownedRegenDelay", 0);
 	}
 
 	getQuantumFuel(binding) {
-		return _.get(this._components, "quantumFuelTank.capacity", 0);
+		return _.get(this._data, "Components.SCItemFuelTankParams.@capacity", 0);
 	}
 
 	getQuantumRange(binding) {
 		// Underlying unit appears to be kilometers; convert to gigameters.
-		return _.get(this._components, "quantumDrive.jumpRange", 0) / 1000000;
+		return _.get(this._data, "Components.SCItemQuantumDriveParams.@jumpRange", 0) / 1000000;
 	}
 
 	getQuantumEfficiency(binding) {
 		// Underlying unit is fuel used per megameter travelled; convert to fuel/gigameter.
-		return _.get(this._components, "quantumDrive.quantumFuelRequirement", 0) * 1000;
+		return _.get(this._data, "Components.SCItemQuantumDriveParams.@quantumFuelRequirement", 0) * 1000;
 	}
 
 	getQuantumSpeed(binding) {
 		// Underlying unit appears to be m/sec; convert to megameters/sec.
-		return _.get(this._components, "quantumDrive.jump.driveSpeed", 0) / 1000000;
+		return _.get(this._data, "Components.SCItemQuantumDriveParams.params.@driveSpeed", 0) / 1000000;
 	}
 
 	getQuantumCooldown(binding) {
-		return _.get(this._components, "quantumDrive.jump.cooldownTime", 0);
+		return _.get(this._data, "Components.SCItemQuantumDriveParams.params.@cooldownTime", 0);
 	}
 
 	getQuantumSpoolTime(binding) {
-		return _.get(this._components, "quantumDrive.jump.spoolUpTime", 0);
+		return _.get(this._data, "Components.SCItemQuantumDriveParams.params.@spoolUpTime", 0);
 	}
 
 	getQuantumCalibrationTime(binding) {
-		const required = _.get(this._components, "quantumDrive.jump.maxCalibrationRequirement", 0);
-		const rate = _.get(this._components, "quantumDrive.jump.calibrationRate", 0);
+		const required = _.get(this._data, "Components.SCItemQuantumDriveParams.params.@maxCalibrationRequirement", 0);
+		const rate = _.get(this._data, "Components.SCItemQuantumDriveParams.params.@calibrationRate", 0);
 		return required / rate;
 	}
 
 	get cargoCapacity() {
 		// Capacity for cargo grids, both on ships and embedded into containers.
-		return _.get(this._components, "cargoGrid.volume.cargoCapacity", 0);
-	}
+		const dimensions =  _.get(this._data, "Components.SCItemCargoGridParams.dimensions", 0);
+		let capacity = _.get(dimensions, "@x", 0) * _.get(dimensions, "@y", 0) * _.get(dimensions, "@z", 0) / 1.953125;
 
-	get containerCapacity() {
-		// Capacity of the cargo grids embedded in a container.
-		if (this.type == "Container") {
-			const ports = _.get(this._data, "ports", []);
-			const embedded = ports.map(n => allItems[_.get(n, "_embedded.item.name")]).filter(n => n);
-			const total = embedded.reduce((total, x) => total + x.cargoCapacity, 0);
-			return total
+		// TODO This is fairly hacky; probably need a generic system for embedded items eventually.
+		const embedded = _.get(this._data, "#embedded", {});
+		for (const name of _.values(embedded)) {
+			const item = allItems[name];
+			capacity += _.get(item, "cargoCapacity", 0);
 		}
 
-		return 0;
+		return capacity;
 	}
 
 	getPowerUsage(binding) {
@@ -777,7 +792,7 @@ class DataforgeComponent {
 
 	getPowerBase(binding) {
 		if (this.type != "PowerPlant") {
-			return _.get(this._connections, "POWER.powerBase", 0);
+			return _.get(this._data, "Components.EntityComponentPowerConnection.@PowerBase", 0);
 		}
 
 		return 0;
@@ -785,7 +800,7 @@ class DataforgeComponent {
 
 	getPowerDraw(binding) {
 		if (this.type != "PowerPlant") {
-			return _.get(this._connections, "POWER.powerDraw", 0);
+			return _.get(this._data, "Components.EntityComponentPowerConnection.@PowerDraw", 0);
 		}
 
 		return 0;
@@ -797,7 +812,7 @@ class DataforgeComponent {
 
 	getPowerAvailable(binding) {
 		if (this.type == "PowerPlant" && binding.powerSelector != "Off") {
-			return _.get(this._connections, "POWER.powerDraw", 0);
+			return _.get(this._data, "Components.EntityComponentPowerConnection.@PowerDraw", 0);
 		}
 
 		return 0;
@@ -812,28 +827,28 @@ class DataforgeComponent {
 	}
 
 	getPowerToEm(binding) {
-		return _.get(this._connections, "POWER.powerToEM", 0);
+		return _.get(this._data, "Components.EntityComponentPowerConnection.@PowerToEM", 0);
 	}
 
 	getFlightAngularPower(binding) {
-		return _.get(this._components, "flightController.powerUsage.angularAccelerationPowerAmount", 0);
+		return _.get(this._data, "Components.SCItemFlightControllerParams.PowerParams.@AngularAccelerationPowerAmount", 0);
 	}
 
 	getFlightLinearPower(binding) {
-		return _.get(this._components, "flightController.powerUsage.linearAccelerationPowerAmount", 0);
+		return _.get(this._data, "Components.SCItemFlightControllerParams.PowerParams.@LinearAccelerationPowerAmount", 0);
 	}
 
 	getTemperatureToIr(binding) {
-		return _.get(this._connections, "HEAT.temperatureToIR", 0);
+		return _.get(this._data, "Components.EntityComponentHeatConnection.@TemperatureToIR", 0);
 	}
 
 	get coolingCoefficient() {
-		return _.get(this._connections, "HEAT.coolingCoefficient", 0);
+		return _.get(this._data, "Components.EntityComponentHeatConnection.@CoolingCoefficient", 0);
 	}
 
 	getOverheatTemperature(binding) {
-		const maxTemperature = _.get(this._connections, "HEAT.maximumTemperature", 0);
-		const overheatRatio = _.get(this._connections, "HEAT.overheatTemperatureRatio", 0);
+		const maxTemperature = _.get(this._data, "Components.EntityComponentHeatConnection.@MaximumTemperature", 0);
+		const overheatRatio = _.get(this._data, "Components.EntityComponentHeatConnection.@OverheatTemperatureRatio", 0);
 
 		return maxTemperature * overheatRatio;
 	}
@@ -841,10 +856,10 @@ class DataforgeComponent {
 	getCurrentTemperature(binding) {
 		let factor = 1.6;
 		if (this.type == "PowerPlant") {
-			factor = _.get(this._components, "powerPlant.heatFactor", 0);
+			factor = _.get(this._data, "Components.SCItemPowerPlantParams.@HeatFactor", 0);
 		}
 		else if (this.type == "Shield") {
-			factor = _.get(this._components, "shieldGenerator.heatFactor", 0);
+			factor = _.get(this._data, "Components.SCItemShieldGeneratorParams.@HeatFactor", 0);
 		}
 
 		if (this.type == "Cooler" || this.type == "QuantumDrive" || this.type == "Turret" || this.type == "TurretBase") {
@@ -863,9 +878,12 @@ class DataforgeComponent {
 		}
 
 		if (this.type == "FlightController") {
-			const minimum = _.get(this._components, "flightController.heatGeneration.minHeatAmount", 0);
-			const angular = _.get(this._components, "flightController.heatGeneration.angularAccelerationHeatAmount", 0);
-			const linear = _.get(this._components, "flightController.heatGeneration.linearAccelerationHeatAmount", 0);
+			const minimum = _.get(
+				this._data, "Components.SCItemFlightControllerParams.HeatParams.@MinimumHeatAmount", 0);
+			const angular = _.get(
+				this._data, "Components.SCItemFlightControllerParams.HeatParams.@AngularAccelerationHeatAmount", 0);
+			const linear = _.get(
+				this._data, "Components.SCItemFlightControllerParams.HeatParams.@LinearAccelerationHeatAmount", 0);
 
 			if (binding.powerSelector == "Active") {
 				// TODO This is a fairly basic activity approximation used for both power and heat calculations.
@@ -897,7 +915,7 @@ class DataforgeComponent {
 	getCoolingAvailable(binding) {
 		if (this.type == "Cooler" && binding.powerSelector != "Off") {
 			// Divide by two to get heat cooled per second.
-			return _.get(this._components, "cooler.heatSinkMaxCapacityContribution", 0) / 2;
+			return _.get(this._data, "Components.SCItemCoolerParams.@HeatSinkMaxCapacityContribution", 0) / 2;
 		}
 
 		return 0;
@@ -978,7 +996,7 @@ class DataforgeComponent {
 		}
 
 		if (this.type == "Container") {
-			return new SummaryText(["{containerCapacity} SCUs cargo capacity"], this, binding);
+			return new SummaryText(["{cargoCapacity} SCUs cargo capacity"], this, binding);
 		}
 
 		if (this.type == "PowerPlant") {
@@ -1007,25 +1025,28 @@ class DataforgeComponent {
 		return heat - loss * efficiency;
 	}
 
-	_getTurretRotationLimit(axis, limit) {
-		const movementAxes = _.keyBy(_.get(this._components, "turret.movementAxes", {}), "axis");
-		const rotationLimits = _.get(movementAxes, axis + ".rotationalLimits", []);
-		if (rotationLimits.length == 1) {
-			return rotationLimits[0][limit];
+	_getTurretRotationLimits(axis) {
+		const params = _.get(this._data, "Components.SCItemTurretParams.movementList.SCItemTurretJointMovementParams");
+		if (params != undefined) {
+			const matched = params.find(x => _.keys(x[axis + "Axis"]).length > 0);
+			return _.get(matched, axis + "Axis.SCItemTurretJointMovementAxisParams.angleLimits");
 		}
+	}
 
-		return undefined;
+	_getStandardTurretRotationLimit(axis, limit) {
+		return _.get(this._getTurretRotationLimits(axis), "SCItemTurretStandardAngleLimitParams." + limit);
 	}
 
 	_makePitchLimits() {
-		const movementAxes = _.keyBy(_.get(this._components, "turret.movementAxes", {}), "axis");
-		const pitchLimits = _.get(movementAxes, "PITCH.rotationalLimits", []);
+		const pitchLimits = _.get(
+			this._getTurretRotationLimits("pitch"),
+			"SCItemTurretCustomAngleLimitParams.AngleLimits.SCItemTurretCustomAngleLimit");
 
-		if (pitchLimits.length > 1) {
+		if (pitchLimits != undefined && pitchLimits.length > 1) {
 			// Duplicate the first entry but wrapped around 360 degrees.
 			let expanded = pitchLimits.slice();
 			let wrapped = _.cloneDeep(expanded[0]);
-			wrapped["turretRotation"] += 360;
+			wrapped["@TurretRotation"] += 360;
 			expanded.push(wrapped);
 			return expanded;
 		}
@@ -1034,7 +1055,8 @@ class DataforgeComponent {
 	}
 
 	_findItemPorts() {
-		return this._data["ports"].map(x => new DataforgeItemPort(x));
+		const ports = _.get(this._data, "Components.SCItem.ItemPorts.SItemPortCoreParams.Ports.SItemPortDef", []);
+		return elementArray(ports).map(x => new DataforgeItemPort(x));
 	}
 }
 
@@ -1063,7 +1085,7 @@ class BaseItemPort {
 			}
 
 			// Match all subtypes when looking for interesting types.
-			// TODO The explicit "UNDEFINED" is for quantum drives; confirm with testing.
+			// The explicit "UNDEFINED" is for quantum drives; it's unclear why they're special.
 			if (subtype != undefined && subtype != "UNDEFINED") {
 				// It looks like subtypes are ports constraining what components can fit,
 				// the subtypes on components aren't constraints just informative.
@@ -1104,39 +1126,35 @@ class BaseItemPort {
 	}
 }
 
-class DataforgeItemPort extends BaseItemPort {
+class VehicleItemPort extends BaseItemPort {
 	constructor(data) {
 		super();
 
 		this._data = data;
-		this._constraints = _.keyBy(_.get(this._data, "rotationConstraints", {}), "axis");
 
-		this.name = data["name"];
-		this.editable = !data["uneditable"];
+		this.name = data["@name"];
+		this.editable = !_.get(data, "ItemPort.@flags", "").includes("uneditable");
+		this.types = this._makeTypes();
 	}
 
 	get minSize() {
-		return this._data["minSize"];
+		return _.get(this._data, "ItemPort.@minsize");
 	}
 
 	get maxSize() {
-		return this._data["maxSize"];
+		return _.get(this._data, "ItemPort.@maxsize");
 	}
 
 	get tags() {
-		return this._data["portTags"];
-	}
-
-	get types() {
-		return this._data["acceptsTypes"].map(x => new ItemPortType(x["type"], x["subType"]));
+		return splitTags(_.get(this._data, "ItemPort.@requiredTags"));
 	}
 
 	get minYaw() {
-		return _.get(this._constraints, "YAW.min");
+		return _.get(this._data, "ItemPort.Yaw.@min");
 	}
 
 	get maxYaw() {
-		return _.get(this._constraints, "YAW.max");
+		return _.get(this._data, "ItemPort.Yaw.@max");
 	}
 
 	get minPitch() {
@@ -1160,11 +1178,61 @@ class DataforgeItemPort extends BaseItemPort {
 	}
 
 	get _minPitch() {
-		return _.get(this._constraints, "PITCH.min");
+		return _.get(this._data, "ItemPort.Pitch.@min");
 	}
 
 	get _maxPitch() {
-		return _.get(this._constraints, "PITCH.max");
+		return _.get(this._data, "ItemPort.Pitch.@max");
+	}
+
+	_makeTypes() {
+		const entries = elementArray(_.get(this._data, "ItemPort.Types.Type", []));
+
+		const result = [];
+		for (const entry of entries) {
+			let subtypes = [undefined];
+			if (entry["@subtypes"]) {
+				subtypes = entry["@subtypes"].split(",");
+			}
+
+			for (const subtype of subtypes) {
+				result.push(new ItemPortType(entry["@type"], subtype));
+			}
+		}
+
+		return result;
+	}
+}
+
+class DataforgeItemPort extends BaseItemPort {
+	constructor(data) {
+		super();
+		this._data = data;
+	}
+
+	get name() {
+		return this._data["@Name"];
+	}
+
+	get editable() {
+		return !this._data["@Flags"].includes("uneditable");
+	}
+
+	get minSize() {
+		return this._data["@MinSize"];
+	}
+
+	get maxSize() {
+		return this._data["@MaxSize"];
+	}
+
+	get tags() {
+		return splitTags(this._data["@PortTags"]);
+	}
+
+	get types() {
+		const types = _.get(this._data, "Types.SItemPortDefTypes", []);
+		return elementArray(types).map(x => new ItemPortType(x["@Type"], _.get(x, "SubTypes.Enum.@value")));
 	}
 }
 
@@ -1529,13 +1597,14 @@ class ShipCustomization {
 
 		const quantumFuel = this._sumComponentValue(allComponents, "quantumFuel");
 		const quantumEfficiency = this._sumComponentValue(allComponents, "quantumEfficiency");
-		const containerCapacity = this._sumComponentValue(allComponents, "containerCapacity");
 
 		const powerUsage = this._sumComponentValue(allComponents, "powerUsage");
 		const powerAvailable = this._sumComponentValue(allComponents, "powerAvailable");
 
 		const coolingUsage = this._sumComponentValue(allComponents, "coolingUsage");
 		const coolingAvailable = this._sumComponentValue(allComponents, "coolingAvailable");
+
+		const cargoCapacity = this._sumComponentValue(allComponents, "cargoCapacity");
 
 		let attributes = this._specification.attributes;
 		attributes = attributes.concat([
@@ -1558,7 +1627,7 @@ class ShipCustomization {
 				name: "Cargo Capacity",
 				category: "Travel",
 				description: "Total cargo capacity in SCUs",
-				value: this._specification.cargoCapacity + containerCapacity
+				value: cargoCapacity
 			},
 			{
 				name: "Power Generation",
@@ -1728,13 +1797,13 @@ var allLoadouts = loadoutData;
 
 var allVehicles = {}
 for (const key of Object.keys(vehicleData)) {
-	const specification = new ShipSpecification(vehicleData[key]);
+	const specification = new ShipSpecification(key, vehicleData[key]);
 	allVehicles[specification.shipId.combinedId] = specification;
 }
 
 var allItems = {}
 for (const key of Object.keys(itemData)) {
-	allItems[key] = new DataforgeComponent(itemData[key]);
+	allItems[key] = new DataforgeComponent(key, itemData[key]);
 }
 
 
@@ -3052,7 +3121,7 @@ var app = new Vue({
 			return defaultShipCustomizations;
 		},
 		gameDataVersion: function() {
-			return metaData.dataload.gameDataVersion;
+			return "3.4.3-LIVE.1049749";
 		}
 	},
 	methods: {

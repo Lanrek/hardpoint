@@ -8,7 +8,7 @@ var shipAttributeOverrides = {
 	"VNCL_Scythe": {
 		"Size Category": "Medium"
 	},
-	"VNCL_Scythe_Glaive": {
+	"VNCL_Glaive_Glaive": {
 		"Size Category": "Medium"
 	},
 	"AEGS_Idris": {
