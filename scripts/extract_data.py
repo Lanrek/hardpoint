@@ -62,9 +62,10 @@ def merge_items(items_directory, ammo_directory, door_loadouts_directory, output
 	def add_item(identifier, value):
 		component = value.get("Components")
 		if component and not any(identifier.lower().endswith(x) for x in excluded_suffixes):
-			type = component["SAttachableComponentParams"]["AttachDef"]["@Type"]
-			if type in included_types:
-				combined_items[identifier] = value
+			if "SAttachableComponentParams" in component:
+				type = component["SAttachableComponentParams"]["AttachDef"]["@Type"]
+				if type in included_types:
+					combined_items[identifier] = value
 	walk_json_directory(items_directory, add_item)
 
 	for key, value in combined_items.items():
@@ -105,18 +106,13 @@ def merge_items(items_directory, ammo_directory, door_loadouts_directory, output
 	write_javascript(combined_items, output_path, "itemData")
 
 def hidden_vehicle_name(name):
-	npc_names = ["_AI", "_Wreck", "_OLD", "probe_", "_S42", "_NoInterior", "_CitizenCon", "_Pirate", "_SimPod", "_Swarm"]
-	for entry in npc_names:
-		if entry in name:
-			return True
-
+	dev_names = ["_OLD", "_NoInterior", "_Template"]
+	npc_names = ["_AI", "_Wreck", "probe_", "_S42", "_CitizenCon", "_Pirate", "_SimPod", "_Swarm"]
 	unfinished_names = ["Redeemer", "DRAK_Cutlass_DRAK", "Taurus"]
-	for entry in unfinished_names:
-		if entry in name:
-			return True
-
 	recolored_names = ["XIAN_Nox_Kue", "DRAK_Dragonfly_", "RSI_Constellation_Phoenix_"]
-	for entry in recolored_names:
+
+	hidden_names = dev_names + npc_names + unfinished_names + recolored_names
+	for entry in hidden_names:
 		if entry in name:
 			return True
 
