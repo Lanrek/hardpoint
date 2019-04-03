@@ -48,7 +48,7 @@ def walk_json_directory(directory, function):
 				function(identifier, value)
 
 def merge_items(items_directory, ammo_directory, door_loadouts_directory, output_path, localization_keys):
-	included_types = ["Cooler", "EMP", "PowerPlant", "Shield", "Turret", "TurretBase", "WeaponMissile", "QuantumDrive", "QuantumFuelTank", "WeaponGun", "WeaponMining", "Ordinance", "Container", "Cargo", "Ping", "FlightController", "Door"]
+	included_types = ["Cooler", "EMP", "PowerPlant", "Shield", "Turret", "TurretBase", "MissileLauncher", "QuantumDrive", "QuantumFuelTank", "WeaponGun", "WeaponMining", "Missile", "Container", "Cargo", "Ping", "FlightController", "Door", "MainThruster", "ManneuverThruster"]
 
 	excluded_suffixes = ["_template", "_damaged"]
 
@@ -261,15 +261,8 @@ filters = {
 		"#vehicleName": None,
 		"@size": None,
 		"@itemPortTags": None,
-		"MovementParams.Spaceship.IFCS.states.state": "ifcsState",
+		"MovementParams.Spaceship.@maxEngineThrust": None,
 		"Parts.Part": "vehiclePart"
-	},
-	"ifcsState": {
-		"[]": "ifcsState",
-		"@name": None,
-		"tuning.@SCMVelocity": None,
-		"tuning.@AngVelocity": None,
-		"afterburner.@CruiseSpeed": None,
 	},
 	"vehiclePart": {
 		"[]": "vehiclePart",
@@ -309,12 +302,17 @@ filters = {
 		"#ammoParams.@lifetime": None,
 		"#ammoParams.projectileParams.BulletProjectileParams.damage.DamageInfo": "damageInfo",		"#ammoParams.projectileParams.BulletProjectileParams.detonationParams.ProjectileDetonationParams": "projectileDetonation",
 		"#embedded": None,
+		"Components.IFCSParams.@maxSpeed": None,
+		"Components.IFCSParams.@maxAfterburnSpeed": None,
+		"Components.IFCSParams.maxAngularVelocity.@x": None,
+		"Components.IFCSParams.maxAngularVelocity.@y": None,
+		"Components.IFCSParams.maxAngularVelocity.@z": None,
 		"Components.SCItemWeaponComponentParams.connectionParams.@heatRateOnline": None,
 		"Components.SAmmoContainerComponentParams.@maxAmmoCount": None,
-		"Components.SCItemMissileParams.GCSParams.@trackingDistanceMax": None,
-		"Components.SCItemMissileParams.GCSParams.@trackingSignalType": None,
-		"Components.SCItemMissileParams.GCSParams.@trackingAngle": None,
-		"Components.SCItemMissileParams.GCSParams.@lockTime": None,
+		"Components.SCItemMissileParams.targetingParams.@trackingDistanceMax": None,
+		"Components.SCItemMissileParams.targetingParams.@trackingSignalType": None,
+		"Components.SCItemMissileParams.targetingParams.@trackingAngle": None,
+		"Components.SCItemMissileParams.targetingParams.@lockTime": None,
 		"Components.SCItemMissileParams.GCSParams.@linearSpeed": None,
 		"Components.SCItemMissileParams.GCSParams.@interceptTime": None,
 		"Components.SCItemMissileParams.GCSParams.@terminalTime": None,
@@ -333,21 +331,19 @@ filters = {
 		"Components.EntityComponentPowerConnection.@PowerBase": None,
 		"Components.EntityComponentPowerConnection.@PowerDraw": None,
 		"Components.EntityComponentPowerConnection.@PowerToEM": None,
-		"Components.SCItemFlightControllerParams.PowerParams.@AngularAccelerationPowerAmount": None,
-		"Components.SCItemFlightControllerParams.PowerParams.@LinearAccelerationPowerAmount": None,
 		"Components.EntityComponentHeatConnection.@TemperatureToIR": None,
-		"Components.EntityComponentHeatConnection.@CoolingCoefficient": None,
-		"Components.EntityComponentHeatConnection.@MaximumTemperature": None,
-		"Components.EntityComponentHeatConnection.@OverheatTemperatureRatio": None,
-		"Components.SCItemPowerPlantParams.@HeatFactor": None,
-		"Components.SCItemShieldGeneratorParams.@HeatFactor": None,
-		"Components.SCItemFlightControllerParams.HeatParams.@MinimumHeatAmount": None,
-		"Components.SCItemFlightControllerParams.HeatParams.@AngularAccelerationHeatAmount": None,
-		"Components.SCItemFlightControllerParams.HeatParams.@LinearAccelerationHeatAmount": None,
-		"Components.SCItemCoolerParams.@HeatSinkMaxCapacityContribution": None,
+		"Components.EntityComponentHeatConnection.@OverheatTemperature": None,
+		"Components.EntityComponentHeatConnection.@SpecificHeatCapacity": None,
+		"Components.EntityComponentHeatConnection.@Mass": None,
+		"Components.EntityComponentHeatConnection.@MaxCoolingRate": None,
+		"Components.EntityComponentHeatConnection.@ThermalEnergyBase": None,
+		"Components.EntityComponentHeatConnection.@ThermalEnergyDraw": None,
+		"Components.EntityComponentHeatConnection.@StartCoolingTemperature": None,
+		"Components.SCItemCoolerParams.@CoolingRate": None,
 		"Components.SCItemCargoGridParams.dimensions.@x": None,
 		"Components.SCItemCargoGridParams.dimensions.@y": None,
 		"Components.SCItemCargoGridParams.dimensions.@z": None,
+		"Components.SCItemThrusterParams.@thrusterType": None,
 		"Components.SCItemWeaponComponentParams.fireActions": "weaponAction",
 		"Components.SCItemTurretParams.movementList.SCItemTurretJointMovementParams": "jointMovement",
 		"Components.SCItem.ItemPorts.SItemPortCoreParams.Ports.SItemPortDef": "itemPort"
@@ -373,7 +369,7 @@ filters = {
 	"weaponActionParams": {
 		"@fireRate": None,
 		"@heatPerShot": None,
-		"projectileLaunchParams.@pelletCount": None
+		"launchParams.SProjectileLauncher.@pelletCount": None
 	},
 	"jointMovement": {
 		"[].pitchAxis.SCItemTurretJointMovementAxisParams": "axisParams",

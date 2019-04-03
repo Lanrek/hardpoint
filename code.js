@@ -176,23 +176,16 @@ class ShipSpecification {
 	}
 
 	get attributes() {
-		const ifcsStates = _.keyBy(elementArray(_.get(this._data, "MovementParams.Spaceship.IFCS.states.state", [])), "@name");
-		const scmVelocity = _.get(ifcsStates, "flightSpace.tuning.@SCMVelocity", 0);
-		const cruiseVelocity = _.get(ifcsStates, "flightSpace.afterburner.@CruiseSpeed", 0);
-
-		const angularVelocity = _.get(ifcsStates, "flightSpace.tuning.@AngVelocity", "");
-		const [maxPitch = 0, maxRoll = 0, maxYaw = 0] = angularVelocity.split(",").map(x => Number(x.trim()));
-		const maxTurn = Math.max(maxYaw, maxPitch);
-
 		const seats = this.itemPorts.filter(p => p.matchesType("Seat"));
 		const crewSeats = seats.filter(
 			s => _.get(elementArray(_.get(s._data, "ItemPort.ControllerDef")), "[0].UserDef.Observerables.Observerable"), []);
 
 		const mannedTurrets = this.itemPorts.filter(p => p.matchesType("TurretBase", "MannedTurret"));
 
+		const spaceship = _.get(this._data, "MovementParams.Spaceship");
 		const size = this._data["@size"];
 		let sizeCategory = "Small";
-		if (!scmVelocity) {
+		if (!spaceship) {
 			sizeCategory = "Ground";
 		}
 		else if (size >= 4) {
@@ -214,43 +207,6 @@ class ShipSpecification {
 				category: "Description",
 				description: "Seats with controls plus manned turrets",
 				value: crewSeats.length + mannedTurrets.length
-			},
-			{
-				name: "Normal Speed",
-				category: "Maneuverability",
-				description: "Maximum speed in normal flight",
-				value: scmVelocity
-			},
-			{
-				name: "Afterburner Speed",
-				category: "Maneuverability",
-				description: "Maximum speed with afterburner engaged",
-				value: cruiseVelocity
-			},
-			{
-				name: "Yaw Rate Limit",
-				category: "Maneuverability",
-				description: "Maximum yaw rate in degrees/second not considering acceleration",
-				value: maxYaw
-			},
-			{
-				name: "Pitch Rate Limit",
-				category: "Maneuverability",
-				description: "Maximum pitch rate in degrees/second not considering acceleration",
-				value: maxPitch
-			},
-			{
-				name: "Turn Rate Limit",
-				category: "Maneuverability",
-				description: "Maximum yaw or pitch rate in degrees/second not considering acceleration",
-				value: maxTurn,
-				comparison: true
-			},
-			{
-				name: "Roll Rate Limit",
-				category: "Maneuverability",
-				description: "Maximum roll rate in degrees/second not considering acceleration",
-				value: maxRoll
 			},
 			{
 				name: "Total Hitpoints",
@@ -423,13 +379,13 @@ class DataforgeComponent {
 		this._data = data;
 
 		// TODO Support multiple firing modes.
-		this._defaultFireAction = elementArray(_.get(this._data, "Components.SCItemWeaponComponentParams.fireActions", []))[0];
+		const fireAction = elementArray(_.get(this._data, "Components.SCItemWeaponComponentParams.fireActions", []))[0];
 
 		// TODO Figure out firing action sequences.
-		const sequence = elementArray(_.get(
-			this._defaultFireAction,
+		this._weaponSequence = elementArray(_.get(
+			fireAction,
 			"SWeaponActionSequenceParams.sequenceEntries.SWeaponSequenceEntryParams", []));
-		this._defaultFireAction = _.get(sequence, "[0].weaponAction", this._defaultFireAction);
+		this._defaultFireAction = _.get(this._weaponSequence, "[0].weaponAction", fireAction);
 
 		this.itemPorts = this._findItemPorts();
 		this._pitchLimits = this._makePitchLimits();
@@ -582,7 +538,7 @@ class DataforgeComponent {
 	}
 
 	getBulletCount(binding) {
-		return _.get(_.values(this._defaultFireAction)[0], "projectileLaunchParams.@pelletCount", 1);
+		return _.get(_.values(this._defaultFireAction)[0], "launchParams.SProjectileLauncher.@pelletCount", 1);
 	}
 
 	getGunAlpha(binding) {
@@ -617,44 +573,18 @@ class DataforgeComponent {
 
 	getGunMaxCoolingPerShot(binding) {
 		const secondsPerShot = 60.0 / this.getGunFireRate(binding);
-		const overheatTemperature = this.getOverheatTemperature(binding);
-		return overheatTemperature - this._temperatureAfter(overheatTemperature, secondsPerShot);
+		const maxCoolingEnergy = this.maxCooling * this.specificHeatCapacity;
+		return maxCoolingEnergy * secondsPerShot;
 	}
 
 	getGunSustainedDps(binding) {
-		// This isn't exact because cooling is non-linear, but the rounding errors are fairly small.
-		const coolingPerShot = this.getGunMaxCoolingPerShot(binding) * binding.customization.coolingEfficiency;
+		const coolingEnergy = this.maxCooling * this.specificHeatCapacity * binding.customization.coolingEfficiency;
+
 		let fireRate = this.getGunFireRate(binding);
-		fireRate *= Math.min(1, coolingPerShot / this.getGunHeatPerShot(binding));
+		fireRate *= Math.min(1, coolingEnergy / this.getHeatingEnergy(binding));
 
 		const scaled = this.getGunAlpha(binding).scale(this.getBulletCount(binding) * fireRate / 60.0);
 		return scaled;
-	}
-
-	getGunContinuousDuration(binding) {
-		if (this.getGunSustainedDps(binding).total == this.getGunBurstDps(binding).total) {
-			return undefined;
-		}
-
-		const efficiency = binding.customization.coolingEfficiency;
-
-		// Quick and dirty simulation although there's probably an analytical solution.
-		// Limit the number of iterations to prevent infinite loops if there are bugs.
-		let shots = 0;
-		let heat = this.getGunStandbyHeat(binding);
-		const secondsPerShot = 60.0 / this.getGunFireRate(binding);
-		heat = this._temperatureAfter(heat, 1, efficiency);
-		while (shots < 100) {
-			shots += 1;
-			heat += this.getGunHeatPerShot(binding);
-			heat = this._temperatureAfter(heat, secondsPerShot, efficiency);
-
-			if (heat >= this.getOverheatTemperature(binding)) {
-				return shots * secondsPerShot;
-			}
-		}
-
-		return undefined;
 	}
 
 	getGunMaximumAmmo(binding) {
@@ -680,19 +610,19 @@ class DataforgeComponent {
 	}
 
 	getMissileRange(binding) {
-		return _.get(this._data, "Components.SCItemMissileParams.GCSParams.@trackingDistanceMax", 0);
+		return _.get(this._data, "Components.SCItemMissileParams.targetingParams.@trackingDistanceMax", 0);
 	}
 
 	getMissileGuidance(binding) {
-		return _.get(this._data, "Components.SCItemMissileParams.GCSParams.@trackingSignalType", "CrossSection");
+		return _.get(this._data, "Components.SCItemMissileParams.targetingParams.@trackingSignalType", "CrossSection");
 	}
 
 	getMissileTrackingAngle(binding) {
-		return _.get(this._data, "Components.SCItemMissileParams.GCSParams.@trackingAngle", 0);
+		return _.get(this._data, "Components.SCItemMissileParams.targetingParams.@trackingAngle", 0);
 	}
 
 	getMissileLockTime(binding) {
-		return _.get(this._data, "Components.SCItemMissileParams.GCSParams.@lockTime", 0);
+		return _.get(this._data, "Components.SCItemMissileParams.targetingParams.@lockTime", 0);
 	}
 
 	getMissileMaximumSpeed(binding) {
@@ -768,13 +698,32 @@ class DataforgeComponent {
 		return capacity;
 	}
 
+	getSpeed(binding) {
+		return _.get(this._data, "Components.IFCSParams.@maxSpeed", 0);
+	}
+
+	getAfterburner(binding) {
+		return _.get(this._data, "Components.IFCSParams.@maxAfterburnSpeed", 0);
+	}
+
+	getAngularVelocityPitch(binding) {
+		return _.get(this._data, "Components.IFCSParams.maxAngularVelocity.@x", 0);
+	}
+
+	getAngularVelocityRoll(binding) {
+		return _.get(this._data, "Components.IFCSParams.maxAngularVelocity.@y", 0);
+	}
+
+	getAngularVelocityYaw(binding) {
+		return _.get(this._data, "Components.IFCSParams.maxAngularVelocity.@z", 0);
+	}
+
+	getThrusterType(binding) {
+		return _.get(this._data, "Components.SCItemThrusterParams.@thrusterType");
+	}
+
 	getPowerUsage(binding) {
 		if (binding.powerSelector == "Active") {
-			if (this.type == "FlightController") {
-				// TODO This is a fairly basic activity approximation used for both power and heat calculations.
-				return this.getPowerBase(binding) + this.getFlightAngularPower(binding) + this.getFlightLinearPower(binding);
-			}
-
 			return this.getPowerDraw(binding);
 		}
 
@@ -830,92 +779,92 @@ class DataforgeComponent {
 		return _.get(this._data, "Components.EntityComponentPowerConnection.@PowerToEM", 0);
 	}
 
-	getFlightAngularPower(binding) {
-		return _.get(this._data, "Components.SCItemFlightControllerParams.PowerParams.@AngularAccelerationPowerAmount", 0);
-	}
-
-	getFlightLinearPower(binding) {
-		return _.get(this._data, "Components.SCItemFlightControllerParams.PowerParams.@LinearAccelerationPowerAmount", 0);
-	}
-
 	getTemperatureToIr(binding) {
 		return _.get(this._data, "Components.EntityComponentHeatConnection.@TemperatureToIR", 0);
 	}
 
-	get coolingCoefficient() {
-		return _.get(this._data, "Components.EntityComponentHeatConnection.@CoolingCoefficient", 0);
+	get startCoolingTemperature() {
+		return _.get(this._data, "Components.EntityComponentHeatConnection.@StartCoolingTemperature", 0);
+	}
+
+	get specificHeatCapacity() {
+		// Joules / Kelvin; mass and SHC are specified with identical units.
+		return _.get(this._data, "Components.EntityComponentHeatConnection.@SpecificHeatCapacity", 0) *
+			_.get(this._data, "Components.EntityComponentHeatConnection.@Mass", 0);
+	}
+
+	get maxCooling() {
+		// Kelvin / second
+		return _.get(this._data, "Components.EntityComponentHeatConnection.@MaxCoolingRate", 0);
 	}
 
 	getOverheatTemperature(binding) {
-		const maxTemperature = _.get(this._data, "Components.EntityComponentHeatConnection.@MaximumTemperature", 0);
-		const overheatRatio = _.get(this._data, "Components.EntityComponentHeatConnection.@OverheatTemperatureRatio", 0);
+		return _.get(this._data, "Components.EntityComponentHeatConnection.@OverheatTemperature", 0);
+	}
 
-		return maxTemperature * overheatRatio;
+	getOverheatTime(binding) {
+		const heatingEnergy = this.getHeatingEnergy(binding);
+		const coolingEnergy = this.maxCooling * this.specificHeatCapacity * binding.customization.coolingEfficiency;
+
+		const temperatureDelta = this.getOverheatTemperature(binding) - this.startCoolingTemperature;
+		const overheatEnergy = temperatureDelta * this.specificHeatCapacity;
+
+		return overheatEnergy / (heatingEnergy - coolingEnergy);
 	}
 
 	getCurrentTemperature(binding) {
-		let factor = 1.6;
-		if (this.type == "PowerPlant") {
-			factor = _.get(this._data, "Components.SCItemPowerPlantParams.@HeatFactor", 0);
-		}
-		else if (this.type == "Shield") {
-			factor = _.get(this._data, "Components.SCItemShieldGeneratorParams.@HeatFactor", 0);
-		}
+		// TODO Implement!
+		return 0;
+	}
 
-		if (this.type == "Cooler" || this.type == "QuantumDrive" || this.type == "Turret" || this.type == "TurretBase") {
-			return 0;
+	getHeatingEnergy(binding) {
+		const base = _.get(this._data, "Components.EntityComponentHeatConnection.@ThermalEnergyBase", 0);
+		const draw = _.get(this._data, "Components.EntityComponentHeatConnection.@ThermalEnergyDraw", 0);
+
+		if (this.type == "PowerPlant") {
+			if (binding.powerSelector == "Active") {
+				const ratio = this.getPowerGeneration(binding) / this.getPowerAvailable(binding);
+				return ratio * draw;
+			}
 		}
 
 		if (this.type == "WeaponGun") {
 			if (binding.powerSelector == "Active") {
-				// TODO Not correct for weapons that won't ever inherently overheat.
-				return this.getOverheatTemperature(binding);
-			}
+				// TODO This is a terrible hack, but it exactly matches empirical data. Either there's a bug with
+				// weapon sequences -- maybe delay-related -- or I'm missing a large part of the heating equation.
+				let fireRate = this.getGunFireRate(binding);
+				if (this._weaponSequence.length > 1) {
+					fireRate = 258;
+				}
 
-			if (binding.powerSelector == "Standby") {
-				return this.getGunStandbyHeat(binding);
-			}
-		}
-
-		if (this.type == "FlightController") {
-			const minimum = _.get(
-				this._data, "Components.SCItemFlightControllerParams.HeatParams.@MinimumHeatAmount", 0);
-			const angular = _.get(
-				this._data, "Components.SCItemFlightControllerParams.HeatParams.@AngularAccelerationHeatAmount", 0);
-			const linear = _.get(
-				this._data, "Components.SCItemFlightControllerParams.HeatParams.@LinearAccelerationHeatAmount", 0);
-
-			if (binding.powerSelector == "Active") {
-				// TODO This is a fairly basic activity approximation used for both power and heat calculations.
-				return minimum + angular + linear;
-			}
-
-			if (binding.powerSelector == "Standby") {
-				return minimum;
+				return this.getGunHeatPerShot(binding) * fireRate / 60.0;
 			}
 		}
 
-		return factor * (this.getPowerGeneration(binding) + this.getPowerUsage(binding));
-	}
+		if (binding.powerSelector == "Active") {
+			return draw;
+		}
 
-	getDelayedTemperature(binding) {
-		// For reasons unknown, the temperature and derived values shown in-game have one second of cooling applied.
-		const efficiency = binding.customization.coolingEfficiency;
-		const initial = this.getCurrentTemperature(binding);
-		return this._temperatureAfter(initial, 1, efficiency);
+		if (binding.powerSelector == "Standby") {
+			return base;
+		}
+
+		return 0;
 	}
 
 	getCoolingUsage(binding) {
-		const temperature = this.getCurrentTemperature(binding);
-		const rate = Math.exp(-1 * this.coolingCoefficient);
+		// TODO Doesn't account for radiative cooling.
+		if (this.specificHeatCapacity == 0) {
+			return 0;
+		}
 
-		return temperature - temperature * rate;
+		const maxCoolingEnergy = this.maxCooling * this.specificHeatCapacity;
+		return Math.min(this.getHeatingEnergy(binding), maxCoolingEnergy);
 	}
 
 	getCoolingAvailable(binding) {
 		if (this.type == "Cooler" && binding.powerSelector != "Off") {
-			// Divide by two to get heat cooled per second.
-			return _.get(this._data, "Components.SCItemCoolerParams.@HeatSinkMaxCapacityContribution", 0) / 2;
+			return _.get(this._data, "Components.SCItemCoolerParams.@CoolingRate", 0);
 		}
 
 		return 0;
@@ -931,7 +880,7 @@ class DataforgeComponent {
 	}
 
 	getIrSignature(binding) {
-		return this.getDelayedTemperature(binding) * this.getTemperatureToIr(binding);
+		return this.getCurrentTemperature(binding) * this.getTemperatureToIr(binding);
 	}
 
 	getSummary(binding) {
@@ -946,10 +895,9 @@ class DataforgeComponent {
 				"{gunSustainedDps.total} sustained dps ({gunHeatPerShot} heat/shot; {gunMaxCoolingPerShot} max cooling/shot X {coolingEfficiency} efficiency)"],
 				this, binding);
 
-			// TODO This doesn't work with vehicle-wide cooling limitations yet.
-			// if (this.getGunContinuousDuration(binding)) {
-			// 	summary.patterns.push("{gunContinuousDuration} seconds of continuous fire before overheating");
-			// }
+			if (this.getOverheatTime(binding) > 0) {
+				summary.patterns.push("Overheats after {overheatTime} seconds of continuous fire");
+			}
 
 			summary.patterns.push("{bulletRange} meter range = {bulletSpeed} m/s projectile speed X {bulletDuration} seconds");
 
@@ -966,7 +914,7 @@ class DataforgeComponent {
 			}
 		}
 
-		if (this.type == "WeaponMissile") {
+		if (this.type == "MissileLauncher") {
 			return new SummaryText(["{itemPorts.length} size {itemPorts.[0].maxSize} missiles"], this, binding);
 		}
 
@@ -986,7 +934,7 @@ class DataforgeComponent {
 				this, binding);
 		}
 
-		if (this.type == "Ordinance") {
+		if (this.type == "Missile") {
 			return new SummaryText([
 				"{missileDamage.total} {missileDamage.type} damage",
 				"{missileLockTime} seconds lock time with {missileRange} meter lock range",
@@ -1005,24 +953,11 @@ class DataforgeComponent {
 				this, binding);
 		}
 
-		if (this.type == "FlightController") {
-			return new SummaryText([
-				"{flightAngularPower} power/second when accelerating rotationally",
-				"{flightLinearPower} power/second when accelerating linearly"],
-				this, binding);
-		}
-
 		if (this.type == "Cooler") {
 			return new SummaryText(["{coolingAvailable} max cooling / second"], this, binding);
 		}
 
 		return new SummaryText();
-	}
-
-	_temperatureAfter(heat, seconds, efficiency = 1) {
-		// Newton's law of cooling; ambient temperature deduced to be 0.
-		const loss = heat - heat * Math.exp(-1 * seconds * this.coolingCoefficient);
-		return heat - loss * efficiency;
 	}
 
 	_getTurretRotationLimits(axis) {
@@ -1338,10 +1273,16 @@ class ItemBinding {
 
 		this._setSelectedComponent(this.defaultComponent, defaultItems);
 
-		const defaultActiveTypes = ["Turret", "TurretBase", "WeaponGun", "PowerPlant", "Cooler", "FlightController"];
+		const defaultActiveTypes = ["Turret", "TurretBase", "WeaponGun", "PowerPlant", "Cooler"];
 		this._powerSelector = "Standby";
-		if (this.selectedComponent && defaultActiveTypes.includes(this.selectedComponent.type)) {
-			this._powerSelector = "Active";
+		if (this.selectedComponent) {
+			if (defaultActiveTypes.includes(this.selectedComponent.type)) {
+				this._powerSelector = "Active";
+			}
+
+			if (this.selectedComponent.getThrusterType(this) == "Main") {
+				this._powerSelector = "Active";
+			}
 		}
 	}
 
@@ -1606,8 +1547,50 @@ class ShipCustomization {
 
 		const cargoCapacity = this._sumComponentValue(allComponents, "cargoCapacity");
 
+		const maxPitch = this._sumComponentValue(allComponents, "angularVelocityPitch");
+		const maxRoll = this._sumComponentValue(allComponents, "angularVelocityRoll");
+		const maxYaw = this._sumComponentValue(allComponents, "angularVelocityYaw");
+		const maxTurn = Math.max(maxYaw, maxPitch);
+
 		let attributes = this._specification.attributes;
 		attributes = attributes.concat([
+			{
+				name: "Normal Speed",
+				category: "Maneuverability",
+				description: "Normal flight speed",
+				value: this._sumComponentValue(allComponents, "speed")
+			},
+			{
+				name: "Maximum Speed",
+				category: "Maneuverability",
+				description: "Maximum flight speed",
+				value: this._sumComponentValue(allComponents, "afterburner")
+			},
+			{
+				name: "Yaw Rate Limit",
+				category: "Maneuverability",
+				description: "Maximum yaw rate in degrees/second not considering acceleration",
+				value: maxYaw
+			},
+			{
+				name: "Pitch Rate Limit",
+				category: "Maneuverability",
+				description: "Maximum pitch rate in degrees/second not considering acceleration",
+				value: maxPitch
+			},
+			{
+				name: "Turn Rate Limit",
+				category: "Maneuverability",
+				description: "Maximum yaw or pitch rate in degrees/second not considering acceleration",
+				value: maxTurn,
+				comparison: true
+			},
+			{
+				name: "Roll Rate Limit",
+				category: "Maneuverability",
+				description: "Maximum roll rate in degrees/second not considering acceleration",
+				value: maxRoll
+			},
 			{
 				name: "Loadout Name",
 				category: "Description",
@@ -1656,19 +1639,19 @@ class ShipCustomization {
 			{
 				name: "Cooling Available",
 				category: "Cooling",
-				description: "Total heat of all components",
+				description: "Total heat dissipation capacity of all coolers",
 				value: Math.round(coolingAvailable)
 			},
 			{
 				name: "Cooling Usage",
 				category: "Cooling",
-				description: "Total heat of all components",
+				description: "Total heat dissipation need of all components.",
 				value: Math.round(coolingUsage)
 			},
 			{
 				name: "Cooling Usage Ratio",
 				category: "Cooling",
-				description: "Percentage of power generation capacity used by current settings",
+				description: "Percentage of cooling capacity used by current settings",
 				value: Math.round(100 * (coolingUsage) / coolingAvailable) + "%"
 			},
 			{
@@ -1699,7 +1682,7 @@ class ShipCustomization {
 				name: "Missile Count",
 				description: "Number of missiles equipped",
 				category: "Missiles",
-				value: allComponents.filter(n => n.selectedComponent.type == "Ordinance").length
+				value: allComponents.filter(n => n.selectedComponent.type == "Missile").length
 			},
 			{
 				name: "Total Missile Damage",
@@ -2016,7 +1999,7 @@ var componentSelector = Vue.component('component-selector', {
 		},
 		activePowerName: function() {
 			const type = _.get(this.bindings[0].selectedComponent, "type");
-			if (type == "WeaponGun" || type == "WeaponMissile" || type == "Turret" || type == "TurretBase") {
+			if (type == "WeaponGun" || type == "MissileLauncher" || type == "Turret" || type == "TurretBase") {
 				return "Firing";
 			}
 			if (type == "Shield") {
@@ -2024,9 +2007,6 @@ var componentSelector = Vue.component('component-selector', {
 			}
 			if (type == "QuantumDrive") {
 				return "Spooling";
-			}
-			if (type == "FlightController") {
-				return "Maneuvering";
 			}
 
 			return "Active";
@@ -2549,15 +2529,15 @@ var shipList = Vue.component('ship-list', {
 					minWidth: 60
 				},
 				{
-					title: "SCM",
+					title: "SCM Speed",
 					key: "Normal Speed",
 					sortable: true,
 					renderHeader: this.renderSortableHeaderWithTooltip,
-					minWidth: 60
+					minWidth: 100
 				},
 				{
-					title: "Afterburner",
-					key: "Afterburner Speed",
+					title: "Max Speed",
+					key: "Maximum Speed",
 					sortable: true,
 					renderHeader: this.renderSortableHeaderWithTooltip,
 					minWidth: 100
@@ -2735,9 +2715,9 @@ var shipDetails = Vue.component('ship-details', {
 			// Also defines the section precedence order; lowest precedence is first.
 			sectionDefinitions: {
 				"Guns": ["WeaponGun", "Turret", "TurretBase"],
-				"Missiles": ["WeaponMissile"],
+				"Missiles": ["MissileLauncher"],
 				"Systems": ["Cooler", "Shield", "PowerPlant", "QuantumDrive"],
-				"Flight": ["FlightController"]
+				"Flight": ["MainThruster", "ManneuverThruster"]
 			},
 
 			summaryColumns: [
@@ -3121,7 +3101,7 @@ var app = new Vue({
 			return defaultShipCustomizations;
 		},
 		gameDataVersion: function() {
-			return "3.4.3-LIVE.1049749";
+			return "3.5.0-PTU.1350446";
 		}
 	},
 	methods: {
