@@ -685,8 +685,12 @@ class DataforgeComponent {
 
 	get cargoCapacity() {
 		// Capacity for cargo grids, both on ships and embedded into containers.
+		const getScuDimension = (key) => {
+			return Math.floor( _.get(dimensions, key, 0) / 1.25);
+		};
 		const dimensions =  _.get(this._data, "Components.SCItemCargoGridParams.dimensions", 0);
-		let capacity = _.get(dimensions, "@x", 0) * _.get(dimensions, "@y", 0) * _.get(dimensions, "@z", 0) / 1.953125;
+
+		let capacity = getScuDimension("@x") * getScuDimension("@y") * getScuDimension("@z");
 
 		// TODO This is fairly hacky; probably need a generic system for embedded items eventually.
 		const embedded = _.get(this._data, "#embedded", {});
