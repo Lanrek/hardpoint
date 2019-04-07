@@ -264,9 +264,19 @@ class ShipSpecification {
 
 class DamageQuantity {
 	constructor(distortion, energy, physical, thermal) {
-		const makeNumber = x => Number(x) || 0;
+		this._values = [distortion, energy, physical, thermal];
+	}
 
-		this._values = [makeNumber(distortion), makeNumber(energy), makeNumber(physical), makeNumber(thermal)];
+	static fromDamageInfo(damageInfo) {
+		return new DamageQuantity(
+			_.get(damageInfo, "@DamageDistortion", 0),
+			_.get(damageInfo, "@DamageEnergy", 0),
+			_.get(damageInfo, "@DamagePhysical", 0),
+			_.get(damageInfo, "@DamageThermal", 0));
+	}
+
+	static _fromValueArray(values) {
+		return new DamageQuantity(values[0], values[1], values[2], values[3]);
 	}
 
 	get distortion() {
@@ -312,15 +322,11 @@ class DamageQuantity {
 	}
 
 	add(quantity) {
-		return DamageQuantity._fromValues(this._values.map((x, index) => x + quantity._values[index]));
+		return DamageQuantity._fromValueArray(this._values.map((x, index) => x + quantity._values[index]));
 	}
 
 	scale(coefficient) {
-		return DamageQuantity._fromValues(this._values.map(x => x * coefficient));
-	}
-
-	static _fromValues(values) {
-		return new DamageQuantity(values[0], values[1], values[2], values[3]);
+		return DamageQuantity._fromValueArray(this._values.map(x => x * coefficient));
 	}
 }
 
@@ -542,16 +548,11 @@ class DataforgeComponent {
 	}
 
 	getGunAlpha(binding) {
-		let params = _.get(
-			this._data, "#ammoParams.projectileParams.BulletProjectileParams.detonationParams.ProjectileDetonationParams.explosionParams");
-		params = params || _.get(this._data, "#ammoParams.projectileParams.BulletProjectileParams");
-		const damageInfo = _.get(params, "damage.DamageInfo");
+		const bullet = _.get(this._data, "#ammoParams.projectileParams.BulletProjectileParams");
+		const bulletInfo = _.get(bullet, "damage.DamageInfo");
+		const explosionInfo = _.get(bullet, "detonationParams.ProjectileDetonationParams.explosionParams.damage.DamageInfo");
 
-		return new DamageQuantity(
-			_.get(damageInfo, "@DamageDistortion", 0),
-			_.get(damageInfo, "@DamageEnergy", 0),
-			_.get(damageInfo, "@DamagePhysical", 0),
-			_.get(damageInfo, "@DamageThermal", 0));
+		return DamageQuantity.fromDamageInfo(bulletInfo).add(DamageQuantity.fromDamageInfo(explosionInfo));
 	}
 
 	getGunFireRate(binding) {
@@ -581,7 +582,7 @@ class DataforgeComponent {
 		const coolingEnergy = this.maxCooling * this.specificHeatCapacity * binding.customization.coolingEfficiency;
 
 		let fireRate = this.getGunFireRate(binding);
-		fireRate *= Math.min(1, coolingEnergy / this.getHeatingEnergy(binding));
+		fireRate *= Math.min(1, coolingEnergy / this.getHeatingEnergy(binding)) || 0;
 
 		const scaled = this.getGunAlpha(binding).scale(this.getBulletCount(binding) * fireRate / 60.0);
 		return scaled;
@@ -601,12 +602,7 @@ class DataforgeComponent {
 
 	getMissileDamage(binding) {
 		const damageInfo = _.get(this._data, "Components.SCItemMissileParams.explosionParams.damage.DamageInfo");
-
-		return new DamageQuantity(
-			_.get(damageInfo, "@DamageDistortion", 0),
-			_.get(damageInfo, "@DamageEnergy", 0),
-			_.get(damageInfo, "@DamagePhysical", 0),
-			_.get(damageInfo, "@DamageThermal", 0));
+		return DamageQuantity.fromDamageInfo(damageInfo);
 	}
 
 	getMissileRange(binding) {
