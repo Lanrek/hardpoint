@@ -3101,7 +3101,7 @@ var app = new Vue({
 			return defaultShipCustomizations;
 		},
 		gameDataVersion: function() {
-			return "3.5.0-PTU.1350446";
+			return "3.5.0-PTU.1430143";
 		}
 	},
 	methods: {
