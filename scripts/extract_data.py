@@ -421,9 +421,6 @@ localization_path = os.path.join(xml_directory, "global.ini")
 # Data/Game.dcb/libs/foundry/records/entities/scitem/vehicles
 items_directory = os.path.join(json_directory, "scitem")
 
-# Data/Game.dcb/libs/foundry/records/ammoparams/vehicle
-ammo_directory = os.path.join(json_directory, "ammoparams", "vehicle")
-
 vehicle_directories = [
 	# Data/Game.dcb/libs/foundry/records/entities/spaceships
 	os.path.join(json_directory, "spaceships"),
@@ -431,6 +428,9 @@ vehicle_directories = [
 	# Data/Game.dcb/libs/foundry/records/entities/groundvehicles
 	os.path.join(json_directory, "groundvehicles")
 ]
+
+# Data/Game.dcb/libs/foundry/records/ammoparams/vehicle
+ammo_directory = os.path.join(json_directory, "ammoparams", "vehicle")
 
 # Data/Scripts/Entities/Vehicles/Implementations/Xml (with flatted subdirectories)
 implementations_directory = os.path.join(json_directory, "Entities", "Vehicles")
