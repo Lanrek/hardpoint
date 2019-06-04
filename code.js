@@ -177,8 +177,7 @@ class ShipSpecification {
 
 	get attributes() {
 		const seats = this.itemPorts.filter(p => p.matchesType("Seat"));
-		const crewSeats = seats.filter(
-			s => _.get(elementArray(_.get(s._data, "ItemPort.ControllerDef")), "[0].UserDef.Observerables.Observerable"), []);
+		const crewSeats = seats.filter(s => s.hasControllerMfd);
 
 		const mannedTurrets = this.itemPorts.filter(p => p.matchesType("TurretBase", "MannedTurret"));
 
@@ -1070,6 +1069,16 @@ class VehicleItemPort extends BaseItemPort {
 		this.name = data["@name"];
 		this.editable = !_.get(data, "ItemPort.@flags", "").includes("uneditable");
 		this.types = this._makeTypes();
+	}
+
+	get hasControllerMfd()
+	{
+		const immutableScreens = ["Screen_TV", "habitation_bed_screen"];
+
+		const controller = elementArray(_.get(this._data, "ItemPort.ControllerDef"));
+		const observables = elementArray(_.get(controller, "[0].UserDef.Observerables.Observerable", []));
+		const mfds = observables.filter(x => !immutableScreens.includes(_.get(x, "@screensAvail", "")));
+		return mfds.length > 0;
 	}
 
 	get minSize() {

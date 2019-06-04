@@ -290,7 +290,8 @@ filters = {
 	},
 	"observable": {
 		"[]": "observable",
-		"@itemType": None
+		"@itemType": None,
+		"@screensAvail": None
 	},
 	"item": {
 		"Components.SAttachableComponentParams.AttachDef.Localization.@Name": None,
