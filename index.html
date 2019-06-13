@@ -15,7 +15,7 @@
 		</script>
 
 		<meta charset="utf-8">
-		<title>Hardpoint - Star Citizen ship fitting and comparison tool</title>
+		<title>Hardpoint.io - Star Citizen ship fitting and comparison tool</title>
 		<meta name="description" content="Web application for planning and comparing loadouts of Star Citizen ships with detailed component breakdown and summary statistics." />
 		<meta name="keywords" content="star citizen,sc,cig,ship,vehicle,spaceship,loadout,fitting,equipment,gear,items,tool,planner,app,theory,comparison" />
 
@@ -45,15 +45,19 @@
 		<link rel="stylesheet" href="style.css">
 	</head>
 	<body>
-		<div id="app">
-			<div class="not-footer">
+		<div id="app" v-cloak>
+			<div class="splash anticloaked">
+				<div class="lds-dual-ring"></div>
+				<p>Loading game data...</p>
+			</div>
+			<div class="not-footer cloaked">
 				<div class="header">
 					<div class="centered-narrow">
 						<row>
 							<i-col span="8">
 								<h1>
 									<router-link to="/">
-										Hardpoint
+										Hardpoint.io
 									</router-link>
 								</h1>
 								<p>Game Data Version {{ gameDataVersion }}</p>
@@ -93,7 +97,7 @@
 					</div>
 				</div>
 			</div>
-			<div class="footer">
+			<div class="footer cloaked">
 				<div class="centered-narrow">
 					<p>Star Citizen intellectual property, content and trademarks are owned by Cloud Imperium Games Corporation and its subsidiaries.</p>
 					<p>Feedback and sugggestions appreciated on <a href="https://discord.gg/M4dEWZr">Discord</a>. Thanks to <a href="https://github.com/dolkensp/unp4k">unp4k</a> for the data extraction tool and <a href="https://github.com/">GitHub</a> for the hosting!</p>
