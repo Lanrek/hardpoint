@@ -547,6 +547,14 @@ class DataforgeComponent {
 		return this.getBulletSpeed(binding) * this.getBulletDuration(binding);
 	}
 
+	getTachyonZeroDamageRange(binding) {
+		return _.get(this._data, "#ammoParams.projectileParams.TachyonProjectileParams.@zeroDamageRange", 0);
+	}
+
+	getTachyonFullDamageRange(binding) {
+		return _.get(this._data, "#ammoParams.projectileParams.TachyonProjectileParams.@fullDamageRange", 0);
+	}
+
 	getBulletCount(binding) {
 		return _.get(_.values(this._defaultFireAction)[0], "launchParams.SProjectileLauncher.@pelletCount", 1);
 	}
@@ -556,7 +564,12 @@ class DataforgeComponent {
 		const bulletInfo = _.get(bullet, "damage.DamageInfo");
 		const explosionInfo = _.get(bullet, "detonationParams.ProjectileDetonationParams.explosionParams.damage.DamageInfo");
 
-		return DamageQuantity.fromDamageInfo(bulletInfo).add(DamageQuantity.fromDamageInfo(explosionInfo));
+		// TODO Need to model charged firing actions.
+		const tachyonTotal = _.get(
+			this._data, "#ammoParams.projectileParams.TachyonProjectileParams.damage.DamageParams.@damageTotal", 0);
+		const tachyonDamage = new DamageQuantity(0, tachyonTotal, 0, 0);
+
+		return tachyonDamage.add(DamageQuantity.fromDamageInfo(bulletInfo).add(DamageQuantity.fromDamageInfo(explosionInfo)));
 	}
 
 	getGunFireRate(binding) {
@@ -903,7 +916,13 @@ class DataforgeComponent {
 				summary.patterns.push("Overheats after {overheatTime} seconds of continuous fire");
 			}
 
-			summary.patterns.push("{bulletRange} meter range = {bulletSpeed} m/s projectile speed X {bulletDuration} seconds");
+			if (this.getTachyonFullDamageRange(binding) > 0)
+			{
+				summary.patterns.push("{tachyonZeroDamageRange} meter range with reduced damage after {tachyonFullDamageRange} meters");
+			}
+			else {
+				summary.patterns.push("{bulletRange} meter range = {bulletSpeed} m/s projectile speed X {bulletDuration} seconds");
+			}
 
 			if (this.getGunMaximumAmmo(binding) > 0) {
 				summary.patterns.push("{gunMaximumAmmo} rounds deplete in {gunMagazineDuration} seconds for potentially {gunMagazineDamage.total} damage");
