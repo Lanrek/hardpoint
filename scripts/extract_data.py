@@ -48,7 +48,7 @@ def walk_json_directory(directory, function):
 				function(identifier, value)
 
 def merge_items(items_directory, ammo_directory, door_loadouts_directory, output_path, localization_keys):
-	included_types = ["Cooler", "EMP", "PowerPlant", "Shield", "Turret", "TurretBase", "MissileLauncher", "QuantumDrive", "QuantumFuelTank", "WeaponGun", "WeaponMining", "Missile", "Container", "Cargo", "Ping", "FlightController", "Door", "MainThruster", "ManneuverThruster"]
+	included_types = ["Cooler", "EMP", "PowerPlant", "Shield", "Turret", "TurretBase", "MissileLauncher", "QuantumDrive", "QuantumFuelTank", "WeaponGun", "WeaponMining", "Missile", "Container", "Cargo", "Ping", "FlightController", "Door", "MainThruster", "ManneuverThruster", "Misc"]
 
 	excluded_suffixes = ["_template", "_damaged"]
 
@@ -107,8 +107,8 @@ def merge_items(items_directory, ammo_directory, door_loadouts_directory, output
 
 def hidden_vehicle_name(name):
 	dev_names = ["_OLD", "_NoInterior", "_Template"]
-	npc_names = ["_AI", "_Wreck", "probe_", "_S42", "_CitizenCon", "_Pirate", "_SimPod", "_Swarm"]
-	unfinished_names = ["Redeemer", "DRAK_Cutlass_DRAK", "Taurus"]
+	npc_names = ["_AI", "_Wreck", "probe_", "_S42", "_CitizenCon", "_Pirate", "_SimPod", "_Swarm", "XIAN_Nox_SM_TE", "F7A"]
+	unfinished_names = ["Redeemer", "DRAK_Cutlass_DRAK", "Taurus", "ANVL_Carrack", "Cutlass_Blue", "Cutlass_Red"]
 	recolored_names = ["XIAN_Nox_Kue", "DRAK_Dragonfly_", "RSI_Constellation_Phoenix_"]
 
 	hidden_names = dev_names + npc_names + unfinished_names + recolored_names

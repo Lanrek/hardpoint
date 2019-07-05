@@ -246,10 +246,15 @@ class ShipSpecification {
 				for (const item of items) {
 					const itemName = _.get(item, "@itemName");
 					if (itemName) {
-						let entry = {};
-						entry.itemName = itemName;
-						entry.children = makeStructure(item);
-						result[_.get(item, "@portName")] = entry;
+						let entry = result[_.get(item, "@portName")];
+						if (!entry) {
+							entry = {};
+							entry.itemName = itemName;
+							entry.children = {};
+							result[_.get(item, "@portName")] = entry;
+						}
+
+						_.extend(entry.children, makeStructure(item));
 					}
 				}
 			}
@@ -1282,7 +1287,7 @@ class ItemBinding {
 
 		this._setSelectedComponent(this.defaultComponent, defaultItems);
 
-		const defaultActiveTypes = ["Turret", "TurretBase", "WeaponGun", "PowerPlant", "Cooler"];
+		const defaultActiveTypes = ["Turret", "TurretBase", "WeaponGun", "PowerPlant", "Cooler", "Misc"];
 		this._powerSelector = "Standby";
 		if (this.selectedComponent) {
 			if (defaultActiveTypes.includes(this.selectedComponent.type)) {
@@ -2008,7 +2013,7 @@ var componentSelector = Vue.component('component-selector', {
 		},
 		activePowerName: function() {
 			const type = _.get(this.bindings[0].selectedComponent, "type");
-			if (type == "WeaponGun" || type == "MissileLauncher" || type == "Turret" || type == "TurretBase") {
+			if (type == "WeaponGun" || type == "MissileLauncher" || type == "Turret" || type == "TurretBase" || type == "Misc") {
 				return "Firing";
 			}
 			if (type == "Shield") {
@@ -2723,7 +2728,7 @@ var shipDetails = Vue.component('ship-details', {
 			expandedSections: ["Guns", "Missiles", "Systems", "Flight"],
 			// Also defines the section precedence order; lowest precedence is first.
 			sectionDefinitions: {
-				"Guns": ["WeaponGun", "Turret", "TurretBase"],
+				"Guns": ["WeaponGun", "Turret", "TurretBase", "Misc"],
 				"Missiles": ["MissileLauncher"],
 				"Systems": ["Cooler", "Shield", "PowerPlant", "QuantumDrive"],
 				"Flight": ["MainThruster", "ManneuverThruster"]
@@ -3110,7 +3115,7 @@ var app = new Vue({
 			return defaultShipCustomizations;
 		},
 		gameDataVersion: function() {
-			return "3.5.1-LIVE.1835013";
+			return "3.6.0-PTU.2074651";
 		}
 	},
 	methods: {
