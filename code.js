@@ -2967,7 +2967,13 @@ var shipDetails = Vue.component('ship-details', {
 			const candidates = this.selectedCustomization.childGroups;
 			const sectionalized = candidates.filter(g => sectionTypes.some(t => g.members[0].port.matchesType(t, undefined)));
 
-			const filtered = sectionalized.filter(g => !excludedTypes.some(e => g.members[0].port.matchesType(e, undefined)));
+			let filtered = sectionalized.filter(g => !excludedTypes.some(e => g.members[0].port.matchesType(e, undefined)));
+
+			// Hide modules (tragically type "Misc") that don't contain item ports with weapons on them.
+			filtered = filtered.filter(g =>
+				g.members[0].port.types.some(t => t.type != "Misc") ||
+				g.members[0].childGroups.some(c => c.members[0].port.types.some(t => t.type == "WeaponGun")));
+
 			return filtered;
 		},
 		getChildBindingGroups: function (prototypeBinding) {
