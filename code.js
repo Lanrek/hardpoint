@@ -977,7 +977,7 @@ class DataforgeComponent {
 		}
 
 		if (this.type == "Cooler") {
-			return new SummaryText(["{coolingAvailable} max cooling / second"], this, binding);
+			return new SummaryText(["Name: {name}, display: {displayName}", "{coolingAvailable} max cooling / second"], this, binding);
 		}
 
 		return new SummaryText();
@@ -3140,7 +3140,7 @@ var app = new Vue({
 			return defaultShipCustomizations;
 		},
 		gameDataVersion: function() {
-			return "3.6.0-LIVE.2247930";
+			return "3.6.2-LIVE.2749409";
 		}
 	},
 	methods: {
