@@ -210,7 +210,7 @@ class ShipSpecification {
 			{
 				name: "Total Hitpoints",
 				category: "Survivability",
-				description: "Total hitpoints of all ship parts",
+				description: "Total hitpoints of all ship parts -- damage to critical parts will destroy a ship faster than this implies",
 				value: this._findParts().reduce((total, x) => total + (x["@damageMax"] || 0), 0)
 			}
 		];
