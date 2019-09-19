@@ -239,6 +239,15 @@ def apply_filters(object, filter_name, previous=""):
 			else:
 				apply_filters(item, filter_name, next)
 	else:
+		# Force dictionary keys to match the case in the filter to handle case discrepancies in the game data.
+		available = [x[len(previous):].split(".")[0] for x in list(filter) if x.startswith(previous)]
+		available_lower = {x.lower() : x for x in available}
+
+		for key in list(object):
+			normalized = available_lower.get(key.lower(), None)
+			if normalized and key != normalized:
+				object[normalized] = object[key]
+
 		for key in list(object):
 			path = previous + key
 			next = path + "."
