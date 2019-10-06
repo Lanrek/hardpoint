@@ -3140,7 +3140,7 @@ var app = new Vue({
 			return defaultShipCustomizations;
 		},
 		gameDataVersion: function() {
-			return "3.6.2-LIVE.2749409";
+			return "3.7.0-PTU.3132275";
 		}
 	},
 	methods: {
