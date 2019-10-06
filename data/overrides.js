@@ -13,6 +13,15 @@ var shipAttributeOverrides = {
 	},
 	"AEGS_Idris": {
 		"Size Category": "Capital"
+	},
+	"AEGS_Vanguard": {
+		"Size Category": "Medium"
+	},
+	"AEGS_Vanguard_Harbinger": {
+		"Size Category": "Medium"
+	},
+	"AEGS_Vanguard_Hoplite": {
+		"Size Category": "Medium"
 	}
 };
 
