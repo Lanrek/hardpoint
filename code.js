@@ -237,32 +237,7 @@ class ShipSpecification {
 	}
 
 	_makeDefaultItems() {
-		const loadout = allLoadouts[this.name];
-
-		const makeStructure = function(root) {
-			let result = {};
-			const items = elementArray(_.get(root, "Items.Item", []));
-			if (items.length > 0) {
-				for (const item of items) {
-					const itemName = _.get(item, "@itemName");
-					if (itemName) {
-						let entry = result[_.get(item, "@portName")];
-						if (!entry) {
-							entry = {};
-							entry.itemName = itemName;
-							entry.children = {};
-							result[_.get(item, "@portName")] = entry;
-						}
-
-						_.extend(entry.children, makeStructure(item));
-					}
-				}
-			}
-			return result;
-		};
-
-		const structure = makeStructure(loadout["Loadout"]);
-		return structure;
+		return allLoadouts[this.name];
 	}
 }
 
@@ -490,7 +465,8 @@ class DataforgeComponent {
 		}
 
 		if (result == undefined) {
-			console.log("Warning: Failed to retrieve component value " + name);
+			console.log("Warning: Failed to retrieve component value " + name + " for " + this.name);
+			console.log(this._data);
 		}
 		return result;
 	}
@@ -707,8 +683,8 @@ class DataforgeComponent {
 
 		// TODO This is fairly hacky; probably need a generic system for embedded items eventually.
 		const embedded = _.get(this._data, "#embedded", {});
-		for (const name of _.values(embedded)) {
-			const item = allItems[name];
+		for (const entry of _.values(embedded)) {
+			const item = allItems[entry["itemName"]];
 			capacity += _.get(item, "cargoCapacity", 0);
 		}
 
@@ -3140,7 +3116,7 @@ var app = new Vue({
 			return defaultShipCustomizations;
 		},
 		gameDataVersion: function() {
-			return "3.7.0-PTU.3132275";
+			return "3.7.2-LIVE.3658647";
 		}
 	},
 	methods: {

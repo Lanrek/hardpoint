@@ -47,6 +47,49 @@ def walk_json_directory(directory, function):
 				identifier = key.split(".", 1)[-1]
 				function(identifier, value)
 
+def make_loadout(loadout_component, loadouts_directory):
+	result = {}
+
+	def add_manual_entries(container, manual_params):
+		elements = element_array(manual_params["entries"].get("SItemPortLoadoutEntryParams"))
+		for data in elements:
+			entry = {}
+			entry["itemName"] = data["@entityClassName"]
+			entry["children"] = {}
+			child_params = data["loadout"].get("SItemPortLoadoutManualParams")
+			if child_params:
+				add_manual_entries(entry["children"], child_params)
+
+			container[data["@itemPortName"]] = entry
+
+	def add_file_entries(container, items):
+		elements = element_array(items.get("Item"))
+		for data in elements:
+			entry = {}
+			entry["itemName"] = data.get("@itemName") or data.get("@itemname")
+			entry["children"] = {}
+			child_items = data.get("Items")
+			if child_items:
+				add_file_entries(entry["children"], child_items)
+
+			container[data.get("@portName") or data["@portname"]] = entry
+
+	manual_params = loadout_component["loadout"].get("SItemPortLoadoutManualParams")
+	if manual_params:
+		add_manual_entries(result, manual_params)
+	else:
+		path = loadout_component["loadout"]["SItemPortLoadoutXMLParams"]["@loadoutPath"]
+		if path:
+			path = path.split("/")[-1].replace(".xml", ".json")
+			path = os.path.join(loadouts_directory, path)
+			if os.path.exists(path):
+				loadout = read_json_file(path)
+				items = loadout["Loadout"].get("Items")
+				if items:
+					add_file_entries(result, items)
+
+	return result
+
 def merge_items(items_directory, ammo_directory, door_loadouts_directory, output_path, localization_keys):
 	included_types = ["Cooler", "EMP", "PowerPlant", "Shield", "Turret", "TurretBase", "MissileLauncher", "QuantumDrive", "QuantumFuelTank", "WeaponGun", "WeaponMining", "Missile", "Container", "Cargo", "Ping", "FlightController", "Door", "MainThruster", "ManneuverThruster", "Misc"]
 
@@ -76,26 +119,7 @@ def merge_items(items_directory, ammo_directory, door_loadouts_directory, output
 
 		loadout_component = value["Components"].get("SEntityComponentDefaultLoadoutParams")
 		if loadout_component:
-			embedded = {}
-			manual_params = loadout_component["loadout"].get("SItemPortLoadoutManualParams")
-
-			if manual_params:
-				entries = element_array(manual_params["entries"].get("SItemPortLoadoutEntryParams"))
-				for entry in entries:
-					embedded[entry["@itemPortName"]] = entry["@entityClassName"]
-			else:
-				path = loadout_component["loadout"]["SItemPortLoadoutXMLParams"]["@loadoutPath"]
-				if path:
-					path = path.split("/")[-1].replace(".xml", ".json")
-					path = os.path.join(door_loadouts_directory, path)
-					if os.path.exists(path):
-						loadout = read_json_file(path)
-						items = loadout["Loadout"].get("Items")
-						if items:
-							elements = element_array(items.get("Item"))
-							for entry in elements:
-								embedded[entry["@portName"]] = entry["@itemName"]
-
+			embedded = make_loadout(loadout_component, door_loadouts_directory)
 			if len(embedded.keys()):
 				value["#embedded"] = embedded
 
@@ -106,9 +130,9 @@ def merge_items(items_directory, ammo_directory, door_loadouts_directory, output
 	write_javascript(combined_items, output_path, "itemData")
 
 def hidden_vehicle_name(name):
-	dev_names = ["_OLD", "_NoInterior", "_Template"]
-	npc_names = ["_AI", "_Wreck", "probe_", "_S42", "_CitizenCon", "_Pirate", "_SimPod", "_Swarm", "XIAN_Nox_SM_TE", "F7A"]
-	unfinished_names = ["Redeemer", "DRAK_Cutlass_DRAK", "Taurus", "ANVL_Carrack", "Cutlass_Blue", "Cutlass_Red"]
+	dev_names = ["_OLD", "_NoInterior", "_Template", "_Showdown", "_ShipShowdown"]
+	npc_names = ["_AI", "_Wreck", "probe_", "_S42", "_CitizenCon", "_Pirate", "_PIR", "_SimPod", "_Swarm", "XIAN_Nox_SM_TE", "F7A"]
+	unfinished_names = ["Redeemer", "DRAK_Cutlass_DRAK", "Taurus", "Cutlass_Blue", "Cutlass_Red"]
 	recolored_names = ["XIAN_Nox_Kue", "DRAK_Dragonfly_", "RSI_Constellation_Phoenix_"]
 
 	hidden_names = dev_names + npc_names + unfinished_names + recolored_names
@@ -161,7 +185,7 @@ def modify_vehicle(implementations_directory, implementation, modification_name)
 
 def merge_vehicles(vehicle_directories, implementations_directory, loadouts_directory,
 				   vehicle_path, loadout_path, localization_keys):
-	loadout_paths = {}
+	loadout_components = {}
 	implementation_paths = {}
 	modification_names = {}
 	vehicle_names = {}
@@ -171,7 +195,7 @@ def merge_vehicles(vehicle_directories, implementations_directory, loadouts_dire
 			return
 		print("+ " + identifier)
 
-		loadout_paths[identifier] = value["Components"]["SEntityComponentDefaultLoadoutParams"]["loadout"]["SItemPortLoadoutXMLParams"]["@loadoutPath"]
+		loadout_components[identifier] = value["Components"]["SEntityComponentDefaultLoadoutParams"]
 		implementation_paths[identifier] = value["Components"]["VehicleComponentParams"]["@vehicleDefinition"]
 		modification_names[identifier] = value["Components"]["VehicleComponentParams"]["@modification"]
 		vehicle_names[identifier] = value["Components"]["VehicleComponentParams"]["@vehicleName"]
@@ -179,11 +203,8 @@ def merge_vehicles(vehicle_directories, implementations_directory, loadouts_dire
 		walk_json_directory(directory, add_paths)
 
 	combined_loadouts = {}
-	for identifier, path in loadout_paths.items():
-		path = path.split("/")[-1].replace(".xml", ".json")
-		path = os.path.join(loadouts_directory, path)
-		if os.path.exists(path):
-			combined_loadouts[identifier] = read_json_file(path)
+	for identifier, component in loadout_components.items():
+		combined_loadouts[identifier] = make_loadout(component, loadouts_directory)
 
 	combined_vehicles = {}
 	for identifier, path in implementation_paths.items():

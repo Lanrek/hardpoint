@@ -152,6 +152,20 @@ var turretRotations = {
 		"hardpoint_turret": {
 		}
 	},
+	"ANVL_Hawk": {
+		"hardpoint_weapon_nose_left": {
+		},
+		"hardpoint_weapon_nose_right": {
+		},
+		"hardpoint_weapon_wing_bottom_left": {
+		},
+		"hardpoint_weapon_wing_bottom_right": {
+		},
+		"hardpoint_weapon_wing_top_left": {
+		},
+		"hardpoint_weapon_wing_top_right": {
+		}
+	},
 	"ANVL_Hornet": {
 		"hardpoint_class_4_nose": {
 		},
@@ -204,6 +218,16 @@ var turretRotations = {
 			"yaw": 90
 		}
 	},
+	"Banu_Defender": {
+		"hardpoint_weapon_wing_left": {
+		},
+		"hardpoint_weapon_wing_right": {
+		},
+		"hardpoint_weapon_nose_left": {
+		},
+		"hardpoint_weapon_nose_right": {
+		}
+	},
 	"CNOU_Mustang": {
 		"hardpoint_weapon_nose": {
 		},
@@ -252,6 +276,12 @@ var turretRotations = {
 		"hardpoint_turret": {
 		}
 	},
+	"DRAK_Dragonfly": {
+		"hardpoint_weapon_left": {
+		},
+		"hardpoint_weapon_right": {
+		}
+	},
 	"DRAK_Herald": {
 		"hardpoint_weapon_s02_nose": {
 		},
@@ -272,12 +302,30 @@ var turretRotations = {
 			"yaw": 180
 		}
 	},
+	"MISC_Prospector": {
+		"hardpoint_weapon_left": {
+			"roll": 90
+		},
+		"hardpoint_weapon_right": {
+			"roll": 90
+		}
+	},
 	"MISC_Razor": {
 		"hardpoint_weapon_left": {
 			"roll": 45
 		},
 		"hardpoint_weapon_right": {
 			"roll": -45
+		}
+	},
+	"MISC_Reliant": {
+		"Hardpoint_Weapon_Wing_Tip_S3_Left": {
+		},
+		"Hardpoint_Weapon_Wing_Tip_S3_Right": {
+		},
+		"Hardpoint_Weapon_Wing_S1_Left": {
+		},
+		"Hardpoint_Weapon_Wing_S1_Right": {
 		}
 	},
 	"MISC_Starfarer": {
