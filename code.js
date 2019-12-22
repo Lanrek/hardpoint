@@ -3116,7 +3116,7 @@ var app = new Vue({
 			return defaultShipCustomizations;
 		},
 		gameDataVersion: function() {
-			return "3.7.2-LIVE.3658647";
+			return "3.8.0-LIVE.3917186";
 		}
 	},
 	methods: {
