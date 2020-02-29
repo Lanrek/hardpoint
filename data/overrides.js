@@ -144,6 +144,19 @@ var turretRotations = {
 		"hardpoint_weapon_wing_right": {
 		}
 	},
+	"ANVL_Carrack": {
+		"hardpoint_turret_right": {
+			"yaw": -90
+		},
+		"hardpoint_turret_left": {
+			"yaw": 90
+		},
+		"hardpoint_turret_remote_turret": {
+		},
+		"hardpoint_turret_back_rear": {
+			"yaw": 180
+		},
+	},
 	"ANVL_Gladiator": {
 		"hardpoint_class_2_left_wing": {
 		},
