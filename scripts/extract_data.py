@@ -130,10 +130,10 @@ def merge_items(items_directory, ammo_directory, door_loadouts_directory, output
 	write_javascript(combined_items, output_path, "itemData")
 
 def hidden_vehicle_name(name):
-	dev_names = ["_OLD", "_NoInterior", "_Template", "_Showdown", "_ShipShowdown"]
-	npc_names = ["_AI", "_Wreck", "probe_", "_S42", "_CitizenCon", "_Pirate", "_PIR", "_SimPod", "_Swarm", "XIAN_Nox_SM_TE", "F7A", "_Hijacked", "Orbital_Sentry"]
+	dev_names = ["_OLD", "_NoInterior", "_Template", "_Showdown", "_ShipShowdown", "_Thruster_"]
+	npc_names = ["_AI", "_Wreck", "probe_", "_S42", "_CitizenCon", "_Pirate", "_PIR", "_SimPod", "_Swarm", "XIAN_Nox_SM_TE", "F7A", "_Hijacked", "Orbital_Sentry", "_CRIM", "_Drone", "_EA_", "_SDF_", "EAObjectiveDestructableProbe", "_Shubin", "_Drug_"]
 	unfinished_names = ["Redeemer", "DRAK_Cutlass_DRAK", "Taurus", "Idris"]
-	recolored_names = ["XIAN_Nox_Kue", "DRAK_Dragonfly_", "RSI_Constellation_Phoenix_", "ORIG_600i_Executive_Edition"]
+	recolored_names = ["XIAN_Nox_Kue", "DRAK_Dragonfly_", "RSI_Constellation_Phoenix_", "ORIG_600i_Executive_Edition", "ARGO_MOLE_", "ANVL_Ballista_", "_Emerald"]
 
 	hidden_names = dev_names + npc_names + unfinished_names + recolored_names
 	for entry in hidden_names:
