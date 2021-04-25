@@ -372,6 +372,11 @@ class DataforgeComponent {
 			"SWeaponActionSequenceParams.sequenceEntries.SWeaponSequenceEntryParams", []));
 		this._defaultFireAction = _.get(this._weaponSequence, "[0].weaponAction", fireAction);
 
+		this._defaultFireAction = _.values(this._defaultFireAction)[0];
+
+		// TODO Support whatever's happening here if it's not junk.
+		this._defaultFireAction = elementArray(this._defaultFireAction)[0];
+
 		this.itemPorts = this._findItemPorts();
 		this._pitchLimits = this._makePitchLimits();
 	}
@@ -532,7 +537,7 @@ class DataforgeComponent {
 	}
 
 	getBulletCount(binding) {
-		return _.get(_.values(this._defaultFireAction)[0], "launchParams.SProjectileLauncher.@pelletCount", 1);
+		return _.get(this._defaultFireAction, "launchParams.SProjectileLauncher.@pelletCount", 1);
 	}
 
 	getGunAlpha(binding) {
@@ -549,7 +554,7 @@ class DataforgeComponent {
 	}
 
 	getGunFireRate(binding) {
-		return _.get(_.values(this._defaultFireAction)[0], "@fireRate", 0);
+		return _.get(this._defaultFireAction, "@fireRate", 0);
 	}
 
 	getGunBurstDps(binding) {
@@ -562,7 +567,7 @@ class DataforgeComponent {
 	}
 
 	getGunHeatPerShot(binding) {
-		return _.get(_.values(this._defaultFireAction)[0], "@heatPerShot", 0);
+		return _.get(this._defaultFireAction, "@heatPerShot", 0);
 	}
 
 	getGunMaxCoolingPerShot(binding) {
@@ -989,7 +994,7 @@ class DataforgeComponent {
 	}
 
 	_findItemPorts() {
-		const ports = _.get(this._data, "Components.SCItem.ItemPorts.SItemPortCoreParams.Ports.SItemPortDef", []);
+		const ports = _.get(this._data, "Components.SItemPortContainerComponentParams.Ports.SItemPortDef", []);
 		return elementArray(ports).map(x => new DataforgeItemPort(x));
 	}
 }
@@ -1363,7 +1368,8 @@ class ItemBinding {
 			if (!container) {
 				return undefined;
 			}
-			entry = container[portName];
+			const key = _.find(_.keys(container), n => n.toLowerCase() == portName.toLowerCase());
+			entry = container[key];
 			container = _.get(entry, "children");
 		}
 
@@ -3116,7 +3122,7 @@ var app = new Vue({
 			return defaultShipCustomizations;
 		},
 		gameDataVersion: function() {
-			return "3.9.0-LIVE-5125346";
+			return "3.13.0-LIVE-7319707";
 		}
 	},
 	methods: {

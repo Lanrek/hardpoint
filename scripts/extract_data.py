@@ -131,9 +131,9 @@ def merge_items(items_directory, ammo_directory, door_loadouts_directory, output
 
 def hidden_vehicle_name(name):
 	dev_names = ["_OLD", "_NoInterior", "_Template", "_Showdown", "_ShipShowdown", "_Thruster_"]
-	npc_names = ["_AI", "_Wreck", "probe_", "_S42", "_CitizenCon", "_Pirate", "_PIR", "_SimPod", "_Swarm", "XIAN_Nox_SM_TE", "F7A", "_Hijacked", "Orbital_Sentry", "_CRIM", "_Drone", "_EA_", "_SDF_", "EAObjectiveDestructableProbe", "_Shubin", "_Drug_"]
+	npc_names = ["_AI", "_Wreck", "probe_", "_S42", "_CitizenCon", "_Pirate", "_PIR", "_SimPod", "_Swarm", "XIAN_Nox_SM_TE", "F7A", "_Hijacked", "Orbital_Sentry", "_CRIM", "_Drone", "_EA_", "_SDF_", "EAObjectiveDestructableProbe", "_Shubin", "_Drug_", "EAObjectiveDestructable", "_Derelict_", "_Advocacy"]
 	unfinished_names = ["Redeemer", "DRAK_Cutlass_DRAK", "Taurus", "Idris"]
-	recolored_names = ["XIAN_Nox_Kue", "DRAK_Dragonfly_", "RSI_Constellation_Phoenix_", "ORIG_600i_Executive_Edition", "ARGO_MOLE_", "ANVL_Ballista_", "_Emerald"]
+	recolored_names = ["XIAN_Nox_Kue", "DRAK_Dragonfly_", "RSI_Constellation_Phoenix_", "ORIG_600i_Executive_Edition", "ARGO_MOLE_", "ANVL_Ballista_", "_Emerald", "_BIS2950"]
 
 	hidden_names = dev_names + npc_names + unfinished_names + recolored_names
 	for entry in hidden_names:
@@ -222,7 +222,6 @@ def merge_vehicles(vehicle_directories, implementations_directory, loadouts_dire
 		value["#vehicleName"] = vehicle_names[key]
 
 		localization_keys.add(value["#vehicleName"])
-
 		apply_filters(value, "vehicle")
 
 	write_javascript(combined_loadouts, loadout_path, "loadoutData")
@@ -267,7 +266,10 @@ def apply_filters(object, filter_name, previous=""):
 		for key in list(object):
 			normalized = available_lower.get(key.lower(), None)
 			if normalized and key != normalized:
-				object[normalized] = object[key]
+				if normalized in object:
+					print("Warning: Dropping " + previous + key + " that would overwrite normalized case")
+				else:
+					object[normalized] = object[key]
 
 		for key in list(object):
 			path = previous + key
@@ -334,7 +336,8 @@ filters = {
 		"#ammoParams.projectileParams.TachyonProjectileParams.damage.DamageParams.@damageTotal": None,
 		"#ammoParams.projectileParams.TachyonProjectileParams.@fullDamageRange": None,
 		"#ammoParams.projectileParams.TachyonProjectileParams.@zeroDamageRange": None,
-		"#ammoParams.projectileParams.BulletProjectileParams.damage.DamageInfo": "damageInfo",		"#ammoParams.projectileParams.BulletProjectileParams.detonationParams.ProjectileDetonationParams": "projectileDetonation",
+		"#ammoParams.projectileParams.BulletProjectileParams.damage.DamageInfo": "damageInfo",
+                "#ammoParams.projectileParams.BulletProjectileParams.detonationParams.ProjectileDetonationParams": "projectileDetonation",
 		"#embedded": None,
 		"Components.IFCSParams.@maxSpeed": None,
 		"Components.IFCSParams.@maxAfterburnSpeed": None,
@@ -380,7 +383,7 @@ filters = {
 		"Components.SCItemThrusterParams.@thrusterType": None,
 		"Components.SCItemWeaponComponentParams.fireActions": "weaponAction",
 		"Components.SCItemTurretParams.movementList.SCItemTurretJointMovementParams": "jointMovement",
-		"Components.SCItem.ItemPorts.SItemPortCoreParams.Ports.SItemPortDef": "itemPort"
+		"Components.SItemPortContainerComponentParams.Ports.SItemPortDef": "itemPort"
 	},
 	"projectileDetonation": {
 		"explosionParams.damage.DamageInfo": "damageInfo"
@@ -401,6 +404,7 @@ filters = {
 		"SWeaponActionFireBeamParams": "weaponActionParams"
 	},
 	"weaponActionParams": {
+                "[]": "weaponActionParams",
 		"@fireRate": None,
 		"@heatPerShot": None,
 		"launchParams.SProjectileLauncher.@pelletCount": None
