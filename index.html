@@ -1,372 +1,313 @@
 <!DOCTYPE html>
-<html>
-	<head>
-		<script>
-			var gaTrackingId = 'UA-117108133-1';
-		</script>
+<html lang="en">
 
-		<!-- Global site tag (gtag.js) - Google Analytics -->
-		<script async src="https://www.googletagmanager.com/gtag/js?id=UA-117108133-1"></script>
-		<script>
-			window.dataLayer = window.dataLayer || [];
+<head>
+    <meta charset="utf-8">
+    <title>Hardpoint.io - Star Citizen ship fitting and comparison tool</title>
+    <link rel="shortcut icon" type="image/x-icon" href="images/favicon.png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1c2438">
+    <link rel="stylesheet" href="https://unpkg.com/iview@3.2.0/dist/styles/iview.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://www.googletagmanager.com">
+    <link rel="preconnect" href="https://unpkg.com">
+    <link rel="preconnect" href="https://www.google-analytics.com">
+    <script>
+        var gaTrackingId = 'UA-117108133-1';
+		</script>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-117108133-1"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
 			function gtag(){dataLayer.push(arguments);}
 			gtag('js', new Date());
 			gtag('config', gaTrackingId, { 'send_page_view': false });
 		</script>
-
-		<meta charset="utf-8">
-		<title>Hardpoint.io - Star Citizen ship fitting and comparison tool</title>
-		<meta name="description" content="Web application for planning and comparing loadouts of Star Citizen ships with detailed component breakdown and summary statistics." />
-		<meta name="keywords" content="star citizen,sc,cig,ship,vehicle,spaceship,loadout,fitting,equipment,gear,items,tool,planner,app,theory,comparison" />
-
-		<script src="//unpkg.com/lodash@4.17.11/lodash.js"></script>
-		<script src="//unpkg.com/clipboard@2.0.0/dist/clipboard.min.js"></script>
-
-		<script src="//unpkg.com/three@0.98.0/build/three.min.js"></script>
-		<script src="//unpkg.com/three@0.98.0/examples/js/controls/TrackballControls.js"></script>
-
-		<link rel="stylesheet" href="//unpkg.com/iview@3.2.0/dist/styles/iview.css">
-
-		<script src="//unpkg.com/vue@2.5.21/dist/vue.js"></script>
-		<script src="//unpkg.com/vue-router@3.0.2/dist/vue-router.js"></script>
-		<script src="//unpkg.com/iview@3.2.0/dist/iview.min.js"></script>
-		<script src="//unpkg.com/iview@3.2.0/dist/locale/en-US.js"></script>
-		<script>
-			iview.lang('en-US');
+    <script src="https://unpkg.com/lodash@4.17.11/lodash.min.js"></script>
+    <script src="https://unpkg.com/clipboard@2.0.0/dist/clipboard.min.js"></script>
+    <script src="https://unpkg.com/three@0.98.0/build/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.98.0/examples/js/controls/TrackballControls.js"></script>
+    <script src="https://unpkg.com/vue@2.5.21/dist/vue.min.js"></script>
+    <script src="https://unpkg.com/vue-router@3.0.2/dist/vue-router.min.js"></script>
+    <script src="https://unpkg.com/iview@3.2.0/dist/iview.min.js"></script>
+    <script src="https://unpkg.com/iview@3.2.0/dist/locale/en-US.js"></script>
+    <script>
+        iview.lang('en-US');
 		</script>
+    <script src="data/vehicles.js"></script>
+    <script src="data/loadouts.js"></script>
+    <script src="data/items.js"></script>
+    <script src="data/strings.js"></script>
+    <script src="data/overrides.js"></script>
+    <meta name="description" content="Web application for planning and comparing loadouts of Star Citizen ships with detailed component breakdown and summary statistics." />
+    <meta name="keywords" content="star citizen,sc,cig,ship,vehicle,spaceship,loadout,fitting,equipment,gear,items,tool,planner,app,theory,comparison" />
+    <link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
+</head>
 
-		<script src="data/vehicles.js"></script>
-		<script src="data/loadouts.js"></script>
-		<script src="data/items.js"></script>
-		<script src="data/strings.js"></script>
-
-		<script src="data/overrides.js"></script>
-
-		<link rel="stylesheet" href="style.css">
-	</head>
-	<body>
-		<div id="app" v-cloak>
-			<div class="splash anticloaked">
-				<div class="lds-dual-ring"></div>
-				<p>Loading game data...</p>
-			</div>
-			<div class="not-footer cloaked">
-				<div class="header">
-					<div class="centered-narrow">
-						<row>
-							<i-col span="8">
-								<h1>
-									<router-link to="/">
-										Hardpoint.io
-									</router-link>
-								</h1>
-								<p>Game Data Version {{ gameDataVersion }}</p>
-							</i-col>
-							<i-col span="16">
-								<div class="menu">
-									<dropdown>
-										<span class="dropdown-title">
-											New Loadout
-											<icon type="ios-arrow-down"></icon>
-										</span>
-										<dropdown-menu slot="list">
-											<dropdown-item
-												v-for="customization in shipCustomizations"
-												:key="customization.serialize()">
-												<router-link
-													:to="{name: 'customize', params: {serialized: customization.serialize()}}">
-													{{customization.displayName}}
-												</router-link>
-											</dropdown-item>
-										</dropdown-menu>
-									</dropdown>
-									<router-link :to="{name: 'saved'}">
-										Saved Loadouts
-									</router-link>
-									<router-link :to="{name: 'list'}" class="rightmost">
-										Ship Comparison
-									</router-link>
-								</div>
-							</i-col>
-						</row>
-					</div>
-				</div>
-				<div class="content">
-					<div class="centered-narrow">
-						<router-view :key="$route.fullPath"></router-view>
-					</div>
-				</div>
-			</div>
-			<div class="footer cloaked">
-				<div class="centered-narrow">
-					<p>Star Citizen intellectual property, content and trademarks are owned by Cloud Imperium Games Corporation and its subsidiaries.</p>
-					<p>Feedback and sugggestions appreciated on <a href="https://discord.gg/M4dEWZr">Discord</a>. Thanks to <a href="https://github.com/dolkensp/unp4k">unp4k</a> for the data extraction tool and <a href="https://github.com/">GitHub</a> for the hosting!</p>
-				</div>
-			</div>
-		</div>
-
-		<template id="ship-list">
-			<div class="ship-list">
-				<row class="spaced-row ship-list-controls">
-					<i-col span="8">
-						<i-input placeholder="Search" clearable v-model="searchInput"></i-input>
-					</i-col>
-					<i-col span="16" class="right">
-						<i-button type="primary" @click="onCompareSelected" :disabled="compareDisabled">
-							{{comparing ? "Show All" : "Compare Selected"}}
-						</i-button>
-					</i-col>
-				</row>
-				<row class="spaced-row">
-					<i-col span="24">
-						<i-table
-							ref="table"
-							@on-sort-change="onSortChange"
-							@on-filter-change="onFilterChange"
-							:columns="attributeColumns"
-							:data="shipAttributes"
-							:height="tableHeight"
-							highlight-row
-							stripe>
-						</i-table>
-					</i-col>
-				</row>
-			</div>
-		</template>
-
-		<template id="item-port-group">
-			<div class="item-port-group">
-				<div class="group-row">
-					<div class="group-indicator" :class="{'group-indicator-border': linkable}">
-						<div class="group-indicator-label" v-if="linkable">
-							<p v-if="linked">
-								{{ prototypeGroup.members.length }}x
-							</p>
-							<i-button type="primary" size="small" @click="onClick">
-								{{ buttonText }}
-							</i-button>
-						</div>
-					</div>
-					<div class="group-content">
-						<div class="group-content-entry" v-for="map in getBindingMap()">
-							<slot
-								:prototype-binding="map.prototypeBinding"
-								:target-bindings="map.targetBindings">
-							</slot>
-						</div>
-					</div>
-				</div>
-			</div>
-		</template>
-
-		<template id="ship-details">
-			<div class="ship-details">
-				<row class="spaced-row">
-					<i-col span="14">
-						<h1>
-							{{selectedCustomization.displayName}}
-							<span v-if="selectedCustomization.storageKey">/ {{selectedCustomization.name}}</span>
-						</h1>
-						<br />
-						<p>Specifications for this ship are based on <a :href="scdbLink">current game data</a> not future plans</p>
-						<p>Additional information available on the <a :href="wikiLink">Star Citizen wiki</a></p>
-					</i-col>
-					<i-col span="10">
-						<div class="horizontal-buttons right">
-							<i-button class="clipboard-button" type="primary">
-								Copy Shareable Link
-							</i-button><i-button type="primary" @click="onOpenModal">
-								{{modalTitle}}
-							</i-button><i-button
-								v-if="selectedCustomization.storageKey"
-								type="error"
-								icon="md-trash"
-								class="large-icon-button"
-								@click="onClickDelete">
-							</i-button>
-						</div>
-						<modal :title="modalTitle" v-model="showModal" :mask-closable="false">
-							<p>Loadout will be saved in browser local storage and won't be available elsewhere.</p>
-							<br />
-							<p><strong>Name</strong></p>
-							<i-input v-model="loadoutName"></i-input>
-							<div slot="footer" class="horizontal-buttons">
-								<i-button size="large" @click="onCancelModal">
-									Cancel
-								</i-button><i-button type="primary" size="large" @click="onConfirmModal">
-									{{modalAction}}
-								</i-button>
-							</div>
-						</modal>
-					</i-col>
-				</row>
-				<row class="sticky-summary" :gutter="16">
-					<i-col span="24">
-						<i-table disabled-hover :columns="summaryColumns" :data="summaryData"></i-table>
-					</i-col>
-				</row>
-				<row class="spaced-row" :gutter="16">
-					<i-col span="17">
-						<collapse v-model="expandedSections">
-							<panel v-for="sectionName in sectionNames" :key="sectionName" :name="sectionName">
-								{{sectionName}}
-								<div slot="content">
-									<item-port-group
-										v-for="group in getSectionBindingGroups(sectionName)"
-										:key="JSON.stringify(selectedCustomization.shipId) + JSON.stringify(group.memberPortNames)"
-										:customization="selectedCustomization"
-										:group-name="group.name">
-										<template slot-scope="parent">
-											<div
-												class="component-and-children-selector"
-												@mouseover="onMouseOver(parent.targetBindings)"
-												@mouseleave="onMouseLeave">
-												<component-selector
-													:customization="selectedCustomization"
-													:bindings="parent.targetBindings">
-												</component-selector>
-												<item-port-group
-													v-for="childGroup in getChildBindingGroups(parent.prototypeBinding)"
-													:key="JSON.stringify(selectedCustomization.shipId) +
+<body>
+    <div id="app" v-cloak>
+        <div class="splash anticloaked">
+            <div class="lds-dual-ring"></div>
+            <p>Loading game data...</p>
+        </div>
+        <div class="not-footer cloaked">
+            <div class="header">
+                <div class="centered-narrow">
+                    <row>
+                        <i-col span="8">
+                            <h1>
+                                <router-link to="/">
+                                    Hardpoint.io
+                                </router-link>
+                            </h1>
+                            <p>Game Data Version {{ gameDataVersion }}</p>
+                        </i-col>
+                        <i-col span="16">
+                            <div class="menu">
+                                <dropdown>
+                                    <span class="dropdown-title">
+                                        New Loadout
+                                        <icon type="ios-arrow-down"></icon>
+                                    </span>
+                                    <dropdown-menu slot="list">
+                                        <dropdown-item v-for="customization in shipCustomizations" :key="customization.serialize()">
+                                            <router-link :to="{name: 'customize', params: {serialized: customization.serialize()}}">
+                                                {{customization.displayName}}
+                                            </router-link>
+                                        </dropdown-item>
+                                    </dropdown-menu>
+                                </dropdown>
+                                <router-link :to="{name: 'saved'}">
+                                    Saved Loadouts
+                                </router-link>
+                                <router-link :to="{name: 'list'}" class="rightmost">
+                                    Ship Comparison
+                                </router-link>
+                            </div>
+                        </i-col>
+                    </row>
+                </div>
+            </div>
+            <div class="content">
+                <div class="centered-narrow">
+                    <router-view :key="$route.fullPath"></router-view>
+                </div>
+            </div>
+        </div>
+        <div class="footer cloaked">
+            <div class="centered-narrow">
+                <p>Star Citizen intellectual property, content and trademarks are owned by Cloud Imperium Games Corporation and its subsidiaries.</p>
+                <p>Feedback and sugggestions appreciated on <a href="https://discord.gg/M4dEWZr">Discord</a>. Thanks to <a href="https://github.com/dolkensp/unp4k">unp4k</a> for the data extraction tool and <a href="https://github.com/">GitHub</a> for the hosting!</p>
+            </div>
+        </div>
+    </div>
+    <template id="ship-list">
+        <div class="ship-list">
+            <row class="spaced-row ship-list-controls">
+                <i-col span="8">
+                    <i-input placeholder="Search" clearable v-model="searchInput"></i-input>
+                </i-col>
+                <i-col span="16" class="right">
+                    <i-button type="primary" @click="onCompareSelected" :disabled="compareDisabled">
+                        {{comparing ? "Show All" : "Compare Selected"}}
+                    </i-button>
+                </i-col>
+            </row>
+            <row class="spaced-row">
+                <i-col span="24">
+                    <i-table ref="table" @on-sort-change="onSortChange" @on-filter-change="onFilterChange" :columns="attributeColumns" :data="shipAttributes" :height="tableHeight" highlight-row stripe>
+                    </i-table>
+                </i-col>
+            </row>
+        </div>
+    </template>
+    <template id="item-port-group">
+        <div class="item-port-group">
+            <div class="group-row">
+                <div class="group-indicator" :class="{'group-indicator-border': linkable}">
+                    <div class="group-indicator-label" v-if="linkable">
+                        <p v-if="linked">
+                            {{ prototypeGroup.members.length }}x
+                        </p>
+                        <i-button type="primary" size="small" @click="onClick">
+                            {{ buttonText }}
+                        </i-button>
+                    </div>
+                </div>
+                <div class="group-content">
+                    <div class="group-content-entry" v-for="map in getBindingMap()">
+                        <slot :prototype-binding="map.prototypeBinding" :target-bindings="map.targetBindings">
+                        </slot>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+    <template id="ship-details">
+        <div class="ship-details">
+            <row class="spaced-row">
+                <i-col span="14">
+                    <h1>
+                        {{selectedCustomization.displayName}}
+                        <span v-if="selectedCustomization.storageKey">/ {{selectedCustomization.name}}</span>
+                    </h1>
+                    <br />
+                    <p>Specifications for this ship are based on <a :href="scdbLink">current game data</a> not future plans</p>
+                    <p>Additional information available on the <a :href="wikiLink">Star Citizen wiki</a></p>
+                </i-col>
+                <i-col span="10">
+                    <div class="horizontal-buttons right">
+                        <i-button class="clipboard-button" type="primary">
+                            Copy Shareable Link
+                        </i-button>
+                        <i-button type="primary" @click="onOpenModal">
+                            {{modalTitle}}
+                        </i-button>
+                        <i-button v-if="selectedCustomization.storageKey" type="error" icon="md-trash" class="large-icon-button" @click="onClickDelete">
+                        </i-button>
+                    </div>
+                    <modal :title="modalTitle" v-model="showModal" :mask-closable="false">
+                        <p>Loadout will be saved in browser local storage and won't be available elsewhere.</p>
+                        <br />
+                        <p><strong>Name</strong></p>
+                        <i-input v-model="loadoutName"></i-input>
+                        <div slot="footer" class="horizontal-buttons">
+                            <i-button size="large" @click="onCancelModal">
+                                Cancel
+                            </i-button>
+                            <i-button type="primary" size="large" @click="onConfirmModal">
+                                {{modalAction}}
+                            </i-button>
+                        </div>
+                    </modal>
+                </i-col>
+            </row>
+            <row class="sticky-summary" :gutter="16">
+                <i-col span="24">
+                    <i-table disabled-hover :columns="summaryColumns" :data="summaryData"></i-table>
+                </i-col>
+            </row>
+            <row class="spaced-row" :gutter="16">
+                <i-col span="17">
+                    <collapse v-model="expandedSections">
+                        <panel v-for="sectionName in sectionNames" :key="sectionName" :name="sectionName">
+                            {{sectionName}}
+                            <div slot="content">
+                                <item-port-group v-for="group in getSectionBindingGroups(sectionName)" :key="JSON.stringify(selectedCustomization.shipId) + JSON.stringify(group.memberPortNames)" :customization="selectedCustomization" :group-name="group.name">
+                                    <template slot-scope="parent">
+                                        <div class="component-and-children-selector" @mouseover="onMouseOver(parent.targetBindings)" @mouseleave="onMouseLeave">
+                                            <component-selector :customization="selectedCustomization" :bindings="parent.targetBindings">
+                                            </component-selector>
+                                            <item-port-group v-for="childGroup in getChildBindingGroups(parent.prototypeBinding)" :key="JSON.stringify(selectedCustomization.shipId) +
 														JSON.stringify(parent.prototypeBinding.selectedComponent) +
 														JSON.stringify(parent.targetBindings.map(b => b.port.name)) +
-														JSON.stringify(childGroup.memberPortNames)"
-													:customization="selectedCustomization"
-													:group-name="childGroup.name"
-													:parent-bindings="parent.targetBindings">
-													<template slot-scope="child">
-														<component-selector
-															:customization="selectedCustomization"
-															:bindings="child.targetBindings"
-															:nested="true">
-														</component-selector>
-													</template>
-												</item-port-group>
-											</div>
-										</template>
-									</item-port-group>
-								</div>
-							</panel>
-						</collapse>
-					</i-col>
-					<i-col span="7" class="summary-tables">
-						<coverage-display v-if="showTurretCoverage"
-							:customization="selectedCustomization">
-						</coverage-display>
-						<i-table :columns="missileColumns" :data="getAttributes('Missiles')"></i-table>
-						<i-table :columns="maneuverabilityColumns" :data="getAttributes('Maneuverability')"></i-table>
-						<i-table :columns="survivabilityColumns" :data="getAttributes('Survivability')"></i-table>
-						<i-table :columns="travelColumns" :data="getAttributes('Travel')"></i-table>
-					</i-col>
-				</row>
-			</div>
-		</template>
+														JSON.stringify(childGroup.memberPortNames)" :customization="selectedCustomization" :group-name="childGroup.name" :parent-bindings="parent.targetBindings">
+                                                <template slot-scope="child">
+                                                    <component-selector :customization="selectedCustomization" :bindings="child.targetBindings" :nested="true">
+                                                    </component-selector>
+                                                </template>
+                                            </item-port-group>
+                                        </div>
+                                    </template>
+                                </item-port-group>
+                            </div>
+                        </panel>
+                    </collapse>
+                </i-col>
+                <i-col span="7" class="summary-tables">
+                    <coverage-display v-if="showTurretCoverage" :customization="selectedCustomization">
+                    </coverage-display>
+                    <i-table :columns="missileColumns" :data="getAttributes('Missiles')"></i-table>
+                    <i-table :columns="maneuverabilityColumns" :data="getAttributes('Maneuverability')"></i-table>
+                    <i-table :columns="survivabilityColumns" :data="getAttributes('Survivability')"></i-table>
+                    <i-table :columns="travelColumns" :data="getAttributes('Travel')"></i-table>
+                </i-col>
+            </row>
+        </div>
+    </template>
+    <template id="component-display">
+        <i-button :disabled="disabled">
+            <!-- Gutters in nested rows are broken; they intermittently inherit the setting from their ancestors. -->
+            <!-- Setting identical gutter on the child rows seems to at least make the behavior consistent.  -->
+            <row v-if="componentName==undefined" :gutter="16" style="text-align: center;">
+                Empty
+            </row>
+            <row v-if="componentName" :gutter="16">
+                <i-col span="12">
+                    <strong>{{component.displayName}}</strong>
+                </i-col>
+                <i-col span="12" class="right">
+                    <p>Size {{component.size}} {{component.type}}</p>
+                </i-col>
+            </row>
+            <row v-if="componentName" :gutter="16">
+                <i-col span="12">
+                    Requires
+                    <span>
+                        {{formatNumber(component.getPowerUsage(bindings[0]))}}<icon type="md-flash" size="14" color="LightSeaGreen"></icon>
+                    </span>
+                    <span>
+                        {{formatNumber(component.getCoolingUsage(bindings[0]))}}<icon type="ios-snow" size="14" color="SteelBlue"></icon>
+                    </span>
+                </i-col>
+                <i-col span="12" class="right">
+                    Emits
+                    <span>
+                        {{formatNumber(component.getEmSignature(bindings[0]))}}<icon type="ios-magnet" size="14" color="rgb(190,85,4)"></icon>
+                    </span>
+                    <span>
+                        {{formatNumber(component.getIrSignature(bindings[0]))}}<icon type="ios-flame" size="14" color="DarkRed"></icon>
+                    </span>
+                </i-col>
+            </row>
+            <row class="component-details" v-if="componentName" :gutter="16">
+                <i-col span="24">
+                    <span v-html="component.getSummary(bindings[0]).render(reference)"></span>
+                </i-col>
+            </row>
+        </i-button>
+    </template>
+    <template id="component-selector">
+        <div class="component-selector">
+            <p class="component-selector-header">
+                {{label}}
+                <span class="power-selector" v-if="!nested && selectedComponentName">
+                    <radio-group :value="bindings[0].powerSelector" @on-change="onPowerSelectorChange" type="button" size="small">
+                        <radio label="Off">Off</radio>
+                        <radio label="Standby" v-if="hasStandby">Standby</radio>
+                        <radio label="Active">{{activePowerName}}</radio>
+                    </radio-group>
+                </span>
+            </p>
+            <dropdown ref="dropdown" :trigger="bindings[0].port.editable ? 'click' : 'custom'" class="component-selector" @on-visible-change="onVisibleChange" @on-click="onClick">
+                <component-display :component-name="selectedComponentName" :bindings="bindings" :disabled="!bindings[0].port.editable">
+                </component-display>
+                <span :class="{'flip-icon': visible}"><i class="ivu-icon ivu-icon-arrow-down-b ivu-select-arrow"></i></span>
+                <dropdown-menu slot="list">
+                    <dropdown-item v-for="componentName in availableComponents" :name="componentName" :key="componentName">
+                        <component-display :component-name="componentName" :bindings="bindings" :reference-name="selectedComponentName">
+                        </component-display>
+                    </dropdown-item>
+                </dropdown-menu>
+            </dropdown>
+        </div>
+    </template>
+    <template id="coverage-display">
+        <div class="coverage-display">
+            <div class="title">Turret Coverage</div>
+            <radio-group v-model="selectedView" @on-change="onViewChange" type="button" size="small">
+                <radio label="Top"></radio>
+                <radio label="Side"></radio>
+                <radio label="Front"></radio>
+                <radio label="Free"></radio>
+            </radio-group>
+            <div class="canvas-container" ref="container">
+                <canvas width="32px" height="32px" ref="canvas"></canvas>
+            </div>
+        </div>
+    </template>
+    <script src="code.min.js"></script>
+</body>
 
-		<template id="component-display">
-			<i-button :disabled="disabled">
-				<!-- Gutters in nested rows are broken; they intermittently inherit the setting from their ancestors. -->
-				<!-- Setting identical gutter on the child rows seems to at least make the behavior consistent.  -->
-				<row v-if="componentName==undefined" :gutter="16" style="text-align: center;">
-					Empty
-				</row>
-				<row v-if="componentName" :gutter="16">
-					<i-col span="12">
-						<strong>{{component.displayName}}</strong>
-					</i-col>
-					<i-col span="12" class="right">
-						<p>Size {{component.size}} {{component.type}}</p>
-					</i-col>
-				</row>
-				<row v-if="componentName" :gutter="16">
-					<i-col span="12">
-						Requires
-						<span>
-							{{formatNumber(component.getPowerUsage(bindings[0]))}}<icon type="md-flash" size="14" color="LightSeaGreen"></icon>
-						</span>
-						<span>
-							{{formatNumber(component.getCoolingUsage(bindings[0]))}}<icon type="ios-snow" size="14" color="SteelBlue"></icon>
-						</span>
-					</i-col>
-					<i-col span="12" class="right">
-						Emits
-						<span>
-							{{formatNumber(component.getEmSignature(bindings[0]))}}<icon type="ios-magnet" size="14" color="rgb(190,85,4)"></icon>
-						</span>
-						<span>
-							{{formatNumber(component.getIrSignature(bindings[0]))}}<icon type="ios-flame" size="14" color="DarkRed"></icon>
-						</span>
-					</i-col>
-				</row>
-				<row class="component-details" v-if="componentName" :gutter="16">
-					<i-col span="24">
-						<span v-html="component.getSummary(bindings[0]).render(reference)"></span>
-					</i-col>
-				</row>
-			</i-button>
-		</template>
-
-		<template id="component-selector">
-			<div class="component-selector">
-				<p class="component-selector-header">
-					{{label}}
-					<span class="power-selector" v-if="!nested && selectedComponentName">
-						<radio-group
-							:value="bindings[0].powerSelector"
-							@on-change="onPowerSelectorChange"
-							type="button"
-							size="small">
-							<radio label="Off">Off</radio>
-							<radio label="Standby" v-if="hasStandby">Standby</radio>
-							<radio label="Active">{{activePowerName}}</radio>
-						</radio-group>
-					</span>
-				</p>
-				<dropdown
-					ref="dropdown"
-					:trigger="bindings[0].port.editable ? 'click' : 'custom'"
-					class="component-selector"
-					@on-visible-change="onVisibleChange"
-					@on-click="onClick">
-
-					<component-display
-						:component-name="selectedComponentName"
-						:bindings="bindings"
-						:disabled="!bindings[0].port.editable">
-					</component-display>
-					<span :class="{'flip-icon': visible}"><i class="ivu-icon ivu-icon-arrow-down-b ivu-select-arrow"></i></span>
-
-					<dropdown-menu slot="list">
-						<dropdown-item v-for="componentName in availableComponents" :name="componentName" :key="componentName">
-							<component-display
-								:component-name="componentName"
-								:bindings="bindings"
-								:reference-name="selectedComponentName">
-							</component-display>
-						</dropdown-item>
-					</dropdown-menu>
-				</dropdown>
-			</div>
-		</template>
-
-		<template id="coverage-display">
-			<div class="coverage-display">
-				<div class="title">Turret Coverage</div>
-				<radio-group
-					v-model="selectedView"
-					@on-change="onViewChange"
-					type="button"
-					size="small">
-					<radio label="Top"></radio>
-					<radio label="Side"></radio>
-					<radio label="Front"></radio>
-					<radio label="Free"></radio>
-				</radio-group>
-				<div class="canvas-container" ref="container">
-					<canvas width="32px" height="32px" ref="canvas"></canvas>
-				</div>
-			</div>
-		</template>
-
-		<script src="code.js"></script>
-	</body>
 </html>
