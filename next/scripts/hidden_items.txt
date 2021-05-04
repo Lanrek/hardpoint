@@ -1,0 +1,10 @@
+# Nonsense
+*template
+*Template
+*_damaged
+*_Fake
+*_Dummy
+test_*
+
+# Recolors
+*_Shark

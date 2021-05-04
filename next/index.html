@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link href="https://fonts.googleapis.com/css?family=Material+Icons" rel="stylesheet" type="text/css">
+        <link href="https://cdn.jsdelivr.net/npm/quasar@2.0.0-beta.14/dist/quasar.prod.css" rel="stylesheet" type="text/css">
+
+		<link rel="stylesheet" href="style.css">
+    </head>
+
+    <body>
+        <div id="q-app">
+            <q-layout view="hhh lpr fff">
+                <q-header elevated class="bg-primary text-white">
+                    <q-toolbar>
+                        <q-toolbar-title>
+                            Hardpoint.io v3.13.0 LIVE
+                        </q-toolbar-title>
+
+                        <q-btn stretch flat label="Spacecraft"></q-btn>
+                        <q-btn stretch flat label="Ground Vehicles"></q-btn>
+                        <q-btn stretch flat label="Personal"></q-btn>
+                    </q-toolbar>
+                </q-header>
+
+                <q-page-container>
+                    <router-view></router-view> 
+                </q-page-container>
+
+                <q-footer elevated class="bg-grey-8 text-white">
+                    <img src="community.png" style="float:left;">
+					<p>Feedback and sugggestions are appreciated on the <a href="https://discord.gg/M4dEWZr">Hardpoint.io Discord server</a>. Thanks to <a href="https://github.com/dolkensp/unp4k">unp4k</a> for the data extraction tool and <a href="https://github.com/">GitHub</a> for the hosting!</p>
+                    <p>This is an unofficial Star Citizen fansite, not affiliated with the Cloud Imperium group of companies. All content on this site not authored by its host or users are property of their respective owners.</p>
+                    <p>Star Citizen&reg;, Roberts Space Industries&reg; and Cloud Imperium&reg; are registered trademarks of Cloud Imperium Rights LLC.</p>
+                </q-footer>
+            </q-layout>
+        </div>
+        
+        <template id="selector-group">
+            <div :class="['group-container', 'level' + level, {'group-bracket': prototype.members.length > 1}]">
+                <div class="group-indicator" v-if="prototype.members.length > 1">
+                    {{prototype.members.length}}x
+                    <br />
+                    <q-btn
+                        @click="toggle"
+                        no-caps
+                        size="sm"
+                        color="primary"
+                        :label="grouped ? 'Ungroup' : 'Group'">
+                    </q-btn>
+                </div>
+                <div class="row">
+                    <item-selector :level="level" :bindings="array" v-for="array in bindingsArrays" :key="randomKey()">
+                    </item-selector>
+                <div class="row">
+            </div>
+        </template>
+
+        <template id="item-selector">
+            <div class="spacer col-2" v-for="leftpad in level"></div>
+            <div class="selector col-8 q-pa-sm">
+                {{prototype.port.name}}
+                <q-list bordered class="rounded-borders">
+                    <q-expansion-item ref="expansion" :disable="prototype.uneditable">
+                        <template v-slot:header>
+                            <q-item-section v-if="!prototype.item">
+                                Empty
+                            </q-item-section>
+                            <q-item-section top v-if="prototype.item">
+                                <q-item dense class="q-pa-none">
+                                    <b>{{prototype.item.displayName || prototype.item.name}}</b>
+                                </q-item>
+                                <q-item dense class="q-pa-none" v-html="summary">
+                                </q-item>
+                            </q-item-section>
+                            <q-item-section top v-if="prototype.item" class="col-2">
+                                <q-item dense class="q-pa-none">
+                                    Size {{prototype.item.size}} {{prototype.item.type}}
+                                </q-item>
+                                <q-item dense class="q-pa-none">
+                                    ZZZ
+                                </q-item>
+                            </q-item-section>
+                        </template>
+                        <div v-for="type in distinctTypes">
+                            <q-table
+                                :title="type"
+                                dense
+                                hide-pagination
+                                :rows="prototype.getMatchingItems(type)"
+                                :columns="getColumns(type)"
+                                :pagination="allRowsPagination"
+                                row-key="item.name">
+                                <template v-slot:body="props">
+                                    <q-tr
+                                        :props="props"
+                                        :class="(props.row.item.name==prototype.itemName) ? 'bg-accent text-white' : ''"
+                                        @click=select(props.row.item.name)>
+                                        <q-td v-for="col in props.cols" :key="col.name" :props="props">
+                                            {{col.value}}
+                                        </q-td>
+                                    </q-tr>
+                                </template>
+                            </q-table>
+                        </div>
+                    </q-expansion-item>
+                </q-list>
+            </div>
+            <q-item class="spacer col-2" v-for="rightpad in 2 - level"></q-item>
+            <selector-group :level="level + 1" :groups="array" v-for="array in groupArrays" :key="randomKey()">
+            </selector-group>
+        </template>
+
+        <template id="vehicle-details">
+            <div class="row q-pa-md" style="max-width: 1200px">
+                <div class="col-12">
+                    <h4>{{vehicleLoadout.vehicle.displayName}}</h4>
+                </div>
+                <q-card class="col-4">
+                    <q-list dense>
+                        <q-item>Test</q-item>
+                        <q-item>Test</q-item>
+                        <q-item>Test</q-item>
+                        <q-item>Test</q-item>
+                    </q-list>
+                </q-card>
+                <q-card class="col-4">
+                    Test
+                </q-card>
+                <q-card class="col-4">
+                    Test
+                </q-card>
+                <q-expansion-item class="col-12" default-opened :label="sectionName" v-for="sectionName in sectionNames">
+                    <selector-group :level="1" :groups="[group]" v-for="group in makeGroups(sectionBindings[sectionName])" :key="randomKey()">
+                    </selector-group>
+                </q-expansion-item>
+            </div>
+        </template>
+
+        <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/vue-router@4/dist/vue-router.global.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/quasar@2.0.0-beta.14/dist/quasar.umd.prod.js"></script>
+
+        <script src ="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
+
+        <script src="data/vehicles.js"></script>
+        <script src="data/items.js"></script>
+        <script src="data/ammo_params.js"></script>
+
+        <script src="model.js"></script>
+        <script src="presentation.js"></script>
+        <script src="controller.js"></script>
+    </body>
+</html>
