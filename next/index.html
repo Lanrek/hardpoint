@@ -16,9 +16,14 @@
                             Hardpoint.io v3.13.0 LIVE
                         </q-toolbar-title>
 
-                        <q-btn stretch flat label="Spacecraft"></q-btn>
-                        <q-btn stretch flat label="Ground Vehicles"></q-btn>
-                        <q-btn stretch flat label="Personal"></q-btn>
+                        <q-btn-dropdown stretch flat no-caps label="New Loadout">
+                            <q-list dense>
+                                <q-item :to="link.target" v-for="link in vehicleLinks">
+                                    {{link.name}}
+                                </q-item>
+                            </q-list>
+                        </q-btn-dropdown>
+                        <q-btn stretch flat no-caps label="Placeholder"></q-btn>
                     </q-toolbar>
                 </q-header>
 
@@ -77,7 +82,7 @@
                                     Size {{prototype.item.size}} {{prototype.item.type}}
                                 </q-item>
                                 <q-item dense class="q-pa-none">
-                                    ZZZ
+                                    Placeholder
                                 </q-item>
                             </q-item-section>
                         </template>
@@ -115,22 +120,30 @@
                 <div class="col-12">
                     <h4>{{vehicleLoadout.vehicle.displayName}}</h4>
                 </div>
-                <q-card class="col-4">
-                    <q-list dense>
-                        <q-item>Test</q-item>
-                        <q-item>Test</q-item>
-                        <q-item>Test</q-item>
-                        <q-item>Test</q-item>
-                    </q-list>
-                </q-card>
-                <q-card class="col-4">
-                    Test
-                </q-card>
-                <q-card class="col-4">
-                    Test
-                </q-card>
-                <q-expansion-item class="col-12" default-opened :label="sectionName" v-for="sectionName in sectionNames">
-                    <selector-group :level="1" :groups="[group]" v-for="group in makeGroups(sectionBindings[sectionName])" :key="randomKey()">
+                <div class="col-4 q-pa-sm row" v-for="cardName in Object.keys(summaryCards)">
+                    <q-card class="col-12 row">
+                        <q-item class="col-12 text-h6">
+                            {{cardName}}
+                        </q-item>
+                        <div class="col-6 q-pa-sm" v-for="entry in summaryValues[cardName]">
+                            <q-item-section>
+                                <q-item-label>{{entry.name}}</q-item-label>
+                                <q-item-label><span class="summary-value">{{entry.value}}</span> {{entry.units}}</q-item-label>
+                            </q-item-section>
+                        </div>
+                    </q-card>
+                </div>
+                <q-expansion-item
+                    class="col-12 q-pa-sm"
+                    header-class="bg-primary text-white"
+                    default-opened
+                    :label="sectionName"
+                    v-for="sectionName in sectionNames">
+                    <selector-group
+                        :level="1"
+                        :groups="[group]"
+                        v-for="group in makeGroups(sectionBindings[sectionName])"
+                        :key="randomKey()">
                     </selector-group>
                 </q-expansion-item>
             </div>

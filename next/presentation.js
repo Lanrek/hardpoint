@@ -111,8 +111,16 @@ const itemProjections = {
         ])
     },
     PowerPlant: {
-        columns: _commonColumns,
-        summary: _defaultSummaryFactory
+        columns: _commonColumns.concat([
+            {
+                name: "powerDraw",
+                label: "Power",
+                field: row => row.item.power.powerDraw,
+                sortable: true
+            }]),
+        summary: (binding) => _evaluateSummaryPattern(binding, [
+            "Generates {item.power.powerDraw} power"
+        ])
     },
     QuantumDrive: {
         columns: _commonColumns.concat([

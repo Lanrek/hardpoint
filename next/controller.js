@@ -82,8 +82,18 @@ class BindingGroup {
 }
 
 const app = Vue.createApp({
-    setup () {
-        return {}
+    computed: {
+        vehicleLinks() {
+            result = [];
+            for (const [name, vehicle] of Object.entries(allVehicles)) {
+                result.push({
+                    name: vehicle.displayName,
+                    target: { name: "loadout", params: { vehicleName: name }}
+                });
+            }
+
+            return _.sortBy(result, "name");
+        }
     }
 });
 
@@ -229,6 +239,55 @@ app.component("vehicle-details", {
 				"Systems": ["Cooler", "Shield", "PowerPlant", "QuantumDrive"],
 				"Flight": ["MainThruster", "ManneuverThruster"]
 			},
+
+            summaryCards: {
+                "Maneuverability": [
+                    {
+                        name: "Combat Speed",
+                        value: "flightController.scmSpeed",
+                        units: "m/sec"
+                    },
+                    {
+                        name: "Max Speed",
+                        value: "flightController.maxSpeed",
+                        units: "m/sec"
+                    },
+                    {
+                        name: "Main Acceleration",
+                        value: "mainAccelerationGs",
+                        units: "Gs"
+                    },
+                    {
+                        name: "Pitch Rate",
+                        value: "flightController.maxAngularVelocityX",
+                        units: "deg/sec"
+                    },
+                    {
+                        name: "Yaw Rate",
+                        value: "flightController.maxAngularVelocityZ",
+                        units: "deg/sec"
+                    },
+                    {
+                        name: "Roll Rate",
+                        value: "flightController.maxAngularVelocityY",
+                        units: "deg/sec"
+                    }
+                ],
+                "Placeholder": [
+                    {
+                        name: "Test",
+                        value: "test",
+                        units: "test"
+                    }
+                ],
+                "Firepower": [
+                    {
+                        name: "Test",
+                        value: "test",
+                        units: "test"
+                    }
+                ]
+            }
         };
     },
     computed: {
@@ -244,6 +303,16 @@ app.component("vehicle-details", {
                         result[name].push(binding);
                         break;
                     }
+                }
+            }
+
+            return result;
+        },
+        summaryValues() {
+            const result = _.cloneDeep(this.summaryCards);
+            for (const card of Object.values(result)) {
+                for (const entry of card) {
+                    entry.value = _format_number(_.get(this.vehicleLoadout, entry.value));
                 }
             }
 
@@ -271,6 +340,7 @@ const router = VueRouter.createRouter({
     history: VueRouter.createWebHashHistory(),
     routes: [
         {
+            name: "loadout",
             path: "/loadouts/:vehicleName",
             component: vehicleDetails
         }

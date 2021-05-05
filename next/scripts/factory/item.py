@@ -64,14 +64,15 @@ def _make_missile(components_element):
         "trackingDistanceMax": float(targeting_element.get("@trackingdistancemax", 0)),
         "trackingSignalType": targeting_element.get("@trackingsignaltype"),
         "trackingAngle": float(targeting_element.get("@trackingangle", 0)),
-        "lockTime": float(targeting_element.get("@locktime", 0))
+        "lockTime": float(targeting_element.get("@locktime", 0)),
+        "lockRangeMin": float(targeting_element.get("@lockrangemin", 0))
     }
 
     if gcs_element:
         result.update({
-            "capacity": float(gcs_element.get("@linearspeed", 0)),
-            "capacity": float(gcs_element.get("@intercepttime", 0)),
-            "capacity": float(gcs_element.get("@terminaltime", 0))
+            "linearSpeed": float(gcs_element.get("@linearspeed", 0)),
+            "interceptTime": float(gcs_element.get("@intercepttime", 0)),
+            "terminalTime": float(gcs_element.get("@terminaltime", 0))
         })
 
     if explosion_element:

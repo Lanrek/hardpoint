@@ -191,6 +191,18 @@ class VehicleLoadout {
         return result;
     }
 
+    get flightController() {
+        let result = {};
+        this._walkBindings(this, "FlightController", (binding) => result = binding.item);
+        return result;
+    }
+
+    get mainAccelerationGs() {
+        let result = 0;
+        this._walkBindings(this, "MainThruster", (binding) => result += binding.extension.accelerationGs);
+        return result;
+    }
+
     getDefaultItem(path) {
         let container = this.vehicle.defaultItems;
         let entry;
