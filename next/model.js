@@ -1,3 +1,103 @@
+class Damage {
+    constructor(damage) {
+        for (const [key, value] of Object.entries(this._sources)) {
+            this[key] = damage ? damage[value] : 0;
+        }
+    }
+
+    get total() {
+        let result = 0;
+        for (const key of this._keys) {
+            result += this[key];
+        }
+
+        return result;
+    }
+
+    get type() {
+        let result;
+        for (const key of this._keys) {
+            if (this[key] > 0) {
+                if (result) {
+                    result = "mixed";
+                }
+                else {
+                    result = key;
+                }
+            }
+        }
+
+        return result;
+    }
+
+    get _keys() {
+        return Object.keys(this._sources);
+    }
+
+    get _sources() {
+        return {
+            "distortion": "damageDistortion",
+            "energy": "damageEnergy",
+            "physical": "damagePhysical",
+            "thermal": "damageThermal"
+        };
+    }
+
+    add(other) {
+        const result = _.cloneDeep(this);
+        for (const key of this._keys) {
+            result[key] += other[key];
+        }
+
+        return result;
+    }
+
+    scale(coefficient) {
+        const result = _.cloneDeep(this);
+        for (const key of this._keys) {
+            result[key] *= coefficient;
+        }
+
+        return result;
+    }
+}
+
+class MissileExtensions {
+    constructor(item, loadout) {
+        this._item = item;
+        this._loadout = loadout;
+    }
+
+    get damage() {
+        return new Damage(this._item.damage);
+    }
+
+    get flightTime() {
+        return this._item.interceptTime + this._item.terminalTime;
+    }
+
+    get flightRange() {
+        return this.flightTime * this._item.linearSpeed;
+    }
+}
+
+class PortContainerExtensions {
+    constructor(item, loadout) {
+        this._item = item;
+        this._loadout = loadout;
+    }
+
+    get portCount() {
+        return Object.keys(this._item.ports).length;
+    }
+
+    get maxPortSize() {
+        if (this.portCount != 0) {
+            return Object.values(this._item.ports)[0].maxSize;
+        }
+    }
+}
+
 class QuantumDriveExtensions {
     constructor(item, loadout) {
         this._item = item;
@@ -44,30 +144,53 @@ class ThrusterExtensions {
     }
 }
 
-class PortContainerExtensions {
+class WeaponGunExtensions {
     constructor(item, loadout) {
         this._item = item;
         this._loadout = loadout;
     }
 
-    get portCount() {
-        return Object.keys(this._item.ports).length;
+    get ammo() {
+        return allAmmoParams[this._item.ammoParamsReference];
     }
 
-    get maxPortSize() {
-        if (this.portCount != 0) {
-            return Object.values(this._item.ports)[0].maxSize;
+    get magazineDuration() {
+        return this._item.maxAmmoCount * 60.0 / this._item.weaponAction.fireRate;
+    }
+
+    get magazineDamage() {
+        return this.alpha.scale(this._item.weaponAction.pelletCount).scale(this._item.maxAmmoCount);
+    }
+
+    get alpha() {
+        let result = new Damage(this.ammo.damage);
+
+        const explosion = new Damage(this.ammo.explosionDamage);
+        if (explosion) {
+            result = result.add(explosion);
         }
+
+        return result;
+    }
+
+    get range() {
+        return this.ammo.speed * this.ammo.lifetime;
+    }
+
+    get burstDps() {
+        return this.alpha.scale(this._item.weaponAction.pelletCount).scale(this._item.weaponAction.fireRate / 60.0);
     }
 }
 
 const extensionClasses = {
-    QuantumDrive : QuantumDriveExtensions,
     MainThruster: ThrusterExtensions,
     ManneuverThruster: ThrusterExtensions,
+    Missile: MissileExtensions,
     MissileLauncher: PortContainerExtensions,
+    QuantumDrive : QuantumDriveExtensions,
     Turret: PortContainerExtensions,
-    TurretBase: PortContainerExtensions
+    TurretBase: PortContainerExtensions,
+    WeaponGun: WeaponGunExtensions
 };
 
 class ExtendedItem {
@@ -83,7 +206,7 @@ class ItemBinding {
         this.port = port;
         this.parent = parent;
 
-        this.setItem(loadout.getDefaultItem(this.path));
+        this.setItem(undefined);
     }
 
     get itemName() {
@@ -176,7 +299,22 @@ class VehicleLoadout {
 			this.bindings[port.name] = new ItemBinding(this, port, null);
 		}
 
+        const setDefaultItems = (container) => {
+            for (const binding of Object.values(container.bindings)) {
+
+                binding.setItem(this.getDefaultItem(binding.path));
+                setDefaultItems(binding);
+            }
+        };
+        setDefaultItems(this);
+
         console.log(this);
+    }
+
+    get cargoCapacity() {
+        let result = 0;
+        this._walkBindings(this, "Cargo", (binding) => result += binding.item.cargo);
+        return result;
     }
 
     get quantumFuelCapacity() {
@@ -200,6 +338,18 @@ class VehicleLoadout {
     get mainAccelerationGs() {
         let result = 0;
         this._walkBindings(this, "MainThruster", (binding) => result += binding.extension.accelerationGs);
+        return result;
+    }
+
+    get burstDps() {
+        let result = 0;
+        this._walkBindings(this, "WeaponGun", (binding) => result += binding.extension.burstDps.total);
+        return result;
+    }
+
+    get shieldCapacity() {
+        let result = 0;
+        this._walkBindings(this, "Shield", (binding) => result += binding.item.maxShieldHealth);
         return result;
     }
 

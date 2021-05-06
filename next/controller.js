@@ -248,24 +248,24 @@ app.component("vehicle-details", {
                         units: "m/sec"
                     },
                     {
-                        name: "Max Speed",
-                        value: "flightController.maxSpeed",
-                        units: "m/sec"
-                    },
-                    {
-                        name: "Main Acceleration",
-                        value: "mainAccelerationGs",
-                        units: "Gs"
-                    },
-                    {
                         name: "Pitch Rate",
                         value: "flightController.maxAngularVelocityX",
                         units: "deg/sec"
                     },
                     {
+                        name: "Max Speed",
+                        value: "flightController.maxSpeed",
+                        units: "m/sec"
+                    },
+                    {
                         name: "Yaw Rate",
                         value: "flightController.maxAngularVelocityZ",
                         units: "deg/sec"
+                    },
+                    {
+                        name: "Main Acceleration",
+                        value: "mainAccelerationGs",
+                        units: "Gs"
                     },
                     {
                         name: "Roll Rate",
@@ -275,16 +275,31 @@ app.component("vehicle-details", {
                 ],
                 "Placeholder": [
                     {
-                        name: "Test",
-                        value: "test",
-                        units: "test"
+                        name: "Cargo Capacity",
+                        value: "cargoCapacity",
+                        units: "SCU"
                     }
                 ],
-                "Firepower": [
+                "Combat": [
                     {
-                        name: "Test",
-                        value: "test",
-                        units: "test"
+                        name: "Burst DPS",
+                        value: "burstDps",
+                        units: "dps"
+                    },
+                    {
+                        name: "Shield Capacity",
+                        value: "shieldCapacity",
+                        units: "hp"
+                    },
+                    {
+                        name: "Min Hitpoints",
+                        value: "vehicle.damageMin",
+                        units: "hp"
+                    },
+                    {
+                        name: "Max Hitpoints",
+                        value: "vehicle.damageMax",
+                        units: "hp"
                     }
                 ]
             }

@@ -220,7 +220,8 @@ def convert_ammo_params(game_xml_root, extracted_path):
         entity = read_xml_tree(element)
         converted = make_ammo_params(entity)
         if converted:
-            ammo_params[identifier] = converted
+            converted["name"] = identifier
+            ammo_params[converted["reference"]] = converted
 
     write_json_file(os.path.join(extracted_path, "ammo_params.json"), ammo_params)
 

@@ -62,11 +62,13 @@ def _has_control_seat(item_port_element):
 
 
 def make_vehicle(definition_element):
+    damage_min = None
     damage_max = 0
     mass = 0
     control_seats = 0
 
     def walk_parts(container_element):
+        nonlocal damage_min
         nonlocal damage_max
         nonlocal mass
         nonlocal control_seats
@@ -75,7 +77,16 @@ def make_vehicle(definition_element):
         parts_element = container_element.single("parts")
         if parts_element:
             for part_element in parts_element["part"]:
-                damage_max += int(part_element.get("@damagemax", 0))
+                part_damage = int(part_element.get("@damagemax", 0))
+                if part_damage > 0:
+                    if "damagebehaviors" in part_element:
+                        for behavior_element in part_element.single("damagebehaviors").get("damagebehavior", []):
+                            for group in behavior_element.get("group", []):
+                                if group["@name"] == "Destroy":
+                                    if damage_min == None or part_damage < damage_min:
+                                        damage_min = part_damage
+
+                damage_max += part_damage
                 mass += float(re.sub("[^0-9.]", "", part_element.get("@mass", "0")))
 
                 if part_element["@class"] == "ItemPort":
@@ -117,6 +128,7 @@ def make_vehicle(definition_element):
         "name": definition_element["@name"],
         "size": definition_element["@size"], # TODO Map to size categories in preprocessing.
         "itemPortTags": definition_element["@itemporttags"],
+        "damageMin": damage_min,
         "damageMax": damage_max,
         "mass": mass,
         "controlSeats": control_seats,

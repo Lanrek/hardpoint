@@ -211,7 +211,7 @@ def _make_weapon_gun(components_element):
     if params_element:
         connection_element = params_element.single("connectionparams")
         if connection_element:
-            result["heatRateOnline"] = connection_element.get("@heatrateonline")
+            result["heatRateOnline"] = float(connection_element.get("@heatrateonline", 0))
 
         weapon_action_element = params_element.single("fireactions")
         result["weaponAction"] = make_weapon_action(weapon_action_element)

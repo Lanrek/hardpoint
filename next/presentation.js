@@ -1,4 +1,4 @@
-const _format_number = (value, row) => Math.round(value * 100) / 100;
+const _format_number = (value) => Math.round(value * 100) / 100;
 const _get_display_name = (row) => row.item.displayName || row.item.name;
 
 const _commonColumns = [
@@ -44,6 +44,10 @@ const itemProjections = {
         columns: _commonColumns,
         summary: _defaultSummaryFactory
     },
+    Container: {
+        columns: _commonColumns,
+        summary: _defaultSummaryFactory
+    },
     Cooler: {
         columns: _commonColumns,
         summary: _defaultSummaryFactory
@@ -53,10 +57,6 @@ const itemProjections = {
         summary: _defaultSummaryFactory
     },
     FlightController: {
-        columns: _commonColumns,
-        summary: _defaultSummaryFactory
-    },
-    FuelTank: {
         columns: _commonColumns,
         summary: _defaultSummaryFactory
     },
@@ -89,8 +89,75 @@ const itemProjections = {
         ])
     },
     Missile: {
-        columns: _commonColumns,
-        summary: _defaultSummaryFactory
+        columns: _commonColumns.concat([
+            {
+                name: "damageTotal",
+                label: "Damage",
+                field: row => row.extension.damage.total,
+                format: _format_number,
+                sortable: true
+            },
+            {
+                name: "trackingSignalType",
+                label: "Tracking Type",
+                field: row => row.item.trackingSignalType,
+                sortable: true
+            },
+            {
+                name: "trackingSignalType",
+                label: "Tracking Angle",
+                field: row => row.item.trackingAngle,
+                format: _format_number,
+                sortable: true
+            },
+            {
+                name: "trackingDistanceMax",
+                label: "Tracking Range",
+                field: row => row.item.trackingDistanceMax,
+                format: _format_number,
+                sortable: true
+            },
+            {
+                name: "lockRangeMin",
+                label: "Min Lock Range",
+                field: row => row.item.lockRangeMin,
+                format: _format_number,
+                sortable: true
+            },
+            {
+                name: "lockTime",
+                label: "Lock Time",
+                field: row => row.item.lockTime,
+                format: _format_number,
+                sortable: true
+            },
+            {
+                name: "linearSpeed",
+                label: "Speed",
+                field: row => row.item.linearSpeed,
+                format: _format_number,
+                sortable: true
+            },
+            {
+                name: "flightTime",
+                label: "Flight Time",
+                field: row => row.extension.flightTime,
+                format: _format_number,
+                sortable: true
+            },
+            {
+                name: "flightRange",
+                label: "Flight Range",
+                field: row => row.extension.flightRange,
+                format: _format_number,
+                sortable: true
+            }]),
+        summary: (binding) => _evaluateSummaryPattern(binding, [
+            "{extension.damage.total} total damage",
+            "{item.trackingSignalType} sensors with {item.trackingAngle} degree view and {item.trackingDistanceMax} meter tracking range",
+            "{item.lockTime} seconds lock time with {item.lockRangeMin} meters minimum lock range",
+            "{extension.flightRange} meters flight range = {item.linearSpeed} m/s speed for {extension.flightTime} seconds flight time"
+        ])
     },
     MissileLauncher: {
         columns: _commonColumns.concat([
@@ -116,6 +183,7 @@ const itemProjections = {
                 name: "powerDraw",
                 label: "Power",
                 field: row => row.item.power.powerDraw,
+                format: _format_number,
                 sortable: true
             }]),
         summary: (binding) => _evaluateSummaryPattern(binding, [
@@ -219,8 +287,63 @@ const itemProjections = {
         ])
     },
     WeaponGun: {
-        columns: _commonColumns,
-        summary: _defaultSummaryFactory
+        columns: _commonColumns.concat([
+        {
+            name: "type",
+            label: "Type",
+            field: row => row.extension.alpha.type,
+            sortable: true
+        },
+        {
+            name: "burstDps",
+            label: "Burst DPS",
+            field: row => row.extension.burstDps.total,
+            format: _format_number,
+            sortable: true
+        },
+        {
+            name: "alpha",
+            label: "Alpha",
+            field: row => row.extension.alpha.total,
+            sortable: true
+        },
+        {
+            name: "fireRate",
+            label: "Fire Rate",
+            field: row => row.item.weaponAction.fireRate,
+            sortable: true
+        },
+        {
+            name: "range",
+            label: "Range",
+            field: row => row.extension.range,
+            format: _format_number,
+            sortable: true
+        },
+        {
+            name: "speed",
+            label: "Speed",
+            field: row => row.extension.ammo.speed,
+            sortable: true
+        },
+        {
+            name: "lifetime",
+            label: "Duration",
+            field: row => row.extension.ammo.lifetime,
+            sortable: true
+        }]),
+        summary: (binding) => {
+            const patterns = [
+                "{extension.burstDps.total} damage/sec = {extension.alpha.total} {extension.alpha.type} damage at {item.weaponAction.fireRate} rounds/minute",
+                "{extension.range} meter range = {extension.ammo.speed} m/sec projectile speed for {extension.ammo.lifetime} seconds"
+            ];
+
+            if (binding.item.maxAmmoCount) {
+                patterns.push("{item.maxAmmoCount} rounds deplete in {extension.magazineDuration} seconds for {extension.magazineDamage.total} potential damage");
+            }
+
+            return _evaluateSummaryPattern(binding, patterns)
+        }
     }
 };
 
