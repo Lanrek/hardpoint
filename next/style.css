@@ -8,6 +8,10 @@
 	color: var(--q-accent);
 }
 
+.coverage-display .q-tab {
+	padding: 0;
+}
+
 .group-container {
 	position: relative;
 	width: 100%;

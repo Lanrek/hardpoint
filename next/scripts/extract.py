@@ -132,18 +132,19 @@ def modify_vehicle(implementation, modification_name, definition_path):
             else:
                 print("    Warning: Unable to modify element ID " + entry["@idref"])
 
-    patch_file = modification.get("@patchFile")
+    patch_file = modification.get("@patchfile")
     if patch_file:
-        patch = read_xml_file(os.path.join(os.path.dirname(definition_path), patch_file + ".xml"))
-        for key, value in patch.single("modifications").items():
-            id = value.get("@id")
-            if id:
-                element = find_element(implementation, id)
-                if element:
-                    element.clear()
-                    element.update(value)
-                else:
-                    print("    Warning: Unable to modify element ID " + id)
+        patch = read_xml_file(os.path.join(extracted_path, "Data", os.path.dirname(definition_path), patch_file + ".xml"))
+        for key, value in patch.items():
+            for entry in value:
+                id = entry.get("@id")
+                if id:
+                    element = find_element(implementation, id)
+                    if element:
+                        element.clear()
+                        element.update(entry)
+                    else:
+                        print("    Warning: Unable to modify element ID " + id)
 
 
 def convert_vehicles(game_xml_root, extracted_path, localization):
@@ -169,6 +170,8 @@ def convert_vehicles(game_xml_root, extracted_path, localization):
             modify_vehicle(definition, modification_name, definition_path)
         
         converted = make_vehicle(definition)
+        converted["name"] = identifier
+        converted["modificationName"] = modification_name
 
         loadout_component = entity.single("components").single("sentitycomponentdefaultloadoutparams")
         converted["defaultItems"] = make_loadout(loadout_component, extracted_path)

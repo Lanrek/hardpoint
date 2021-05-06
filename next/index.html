@@ -120,7 +120,7 @@
                 <div class="col-12">
                     <h4>{{vehicleLoadout.vehicle.displayName}}</h4>
                 </div>
-                <div class="col-4 q-pa-sm row" v-for="cardName in Object.keys(summaryCards)">
+                <div class="col-3 q-pa-sm row" v-for="cardName in Object.keys(summaryCards)">
                     <q-card class="col-12 row">
                         <q-item class="col-12 text-h6">
                             {{cardName}}
@@ -131,6 +131,15 @@
                                 <q-item-label><span class="summary-value">{{entry.value}}</span> {{entry.units}}</q-item-label>
                             </q-item-section>
                         </div>
+                    </q-card>
+                </div>
+                <div class="col-3 q-pa-sm row">
+                    <q-card class="col-12 row">
+                        <q-item class="col-12 text-h6">
+                            Turret Coverage
+                        </q-item>
+                        <coverage-display :loadout="vehicleLoadout">
+                        </coverage-display>
                     </q-card>
                 </div>
                 <q-expansion-item
@@ -149,18 +158,44 @@
             </div>
         </template>
 
+        <template id="coverage-display">
+			<div class="col-12 coverage-display">
+                <q-tabs no-caps dense style v-model="selectedView">
+                    <q-tab name="Top" label="Top"></q-tab>
+                    <q-tab name="Side" label="Side"></q-tab>
+                    <q-tab name="Front" label="Front"></q-tab>
+                    <q-tab name="Free" label="Free"></q-tab>
+                </q-tabs>
+
+                <div class=" q-pa-sm">
+                    <div class="canvas-container" ref="container">
+                        <canvas width="32px" height="32px" ref="canvas"></canvas>
+                    </div>
+                </div>
+			</div>
+		</template>
+
         <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/vue-router@4/dist/vue-router.global.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/quasar@2.0.0-beta.14/dist/quasar.umd.prod.js"></script>
+
+        <script src="https://cdn.jsdelivr.net/npm/three@0.98.0/build/three.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/three@0.98.0/examples/js/controls/TrackballControls.js"></script>
 
         <script src ="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
 
         <script src="data/vehicles.js"></script>
         <script src="data/items.js"></script>
         <script src="data/ammo_params.js"></script>
+        <script src="data/rotations.js"></script>
 
         <script src="model.js"></script>
         <script src="presentation.js"></script>
         <script src="controller.js"></script>
+        <script src="coverage.js"></script>
+
+        <script>
+            app.mount('#q-app');
+        </script>
     </body>
 </html>

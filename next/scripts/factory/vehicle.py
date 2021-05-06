@@ -16,7 +16,7 @@ def make_loadout(loadout_component, extracted_path):
             if child_params:
                 add_manual_entries(entry["children"], child_params)
 
-            container[data["@itemportname"]] = entry
+            container[data["@itemportname"].lower()] = entry
 
     def add_file_entries(container, items):
         elements = element_array(items.get("Item"))
@@ -28,7 +28,7 @@ def make_loadout(loadout_component, extracted_path):
             if child_items:
                 add_file_entries(entry["children"], child_items)
 
-            container[data.get("@portName") or data["@portname"]] = entry
+            container[data["@portname"].lower()] = entry
 
     manual_params = loadout_component.single("loadout").single("sitemportloadoutmanualparams")
 
@@ -125,7 +125,7 @@ def make_vehicle(definition_element):
     ports = walk_parts(definition_element)
 
     result = {
-        "name": definition_element["@name"],
+        "baseName": definition_element["@name"],
         "size": definition_element["@size"], # TODO Map to size categories in preprocessing.
         "itemPortTags": definition_element["@itemporttags"],
         "damageMin": damage_min,

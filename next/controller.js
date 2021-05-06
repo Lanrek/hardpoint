@@ -364,4 +364,3 @@ const router = VueRouter.createRouter({
 app.use(router);
 
 app.use(Quasar);
-app.mount('#q-app');

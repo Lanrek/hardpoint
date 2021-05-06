@@ -379,3 +379,8 @@ class VehicleLoadout {
         }
     }
 }
+
+const defaultLoadouts = {};
+for (const vehicleName of Object.keys(allVehicles)) {
+    defaultLoadouts[vehicleName] = new VehicleLoadout(vehicleName);
+}
