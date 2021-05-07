@@ -1,0 +1,5 @@
+FeatureTest_Shopping
+TestInventories
+AC_Inventory
+AnniversarySales
+DynamicEvents

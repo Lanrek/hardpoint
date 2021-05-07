@@ -1,7 +1,7 @@
 const _format_number = (value) => Math.round(value * 100) / 100;
 const _get_display_name = (row) => row.item.displayName || row.item.name;
 
-const _commonColumns = [
+const _prefixColumns = [
     {
         name: "name",
         label: "Name",
@@ -9,6 +9,15 @@ const _commonColumns = [
         align: "left",
         sortable: true
     },
+    {
+        name: "basePrice",
+        label: "Price",
+        field: row => row.item.basePrice,
+        sortable: true
+    }
+];
+
+const _suffixColumns = [
     {
         name: "size",
         label: "Size",
@@ -22,6 +31,8 @@ const _commonColumns = [
         sortable: true
     }
 ];
+
+const _defaultColumns = _prefixColumns.concat(_suffixColumns);
 
 const _evaluateSummaryPattern = (binding, pattern) => {
     const getValue = (key) => {
@@ -41,27 +52,27 @@ const _defaultSummaryFactory = (binding) => "No further information available";
 
 const itemProjections = {
     Cargo: {
-        columns: _commonColumns,
+        columns: _defaultColumns,
         summary: _defaultSummaryFactory
     },
     Container: {
-        columns: _commonColumns,
+        columns: _defaultColumns,
         summary: _defaultSummaryFactory
     },
     Cooler: {
-        columns: _commonColumns,
+        columns: _defaultColumns,
         summary: _defaultSummaryFactory
     },
     EMP: {
-        columns: _commonColumns,
+        columns: _defaultColumns,
         summary: _defaultSummaryFactory
     },
     FlightController: {
-        columns: _commonColumns,
+        columns: _defaultColumns,
         summary: _defaultSummaryFactory
     },
     MainThruster: {
-        columns: _commonColumns.concat([
+        columns: _prefixColumns.concat([
             {
                 name: "thrustMn",
                 label: "Thrust",
@@ -82,14 +93,15 @@ const itemProjections = {
                 field: row => row.extension.maxFuelBurn,
                 format: _format_number,
                 sortable: true
-            }]),
+            }],
+            _suffixColumns),
         summary: (binding) => _evaluateSummaryPattern(binding, [
             "Provides {extension.thrustMn} meganewtons thrust for {extension.accelerationGs} G of acceleration",
             "Burns {extension.maxFuelBurn} hydrogen fuel/sec depleting fuel tanks after {extension.maxFuelDurationMinutes} minutes"
         ])
     },
     Missile: {
-        columns: _commonColumns.concat([
+        columns: _prefixColumns.concat([
             {
                 name: "damageTotal",
                 label: "Damage",
@@ -151,7 +163,8 @@ const itemProjections = {
                 field: row => row.extension.flightRange,
                 format: _format_number,
                 sortable: true
-            }]),
+            }],
+            _suffixColumns),
         summary: (binding) => _evaluateSummaryPattern(binding, [
             "{extension.damage.total} total damage",
             "{item.trackingSignalType} sensors with {item.trackingAngle} degree view and {item.trackingDistanceMax} meter tracking range",
@@ -160,7 +173,7 @@ const itemProjections = {
         ])
     },
     MissileLauncher: {
-        columns: _commonColumns.concat([
+        columns: _prefixColumns.concat([
             {
                 name: "portCount",
                 label: "Missiles",
@@ -172,26 +185,28 @@ const itemProjections = {
                 label: "Missile Size",
                 field: row => row.extension.maxPortSize,
                 sortable: true
-            }]),
+            }],
+            _suffixColumns),
         summary: (binding) => _evaluateSummaryPattern(binding, [
             "{extension.portCount} size {extension.maxPortSize} missiles"
         ])
     },
     PowerPlant: {
-        columns: _commonColumns.concat([
+        columns: _prefixColumns.concat([
             {
                 name: "powerDraw",
                 label: "Power",
                 field: row => row.item.power.powerDraw,
                 format: _format_number,
                 sortable: true
-            }]),
+            }],
+            _suffixColumns),
         summary: (binding) => _evaluateSummaryPattern(binding, [
             "Generates {item.power.powerDraw} power"
         ])
     },
     QuantumDrive: {
-        columns: _commonColumns.concat([
+        columns: _prefixColumns.concat([
             {
                 name: "driveSpeedMm",
                 label: "Max Speed",
@@ -230,7 +245,8 @@ const itemProjections = {
                 label: "Cooldown",
                 field: row => row.item.cooldownTime,
                 sortable: true
-            }]),
+            }],
+            _suffixColumns),
         summary: (binding) => _evaluateSummaryPattern(binding, [
             "{extension.driveSpeedMm} megameter/sec max jump speed with at most {item.cooldownTime} seconds cooldown",
             "Consumes {extension.fuelPerGm} quantum fuel/gigameter for {extension.fuelRangeGm} gigameters max range",
@@ -238,7 +254,7 @@ const itemProjections = {
         ])
     },
     Shield: {
-        columns: _commonColumns.concat([
+        columns: _prefixColumns.concat([
             {
                 name: "maxShieldHealth",
                 label: "Capacity",
@@ -262,14 +278,15 @@ const itemProjections = {
                 label: "Drop Delay",
                 field: row => row.item.downedRegenDelay,
                 sortable: true
-            }]),
+            }],
+            _suffixColumns),
         summary: (binding) => _evaluateSummaryPattern(binding, [
             "{item.maxShieldHealth} shield capacity with {item.maxShieldRegen} regeneration per second",
             "Regeneration halted for {item.damagedRegenDelay} seconds after taking damage and {item.downedRegenDelay} seconds after dropping"
         ])
     },
     Turret: {
-        columns: _commonColumns.concat([
+        columns: _prefixColumns.concat([
             {
                 name: "portCount",
                 label: "Ports",
@@ -281,13 +298,14 @@ const itemProjections = {
                 label: "Port Size",
                 field: row => row.extension.maxPortSize,
                 sortable: true
-            }]),
+            }],
+            _suffixColumns),
         summary: (binding) => _evaluateSummaryPattern(binding, [
             "{extension.portCount} size {extension.maxPortSize} item ports"
         ])
     },
     WeaponGun: {
-        columns: _commonColumns.concat([
+        columns: _prefixColumns.concat([
         {
             name: "type",
             label: "Type",
@@ -331,7 +349,8 @@ const itemProjections = {
             label: "Duration",
             field: row => row.extension.ammo.lifetime,
             sortable: true
-        }]),
+        }],
+        _suffixColumns),
         summary: (binding) => {
             const patterns = [
                 "{extension.burstDps.total} damage/sec = {extension.alpha.total} {extension.alpha.type} damage at {item.weaponAction.fireRate} rounds/minute",
