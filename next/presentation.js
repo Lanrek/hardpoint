@@ -67,9 +67,19 @@ const itemProjections = {
         columns: _defaultColumns,
         summary: _defaultSummaryFactory
     },
-    FlightController: {
-        columns: _defaultColumns,
-        summary: _defaultSummaryFactory
+    FuelIntake: {
+        columns: _prefixColumns.concat([
+            {
+                name: "fuelPushRate",
+                label: "Intake Rate",
+                field: row => row.item.fuelPushRate,
+                format: _format_number,
+                sortable: true
+            }],
+            _suffixColumns),
+        summary: (binding) => _evaluateSummaryPattern(binding, [
+            "Produces {item.fuelPushRate} hydrogen fuel / second"
+        ])
     },
     MainThruster: {
         columns: _prefixColumns.concat([

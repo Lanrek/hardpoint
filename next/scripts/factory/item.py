@@ -47,6 +47,16 @@ def _make_flight_controller(components_element):
     }
 
 
+def _make_fuel_intake(components_element):
+    result = {}
+
+    params_element = components_element.single("scitemfuelintakeparams")
+    if params_element:
+        result["fuelPushRate"] = float(params_element.get("@fuelpushrate", 0))
+
+    return result
+
+
 def _make_fuel_tank(components_element):
     params_element = components_element.single("scitemfueltankparams")
     return {
@@ -229,6 +239,7 @@ _item_type_methods = {
     "Cooler": _make_cooler,
     "EMP": _make_emp,
     "FlightController": _make_flight_controller,
+    "FuelIntake": _make_fuel_intake,
     "FuelTank": _make_fuel_tank,
     "MainThruster": _make_thruster,
     "ManneuverThruster": _make_thruster,

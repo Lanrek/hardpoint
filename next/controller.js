@@ -236,7 +236,7 @@ app.component("vehicle-details", {
 			sectionTypes: {
 				"Missiles": ["MissileLauncher"],
 				"Guns": ["WeaponGun", "Turret", "TurretBase"],
-				"Systems": ["Cooler", "Shield", "PowerPlant", "QuantumDrive"],
+				"Systems": ["Cooler", "Shield", "PowerPlant", "QuantumDrive", "FuelIntake"],
 				"Flight": ["MainThruster", "ManneuverThruster"]
 			},
 
