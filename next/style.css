@@ -1,10 +1,6 @@
 :root {
-	--spacer-width: 100px;
+	--spacer-width: 80px;
 	--spacer-inset: 8px;
-}
-
-.vehicle-grid {
-	max-height: 1000px;
 }
 
 .vehicle-grid thead tr th {
@@ -14,9 +10,31 @@
 	top: 0;
 }
 
+.subheader {
+	color: white;
+	align-items: center;
+	font-size: 20px;
+	line-height: 2em;
+	padding-left: 12px;
+}
+
+.card-label {
+	font-size: 13px;
+}
+
+.card-value {
+	font-size: 18px;
+	color: #666666;
+}
+
 .summary-value {
 	font-weight: bold;
 	color: var(--q-accent);
+}
+
+.sticky-side {
+	position: sticky;
+	top: 0;
 }
 
 .coverage-display .q-tab {
@@ -26,6 +44,14 @@
 .group-container {
 	position: relative;
 	width: 100%;
+}
+
+.spacer {
+	width: var(--spacer-width) !important;
+}
+
+.selector {
+	width: calc(100% - var(--spacer-width) * 2) !important;
 }
 
 .group-bracket:after {
@@ -51,21 +77,22 @@
 	top: 50%;
 	transform: translate(0, -50%);
 	width:var(--spacer-width);
-	padding-top: 4px;
-	padding-bottom: 4px;
+	padding-bottom: 8px;
 	text-align: center;
 	vertical-align: middle;
 	background-color: white;
+
+	font-size: 24px;
+	line-height: 1.25em;
 }
 
 .level2 .group-indicator {
 	left: var(--spacer-width);
 }
 
-.spacer {
-	width: var(--spacer-width) !important;
-}
-
-.selector {
-	width: calc(100% - var(--spacer-width) * 2) !important;
+.group-indicator .q-btn {
+	font-size: 12px;
+	line-height: 1em;
+	padding: 8px;
+	min-height: 0;
 }

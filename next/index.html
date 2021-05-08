@@ -4,13 +4,13 @@
         <link href="https://fonts.googleapis.com/css?family=Material+Icons" rel="stylesheet" type="text/css">
         <link href="https://cdn.jsdelivr.net/npm/quasar@2.0.0-beta.14/dist/quasar.prod.css" rel="stylesheet" type="text/css">
 
-		<link rel="stylesheet" href="style.css">
+        <link rel="stylesheet" href="style.css">
     </head>
 
     <body>
         <div id="q-app">
             <q-layout view="hhh lpr fff">
-                <q-header elevated class="bg-primary text-white">
+                <q-header elevated class="bg-grey-9 text-white">
                     <q-toolbar>
                         <q-toolbar-title>
                             Hardpoint.io v3.13.0 LIVE
@@ -23,19 +23,17 @@
                                 </q-item>
                             </q-list>
                         </q-btn-dropdown>
-                        <q-btn stretch flat no-caps label="Placeholder" to="/"></q-btn>
+                        <q-btn stretch flat no-caps label="Comparison" to="/"></q-btn>
                     </q-toolbar>
                 </q-header>
 
                 <q-page-container>
-                    <div class="q-pa-md" >
-                        <router-view></router-view>
-                    </div>
+                    <router-view></router-view>
                 </q-page-container>
 
-                <q-footer elevated class="bg-grey-8 text-white">
+                <q-footer elevated class="bg-grey-9 text-white">
                     <img src="community.png" style="float:left;">
-					<p>Feedback and sugggestions are appreciated on the <a href="https://discord.gg/M4dEWZr">Hardpoint.io Discord server</a>. Thanks to <a href="https://github.com/dolkensp/unp4k">unp4k</a> for the data extraction tool and <a href="https://github.com/">GitHub</a> for the hosting!</p>
+                    <p>Feedback and sugggestions are appreciated on the <a href="https://discord.gg/M4dEWZr">Hardpoint.io Discord server</a>. Thanks to <a href="https://github.com/dolkensp/unp4k">unp4k</a> for the data extraction tool and <a href="https://github.com/">GitHub</a> for the hosting!</p>
                     <p>This is an unofficial Star Citizen fansite, not affiliated with the Cloud Imperium group of companies. All content on this site not authored by its host or users are property of their respective owners.</p>
                     <p>Star Citizen&reg;, Roberts Space Industries&reg; and Cloud Imperium&reg; are registered trademarks of Cloud Imperium Rights LLC.</p>
                 </q-footer>
@@ -50,7 +48,6 @@
                     <q-btn
                         @click="toggle"
                         no-caps
-                        size="sm"
                         color="primary"
                         :label="grouped ? 'Ungroup' : 'Group'">
                     </q-btn>
@@ -118,8 +115,8 @@
         </template>
 
         <template id="coverage-display">
-			<div class="col-12 coverage-display">
-                <q-tabs no-caps dense style v-model="selectedView">
+            <div class="col-12 coverage-display">
+                <q-tabs no-caps dense v-model="selectedView">
                     <q-tab name="Top" label="Top"></q-tab>
                     <q-tab name="Side" label="Side"></q-tab>
                     <q-tab name="Front" label="Front"></q-tab>
@@ -131,38 +128,15 @@
                         <canvas width="32px" height="32px" ref="canvas"></canvas>
                     </div>
                 </div>
-			</div>
-		</template>
+            </div>
+        </template>
 
         <template id="vehicle-details">
-            <div class="row" style="max-width: 1200px">
-                <div class="col-12">
-                    <h4>{{vehicleLoadout.vehicle.displayName}}</h4>
-                </div>
-                <div class="col-3 q-pa-sm row" v-for="cardName in Object.keys(summaryCards)">
-                    <q-card class="col-12 row">
-                        <q-item class="col-12 text-h6">
-                            {{cardName}}
-                        </q-item>
-                        <div class="col-6 q-pa-sm" v-for="entry in summaryValues[cardName]">
-                            <q-item-section>
-                                <q-item-label>{{entry.name}}</q-item-label>
-                                <q-item-label><span class="summary-value">{{entry.value}}</span> {{entry.units}}</q-item-label>
-                            </q-item-section>
-                        </div>
-                    </q-card>
-                </div>
-                <div class="col-3 q-pa-sm row">
-                    <q-card class="col-12 row">
-                        <q-item class="col-12 text-h6">
-                            Turret Coverage
-                        </q-item>
-                        <coverage-display :loadout="vehicleLoadout">
-                        </coverage-display>
-                    </q-card>
-                </div>
+            <div class="subheader bg-grey-8">{{vehicleLoadout.vehicle.displayName}}</div>
+            <div class="row q-pa-md">
+                <div class="col-9">
                 <q-expansion-item
-                    class="col-12 q-pa-sm"
+                    class="q-pa-sm"
                     header-class="bg-primary text-white"
                     default-opened
                     :label="sectionName"
@@ -174,38 +148,67 @@
                         :key="randomKey()">
                     </selector-group>
                 </q-expansion-item>
+                </div>
+                <div class="col-3">
+                    <div class="sticky-side">
+                        <div class="q-pa-sm row">
+                            <q-card class="col-12 row">
+                                <q-item class="col-12 text-h6">
+                                    Turret Coverage
+                                </q-item>
+                                <coverage-display :loadout="vehicleLoadout">
+                                </coverage-display>
+                            </q-card>
+                        </div>
+                        <div class="q-pa-sm row" v-for="cardName in Object.keys(summaryCards)">
+                            <q-card class="col-12 row">
+                                <q-item class="col-12 text-h6">
+                                    {{cardName}}
+                                </q-item>
+                                <div class="col-6 q-pa-sm" v-for="entry in summaryValues[cardName]">
+                                    <q-item-section>
+                                        <q-item-label class="card-label">{{entry.name}}</q-item-label>
+                                        <q-item-label class="card-value"><span class="summary-value">{{entry.value}}</span> {{entry.units}}</q-item-label>
+                                    </q-item-section>
+                                </div>
+                            </q-card>
+                        </div>
+                    </div>
+                </div>
             </div>
         </template>
 
         <template id="vehicle-grid">
-            <div class="row">
-                <q-input class="col-3 q-pb-md" dense outlined clearable placeholder="Search" v-model="searchText">
-                    <template v-slot:prepend>
-                    <q-icon name="search"></q-icon>
+            <div class="q-pa-md">
+                <div class="row">
+                    <q-input class="col-3 q-pb-md" dense outlined clearable placeholder="Search" v-model="searchText">
+                        <template v-slot:prepend>
+                        <q-icon name="search"></q-icon>
+                        </template>
+                    </q-input>
+                </div>
+                <q-table
+                    class="vehicle-grid"
+                    dense
+                    hide-pagination
+                    :filter="searchText"
+                    :filter-method="filterRows"
+                    :rows="loadouts"
+                    :columns="columns"
+                    :pagination="allRowsPagination">
+                    <template v-slot:body-cell-edit="props">
+                        <q-td :props="props">
+                            <q-btn
+                                @click="navigate(props.row)"
+                                no-caps
+                                size="sm"
+                                color="primary"
+                                label="Edit">
+                            </q-btn>
+                        </q-td>
                     </template>
-                </q-input>
+                </q-table>
             </div>
-            <q-table
-                class="vehicle-grid"
-                dense
-                hide-pagination
-                :filter="searchText"
-                :filter-method="filterRows"
-                :rows="loadouts"
-                :columns="columns"
-                :pagination="allRowsPagination">
-                <template v-slot:body-cell-edit="props">
-                    <q-td :props="props">
-                        <q-btn
-                            @click="navigate(props.row)"
-                            no-caps
-                            size="sm"
-                            color="primary"
-                            label="Edit">
-                        </q-btn>
-                    </q-td>
-                  </template>
-            </q-table>
         </template>
 
         <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
