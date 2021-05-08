@@ -127,7 +127,7 @@ def make_vehicle(definition_element):
         "baseName": definition_element["@name"],
         "size": definition_element["@size"], # TODO Map to size categories in preprocessing.
         "itemPortTags": definition_element["@itemporttags"],
-        "damageMin": min(critical_part_damage),
+        "damageMin": min(critical_part_damage.values()),
         "damageMax": damage_max,
         "damageCriticalPart": critical_part_damage,
         "mass": mass,

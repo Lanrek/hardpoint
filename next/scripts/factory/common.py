@@ -1,6 +1,6 @@
 def _make_item_port(item_port_element, name_override, types):
     port = {
-        "name": name_override or item_port_element.get("@name"),
+        "name": (name_override or item_port_element.get("@name", "")).lower(),
         "types": types,
         "flags": [x for x in item_port_element.get("@flags", "").split(" ") if x != ""],
         "minSize": int(item_port_element.get("@minsize", 0)),

@@ -178,6 +178,10 @@ class WeaponGunExtensions {
     }
 
     get burstDps() {
+        if (!this.ammo) {
+            return new Damage();
+        }
+
         return this.alpha.scale(this._item.weaponAction.pelletCount).scale(this._item.weaponAction.fireRate / 60.0);
     }
 }
@@ -307,9 +311,17 @@ class VehicleLoadout {
             }
         };
         setDefaultItems(this);
-
-        console.log(this);
     }
+
+    get manufacturerDisplayName() {
+		const split = this.vehicle.displayName.split(/[ _]/);
+		return split[0].trim();
+	}
+
+	get vehicleDisplayName() {
+		const split = this.vehicle.displayName.split(/[ _]/);
+		return split.slice(1).join(" ").trim();
+	}
 
     get cargoCapacity() {
         let result = 0;
@@ -329,10 +341,20 @@ class VehicleLoadout {
         return result;
     }
 
+    get quantumDrive() {
+        let result = {};
+        this._walkBindings(this, "QuantumDrive", (binding) => result = binding);
+        return result;
+    }
+
     get flightController() {
         let result = {};
-        this._walkBindings(this, "FlightController", (binding) => result = binding.item);
+        this._walkBindings(this, "FlightController", (binding) => result = binding);
         return result;
+    }
+
+    get maxTurnRate() {
+        return Math.max(_.get(this, "flightController.item.maxAngularVelocityX"), _.get(this, "flightController.item.maxAngularVelocityZ"));
     }
 
     get mainAccelerationGs() {

@@ -10,7 +10,7 @@ def _make_cargo(components_element):
         cargo_capacity *= scu
 
     return {
-        "cargo": cargo_capacity
+        "cargo": int(cargo_capacity)
     }
 
 

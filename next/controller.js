@@ -171,7 +171,8 @@ app.component("item-selector", {
             }
         },
         distinctTypes() {
-            return this.prototype.port.types.map(n => n.type).filter((x, i, a) => a.indexOf(x) == i);
+            const distinct = this.prototype.port.types.map(n => n.type).filter((x, i, a) => a.indexOf(x) == i);
+            return distinct.filter(n => n in itemProjections);
         },
         groupArrays() {
             // Don't recurse more than two layers deep!
@@ -244,22 +245,22 @@ app.component("vehicle-details", {
                 "Maneuverability": [
                     {
                         name: "Combat Speed",
-                        value: "flightController.scmSpeed",
+                        value: "flightController.item.scmSpeed",
                         units: "m/sec"
                     },
                     {
                         name: "Pitch Rate",
-                        value: "flightController.maxAngularVelocityX",
+                        value: "flightController.item.maxAngularVelocityX",
                         units: "deg/sec"
                     },
                     {
                         name: "Max Speed",
-                        value: "flightController.maxSpeed",
+                        value: "flightController.item.maxSpeed",
                         units: "m/sec"
                     },
                     {
                         name: "Yaw Rate",
-                        value: "flightController.maxAngularVelocityZ",
+                        value: "flightController.item.maxAngularVelocityZ",
                         units: "deg/sec"
                     },
                     {
@@ -269,7 +270,7 @@ app.component("vehicle-details", {
                     },
                     {
                         name: "Roll Rate",
-                        value: "flightController.maxAngularVelocityY",
+                        value: "flightController.item.maxAngularVelocityY",
                         units: "deg/sec"
                     }
                 ],
@@ -327,7 +328,7 @@ app.component("vehicle-details", {
             const result = _.cloneDeep(this.summaryCards);
             for (const card of Object.values(result)) {
                 for (const entry of card) {
-                    entry.value = _format_number(_.get(this.vehicleLoadout, entry.value));
+                    entry.value = _round_number(_.get(this.vehicleLoadout, entry.value));
                 }
             }
 
@@ -343,13 +344,47 @@ app.component("vehicle-details", {
         }
     },
 	created() {
-        setLoadout = () => this.vehicleLoadout = new VehicleLoadout(this.$route.params.vehicleName);
+        setLoadout = () => {
+            if (this.$route.name == "loadout") {
+                this.vehicleLoadout = new VehicleLoadout(this.$route.params.vehicleName);
+            }
+        };
         setLoadout();
 
         this.$watch(() => this.$route.params, setLoadout);
 	}
 });
 const vehicleDetails = app.component("vehicle-details");
+
+app.component("vehicle-grid", {
+	template: "#vehicle-grid",
+	data: function() {
+        return {
+            allRowsPagination: {
+                rowsPerPage: 0
+            },
+
+            searchText: null,
+
+            columns: vehicleColumns
+        };
+    },
+    computed: {
+        loadouts() {
+            return _.sortBy(Object.values(defaultLoadouts), "vehicle.name");
+        }
+    },
+    methods: {
+        filterRows(rows, terms, cols, getCellValue) {
+            return rows.filter(n => n.vehicle.displayName.toLowerCase().includes(this.searchText.toLowerCase()));
+        },
+        navigate(row) {
+            this.$router.push({ name: "loadout", params: { vehicleName: row.vehicle.name }});
+        }
+    }
+});
+const vehicleGrid = app.component("vehicle-grid");
+
 
 const router = VueRouter.createRouter({
     history: VueRouter.createWebHashHistory(),
@@ -358,6 +393,11 @@ const router = VueRouter.createRouter({
             name: "loadout",
             path: "/loadouts/:vehicleName",
             component: vehicleDetails
+        },
+        {
+            name: "grid",
+            path: "/",
+            component: vehicleGrid
         }
     ],
 });

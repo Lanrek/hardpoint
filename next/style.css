@@ -3,6 +3,17 @@
 	--spacer-inset: 8px;
 }
 
+.vehicle-grid {
+	max-height: 1000px;
+}
+
+.vehicle-grid thead tr th {
+	background-color: white;
+	position: sticky;
+	z-index: 1;
+	top: 0;
+}
+
 .summary-value {
 	font-weight: bold;
 	color: var(--q-accent);

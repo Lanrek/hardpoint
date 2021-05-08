@@ -23,12 +23,14 @@
                                 </q-item>
                             </q-list>
                         </q-btn-dropdown>
-                        <q-btn stretch flat no-caps label="Placeholder"></q-btn>
+                        <q-btn stretch flat no-caps label="Placeholder" to="/"></q-btn>
                     </q-toolbar>
                 </q-header>
 
                 <q-page-container>
-                    <router-view></router-view> 
+                    <div class="q-pa-md" >
+                        <router-view></router-view>
+                    </div>
                 </q-page-container>
 
                 <q-footer elevated class="bg-grey-8 text-white">
@@ -115,8 +117,25 @@
             </selector-group>
         </template>
 
+        <template id="coverage-display">
+			<div class="col-12 coverage-display">
+                <q-tabs no-caps dense style v-model="selectedView">
+                    <q-tab name="Top" label="Top"></q-tab>
+                    <q-tab name="Side" label="Side"></q-tab>
+                    <q-tab name="Front" label="Front"></q-tab>
+                    <q-tab name="Free" label="Free"></q-tab>
+                </q-tabs>
+
+                <div class=" q-pa-sm">
+                    <div class="canvas-container" ref="container">
+                        <canvas width="32px" height="32px" ref="canvas"></canvas>
+                    </div>
+                </div>
+			</div>
+		</template>
+
         <template id="vehicle-details">
-            <div class="row q-pa-md" style="max-width: 1200px">
+            <div class="row" style="max-width: 1200px">
                 <div class="col-12">
                     <h4>{{vehicleLoadout.vehicle.displayName}}</h4>
                 </div>
@@ -158,22 +177,36 @@
             </div>
         </template>
 
-        <template id="coverage-display">
-			<div class="col-12 coverage-display">
-                <q-tabs no-caps dense style v-model="selectedView">
-                    <q-tab name="Top" label="Top"></q-tab>
-                    <q-tab name="Side" label="Side"></q-tab>
-                    <q-tab name="Front" label="Front"></q-tab>
-                    <q-tab name="Free" label="Free"></q-tab>
-                </q-tabs>
-
-                <div class=" q-pa-sm">
-                    <div class="canvas-container" ref="container">
-                        <canvas width="32px" height="32px" ref="canvas"></canvas>
-                    </div>
-                </div>
-			</div>
-		</template>
+        <template id="vehicle-grid">
+            <div class="row">
+                <q-input class="col-3 q-pb-md" dense outlined clearable placeholder="Search" v-model="searchText">
+                    <template v-slot:prepend>
+                    <q-icon name="search"></q-icon>
+                    </template>
+                </q-input>
+            </div>
+            <q-table
+                class="vehicle-grid"
+                dense
+                hide-pagination
+                :filter="searchText"
+                :filter-method="filterRows"
+                :rows="loadouts"
+                :columns="columns"
+                :pagination="allRowsPagination">
+                <template v-slot:body-cell-edit="props">
+                    <q-td :props="props">
+                        <q-btn
+                            @click="navigate(props.row)"
+                            no-caps
+                            size="sm"
+                            color="primary"
+                            label="Edit">
+                        </q-btn>
+                    </q-td>
+                  </template>
+            </q-table>
+        </template>
 
         <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/vue-router@4/dist/vue-router.global.js"></script>
