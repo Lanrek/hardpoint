@@ -13,7 +13,8 @@
                 <q-header elevated class="bg-grey-9 text-white">
                     <q-toolbar>
                         <q-toolbar-title>
-                            Hardpoint.io v3.13.0 LIVE
+                            Hardpoint.io
+                            <span class="version">v3.13.0 LIVE</span>
                         </q-toolbar-title>
 
                         <q-btn-dropdown stretch flat no-caps label="New Loadout">
@@ -132,7 +133,9 @@
         </template>
 
         <template id="vehicle-details">
-            <div class="subheader bg-grey-8">{{vehicleLoadout.vehicle.displayName}}</div>
+            <div class="subheader">
+                <h4>{{vehicleLoadout.vehicle.displayName}}</h4>
+            </div>
             <div class="row q-pa-md">
                 <div class="col-9">
                 <q-expansion-item

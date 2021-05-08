@@ -3,6 +3,13 @@
 	--spacer-inset: 8px;
 }
 
+.version {
+	padding-left: 24px;
+	color: #bdbdbd;
+	font-size: 18px;
+}
+
+/* Sticky header for the vehicle grid. */
 .vehicle-grid thead tr th {
 	background-color: white;
 	position: sticky;
@@ -10,21 +17,56 @@
 	top: 0;
 }
 
+/* Diagonal subheader for the loadout page title. */
 .subheader {
-	color: white;
-	align-items: center;
-	font-size: 20px;
-	line-height: 2em;
-	padding-left: 12px;
+	text-align: center;
 }
 
+.subheader h4 {
+	display: inline-block;
+	position: relative;
+	margin: 0;
+	padding: 0;
+	color: white;
+	text-align: center;
+	font-size: 20px;
+	line-height: 2em;
+}
+
+.subheader h4:before {
+	content: '';
+	z-index: -1;
+	display: block;
+	position: absolute;
+	height: 100%;
+	width: calc(60% + 24px);
+	top: 0;
+	right:40%;
+	transform:skewX(20deg);
+	background-color: #616161;
+}
+
+.subheader h4:after {
+	content: '';
+	z-index: -1;
+	display: block;
+	position: absolute;
+	height: 100%;
+	width: calc(60% + 24px);
+	top: 0;
+	left:40%;
+	transform:skewX(-20deg);
+	background-color: #616161;
+}
+
+/* Summary cards for the loadout page. */
 .card-label {
 	font-size: 13px;
 }
 
 .card-value {
 	font-size: 18px;
-	color: #666666;
+	color: #616161;
 }
 
 .summary-value {
@@ -41,6 +83,7 @@
 	padding: 0;
 }
 
+/* Item group layout and lines for the loadout page. */
 .group-container {
 	position: relative;
 	width: 100%;
