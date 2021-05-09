@@ -398,6 +398,66 @@ app.component("item-selector", {
     }
 });
 
+app.component("required-items", {
+    template: "#required-items",
+    props: {
+        loadout: VehicleLoadout
+    },
+    data: function() {
+        return {
+        };
+    },
+    computed: {
+        stockItems() {
+            const result = {};
+            const walkDefaults = (container) => {
+                for (const value of Object.values(container)) {
+                    if (value.itemName) {
+                        result[value.itemName] = (result[value.itemName] || 0) + 1;
+                        walkDefaults(value.children);
+                    }
+                }
+            };
+
+            walkDefaults(this.loadout.vehicle.defaultItems);
+            return result;
+        },
+        equippedItems() {
+            const result = {};
+            const walkBindings = (container) => {
+                for (const binding of Object.values(container.bindings)) {
+                    if (binding.itemName) {
+                        result[binding.itemName] = (result[binding.itemName] || 0) + 1;
+                        walkBindings(binding);
+                    }
+                }
+            };
+
+            walkBindings(this.loadout);
+            return result;
+        },
+        requiredItems() {
+            const stock = this.stockItems;
+            let result = Object.entries(this.equippedItems).map(n => {
+                return { name: n[0], count: n[1] }
+            });
+
+            for (const entry of result) {
+                if (entry.name in stock) {
+                    entry.count -= stock[entry.name];
+                }
+
+                entry.displayName = allItems[entry.name].displayName;
+                entry.basePrice = allItems[entry.name].basePrice;
+                entry.available = entry.basePrice > 0 && allItems[entry.name].shops.length > 0;
+            }
+
+            result = result.filter(n => n.count > 0);
+            return result;
+        }
+    }
+});
+
 app.component("vehicle-details", {
     template: "#vehicle-details",
     data: function() {
