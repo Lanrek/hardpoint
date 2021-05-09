@@ -354,6 +354,20 @@ const itemProjections = {
             sortable: true
         },
         {
+            name: "minSpread",
+            label: "Spread",
+            field: row => row.item.weaponAction.spread.min,
+            format: _format_number(1),
+            sortable: true
+        },
+        {
+            name: "dropStartRange",
+            label: "Falloff",
+            field: row => row.extension.dropStartRange,
+            format: _format_number(0),
+            sortable: true
+        },
+        {
             name: "range",
             label: "Range",
             field: row => row.extension.range,
@@ -380,6 +394,15 @@ const itemProjections = {
                 "{extension.burstDps.total} damage/sec = {extension.alpha.total} {extension.alpha.type} damage at {item.weaponAction.fireRate} rounds/minute",
                 "{extension.range} meter range = {extension.ammo.speed} m/sec projectile speed for {extension.ammo.lifetime} seconds"
             ];
+
+            if (binding.extension.dropStartRange > 0) {
+                patterns.push("{extension.droppedDps.total} damage/sec at {extension.dropEndRange} meters; falloff starts at {extension.dropStartRange} meters");
+            }
+
+            if (binding.item.weaponAction.spread && binding.item.weaponAction.spread.min > 0) {
+                console.log(binding)
+                patterns.push("{item.weaponAction.spread.min} to {item.weaponAction.spread.max} deg spread increasing at {item.weaponAction.spread.attack} deg/shot and recovering at {item.weaponAction.spread.decay} deg/sec");
+            }
 
             if (binding.item.maxAmmoCount) {
                 patterns.push("{item.maxAmmoCount} rounds deplete in {extension.magazineDuration} seconds for {extension.magazineDamage.total} potential damage");

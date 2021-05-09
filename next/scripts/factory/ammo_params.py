@@ -15,5 +15,12 @@ def make_ammo_params(ammo_params_element):
         detonation_element = projectile_element.single("detonationparams").single("projectiledetonationparams")
         if detonation_element:
             result["explosionDamage"] = _make_damage(detonation_element.single("explosionparams").single("damage"))
-
+            
+        drop_element = projectile_element.single("damagedropparams").single("bulletdamagedropparams")
+        if drop_element:
+            result["damageDrop"] = {
+                "minDistance": _make_damage(drop_element.single("damagedropmindistance")),
+                "dropPerMeter": _make_damage(drop_element.single("damagedroppermeter")),
+                "minDamage": _make_damage(drop_element.single("damagedropmindamage"))
+            }
     return result

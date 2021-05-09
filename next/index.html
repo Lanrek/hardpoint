@@ -40,8 +40,11 @@
                 <q-footer elevated class="bg-grey-9 text-white">
                     <img src="community.png" style="float:left;">
                     <p>Feedback and sugggestions are appreciated on the <a href="https://discord.gg/M4dEWZr">Hardpoint.io Discord server</a>. Thanks to <a href="https://github.com/dolkensp/unp4k">unp4k</a> for the data extraction tool and <a href="https://github.com/">GitHub</a> for the hosting!</p>
-                    <p>This is an unofficial Star Citizen fansite, not affiliated with the Cloud Imperium group of companies. All content on this site not authored by its host or users are property of their respective owners.</p>
-                    <p>Star Citizen&reg;, Roberts Space Industries&reg; and Cloud Imperium&reg; are registered trademarks of Cloud Imperium Rights LLC.</p>
+                    <p>
+                        This is an unofficial Star Citizen fansite, not affiliated with the Cloud Imperium group of companies. All content on this site not authored by its host or users are property of their respective owners.
+                        <br />
+                        Star Citizen&reg;, Roberts Space Industries&reg; and Cloud Imperium&reg; are registered trademarks of Cloud Imperium Rights LLC.
+                    </p>
                 </q-footer>
             </q-layout>
         </div>
@@ -149,7 +152,7 @@
                     <q-item class="col-12 card-title">
                         Required Items
                     </q-item>
-                    <q-list dense>
+                    <q-list dense class="full-width">
                         <q-item v-for="entry in requiredItems">
                             <q-item-section>
                                 {{entry.count}}x {{entry.displayName}}

@@ -162,6 +162,10 @@ class WeaponGunExtensions {
         return this.alpha.scale(this._item.weaponAction.pelletCount).scale(this._item.maxAmmoCount);
     }
 
+    get range() {
+        return this.ammo.speed * this.ammo.lifetime;
+    }
+
     get alpha() {
         let result = new Damage(this.ammo.damage);
 
@@ -173,16 +177,48 @@ class WeaponGunExtensions {
         return result;
     }
 
-    get range() {
-        return this.ammo.speed * this.ammo.lifetime;
-    }
-
     get burstDps() {
         if (!this.ammo) {
             return new Damage();
         }
 
         return this.alpha.scale(this._item.weaponAction.pelletCount).scale(this._item.weaponAction.fireRate / 60.0);
+    }
+
+    get droppedAlpha() {
+        if (this.ammo.damageDrop) {
+            return new Damage(this.ammo.damageDrop.minDamage);
+        }
+
+        return this.alpha;
+    }
+
+    get droppedDps() {
+        if (this.ammo && this.ammo.damageDrop) {
+            return this.droppedAlpha.scale(this._item.weaponAction.pelletCount).scale(this._item.weaponAction.fireRate / 60.0);
+        }
+
+        return this.burstDps;
+    }
+
+    get dropStartRange() {
+        if (this.ammo.damageDrop) {
+            // TODO Support other and mixed damage types for damage drop.
+            const key = "energy";
+            const minDistance = new Damage(this.ammo.damageDrop.minDistance);
+            return minDistance[key];
+        }
+    }
+
+    get dropEndRange() {
+        if (this.ammo.damageDrop) {
+            // TODO Support other and mixed damage types for damage drop.
+            const key = "energy";
+            const minDamage = new Damage(this.ammo.damageDrop.minDamage);
+            const dropPerMeter = new Damage(this.ammo.damageDrop.dropPerMeter);
+            const dropDistance = (this.alpha[key] - minDamage[key]) / dropPerMeter[key];
+            return this.dropStartRange + dropDistance;
+        }
     }
 }
 

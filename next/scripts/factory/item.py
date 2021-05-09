@@ -189,7 +189,17 @@ def _make_weapon_gun(components_element):
 
         launch_element = action_params_element.single("launchparams")
         if launch_element:
-            result["pelletCount"] = int(launch_element.single("sprojectilelauncher").get("@pelletcount", 0))
+            launcher_element = launch_element.single("sprojectilelauncher")
+            result["pelletCount"] = int(launcher_element.get("@pelletcount", 0))
+
+            spread_element = launcher_element.single("spreadparams")
+            if spread_element:
+                result["spread"] = {
+                    "min": float(spread_element.get("@min", 0)),
+                    "max": float(spread_element.get("@max", 0)),
+                    "attack": float(spread_element.get("@attack", 0)),
+                    "decay": float(spread_element.get("@decay", 0))
+                }
 
         return result
 
