@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html>
     <head>
+        <meta charset="utf-8">
+		<title>Hardpoint.io - Star Citizen ship fitting and comparison tool</title>
+		<meta name="description" content="Web application for planning and comparing loadouts of Star Citizen ships with detailed component breakdown and summary statistics." />
+		<meta name="keywords" content="star citizen,sc,cig,ship,vehicle,spaceship,loadout,fitting,equipment,gear,items,tool,planner,app,theory,comparison" />
+
         <link href="https://fonts.googleapis.com/css?family=Material+Icons" rel="stylesheet" type="text/css">
         <link href="https://cdn.jsdelivr.net/npm/quasar@2.0.0-beta.14/dist/quasar.prod.css" rel="stylesheet" type="text/css">
 
@@ -63,61 +68,58 @@
         <template id="item-selector">
             <div class="spacer col-2" v-for="leftpad in level"></div>
             <div class="selector col-8 q-pa-sm">
-                {{prototype.port.name}}
-                <q-list bordered class="rounded-borders">
-                    <q-expansion-item
-                        @mouseover="setHoveredBindings(bindings)"
-                        @mouseleave="setHoveredBindings([])"
-                        header-class="selector-header"
-                        ref="expansion"
-                        :disable="prototype.uneditable">
-                        <template v-slot:header>
-                            <q-item-section v-if="!prototype.item">
-                                Empty
-                            </q-item-section>
-                            <q-item-section top v-if="prototype.item">
-                                <q-item dense class="q-pa-none">
-                                    <b>{{prototype.item.displayName || prototype.item.name}}</b>
-                                </q-item>
-                                <q-item dense class="q-pa-none" v-html="summary">
-                                </q-item>
-                            </q-item-section>
-                            <q-item-section top v-if="prototype.item" class="col-2">
-                                <q-item dense class="q-pa-none">
-                                    Size {{prototype.item.size}} {{prototype.item.type}}
-                                </q-item>
-                                <q-item dense class="q-pa-none">
-                                    Placeholder
-                                </q-item>
-                            </q-item-section>
-                        </template>
-                        <div v-for="type in distinctTypes">
-                            <q-table
-                                :title="type"
-                                title-class="selector-table-title"
-                                class="selector-table q-pa-sm"
-                                dense
-                                flat
-                                hide-pagination
-                                :rows="prototype.getMatchingItems(type)"
-                                :columns="getColumns(type)"
-                                :pagination="allRowsPagination"
-                                row-key="item.name">
-                                <template v-slot:body="props">
-                                    <q-tr
-                                        :props="props"
-                                        class="cursor-pointer"
-                                        :class="(props.row.item.name==prototype.itemName) ? 'bg-accent text-white' : ''"
-                                        @click=select(props.row.item.name)>
-                                        <q-td v-for="col in props.cols" :key="col.name" :props="props">
-                                            {{col.value}}
-                                        </q-td>
-                                    </q-tr>
-                                </template>
-                            </q-table>
-                        </div>
-                    </q-expansion-item>
-                </q-list>
+                <q-expansion-item
+                    @mouseover="setHoveredBindings(bindings)"
+                    @mouseleave="setHoveredBindings([])"
+                    header-class="selector-header"
+                    ref="expansion"
+                    :disable="prototype.uneditable">
+                    <template v-slot:header>
+                        <q-item-section v-if="!prototype.item">
+                            Empty
+                        </q-item-section>
+                        <q-item-section top v-if="prototype.item">
+                            <q-item dense class="q-pa-none">
+                                <b>{{prototype.item.displayName || prototype.item.name}}</b>
+                            </q-item>
+                            <q-item dense class="q-pa-none" v-html="summary">
+                            </q-item>
+                        </q-item-section>
+                        <q-item-section top v-if="prototype.item" class="col-2">
+                            <q-item dense class="q-pa-none">
+                                <b>Size {{prototype.item.size}} {{prototype.item.type}}</b>
+                            </q-item>
+                            <q-item dense class="q-pa-none">
+                                Placeholder
+                            </q-item>
+                        </q-item-section>
+                    </template>
+                    <div v-for="type in distinctTypes">
+                        <q-table
+                            :title="type"
+                            title-class="selector-table-title"
+                            class="selector-table q-pa-sm"
+                            dense
+                            flat
+                            hide-pagination
+                            :rows="prototype.getMatchingItems(type)"
+                            :columns="getColumns(type)"
+                            :pagination="allRowsPagination"
+                            row-key="item.name">
+                            <template v-slot:body="props">
+                                <q-tr
+                                    :props="props"
+                                    class="cursor-pointer"
+                                    :class="(props.row.item.name==prototype.itemName) ? 'bg-accent text-white' : ''"
+                                    @click=select(props.row.item.name)>
+                                    <q-td v-for="col in props.cols" :key="col.name" :props="props">
+                                        {{col.value}}
+                                    </q-td>
+                                </q-tr>
+                            </template>
+                        </q-table>
+                    </div>
+                </q-expansion-item>
             </div>
             <q-item class="spacer col-2" v-for="rightpad in 2 - level"></q-item>
             <selector-group :level="level + 1" :groups="array" v-for="array in groupArrays" :key="randomKey()">
@@ -185,18 +187,18 @@
                 </q-expansion-item>
                 </div>
                 <div class="col-3">
+                    <required-items :loadout="vehicleLoadout">
+                    </required-items>
+                    <div class="q-pa-sm row" v-if="showTurretCoverage">
+                        <q-card class="col-12 row">
+                            <q-item class="col-12 card-title">
+                                Turret Coverage
+                            </q-item>
+                            <coverage-display :loadout="vehicleLoadout">
+                            </coverage-display>
+                        </q-card>
+                    </div>
                     <div class="sticky-side">
-                        <required-items :loadout="vehicleLoadout">
-                        </required-items>
-                        <div class="q-pa-sm row" v-if="showTurretCoverage">
-                            <q-card class="col-12 row">
-                                <q-item class="col-12 card-title">
-                                    Turret Coverage
-                                </q-item>
-                                <coverage-display :loadout="vehicleLoadout">
-                                </coverage-display>
-                            </q-card>
-                        </div>
                         <div class="q-pa-sm row" v-for="cardName in Object.keys(summaryCards)">
                             <q-card class="col-12 row">
                                 <q-item class="col-12 card-title">

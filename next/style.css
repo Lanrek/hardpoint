@@ -23,7 +23,8 @@ body {
 	font-size: 18px;
 }
 
-.selector .q-list {
+.selector .q-expansion-item {
+	border-radius: 4px;
 	border: 2px solid #bdbdbd;
 	background-color: #fafafa;
 }

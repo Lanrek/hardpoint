@@ -486,7 +486,7 @@ app.component("vehicle-details", {
             },
 
             summaryCards: {
-                "Maneuverability": [
+                "Maneuver": [
                     {
                         name: "Combat Speed",
                         value: "flightController.item.scmSpeed",
@@ -518,13 +518,6 @@ app.component("vehicle-details", {
                         units: "deg/sec"
                     }
                 ],
-                "Placeholder": [
-                    {
-                        name: "Cargo Capacity",
-                        value: "cargoCapacity",
-                        units: "SCU"
-                    }
-                ],
                 "Combat": [
                     {
                         name: "Burst DPS",
@@ -545,6 +538,30 @@ app.component("vehicle-details", {
                         name: "Max Hitpoints",
                         value: "vehicle.damageMax",
                         units: "hp"
+                    }
+                ],
+                "Travel": [
+                    {
+                        name: "Hydrogen Fuel",
+                        value: "hydrogenFuelCapacity",
+                        units: "units"
+                    },
+                    {
+                        name: "Quantum Fuel",
+                        value: "quantumFuelCapacity",
+                        units: "units"
+                    },
+                    {
+                        name: "Cargo Capacity",
+                        value: "cargoCapacity",
+                        units: "SCU"
+                    }
+                ],
+                "Power": [
+                    {
+                        name: "Cargo Capacity",
+                        value: "cargoCapacity",
+                        units: "SCU"
                     }
                 ]
             }
