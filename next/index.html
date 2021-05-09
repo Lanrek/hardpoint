@@ -65,7 +65,7 @@
             <div class="selector col-8 q-pa-sm">
                 {{prototype.port.name}}
                 <q-list bordered class="rounded-borders">
-                    <q-expansion-item ref="expansion" :disable="prototype.uneditable">
+                    <q-expansion-item header-class="selector-header" ref="expansion" :disable="prototype.uneditable">
                         <template v-slot:header>
                             <q-item-section v-if="!prototype.item">
                                 Empty
@@ -89,7 +89,10 @@
                         <div v-for="type in distinctTypes">
                             <q-table
                                 :title="type"
+                                title-class="selector-table-title"
+                                class="selector-table q-pa-sm"
                                 dense
+                                flat
                                 hide-pagination
                                 :rows="prototype.getMatchingItems(type)"
                                 :columns="getColumns(type)"
@@ -135,7 +138,7 @@
         <template id="required-items">
             <div class="q-pa-sm row" v-if="requiredItems.length > 0">
                 <q-card class="col-12 row">
-                    <q-item class="col-12 text-h6">
+                    <q-item class="col-12 card-title">
                         Required Items
                     </q-item>
                     <q-list dense>
@@ -143,10 +146,10 @@
                             <q-item-section>
                                 {{entry.count}}x {{entry.displayName}}
                             </q-item-section>
-                            <q-item-section side v-if="entry.available">
+                            <q-item-section class="text-faded" side v-if="entry.available">
                                 {{entry.count * entry.basePrice}} aUEC
                             </q-item-section>
-                            <q-item-section side v-else>
+                            <q-item-section class="text-faded" side v-else>
                                 Unavailable
                             </q-item-section>
                         </q-item>
@@ -163,7 +166,7 @@
                 <div class="col-9">
                 <q-expansion-item
                     class="q-pa-sm"
-                    header-class="bg-primary text-white"
+                    header-class="section-header"
                     default-opened
                     :label="sectionName"
                     v-for="sectionName in sectionNames">
@@ -181,7 +184,7 @@
                         </required-items>
                         <div class="q-pa-sm row">
                             <q-card class="col-12 row">
-                                <q-item class="col-12 text-h6">
+                                <q-item class="col-12 card-title">
                                     Turret Coverage
                                 </q-item>
                                 <coverage-display :loadout="vehicleLoadout">
@@ -190,13 +193,16 @@
                         </div>
                         <div class="q-pa-sm row" v-for="cardName in Object.keys(summaryCards)">
                             <q-card class="col-12 row">
-                                <q-item class="col-12 text-h6">
+                                <q-item class="col-12 card-title">
                                     {{cardName}}
                                 </q-item>
                                 <div class="col-6 q-pa-sm" v-for="entry in summaryValues[cardName]">
                                     <q-item-section>
-                                        <q-item-label class="card-label">{{entry.name}}</q-item-label>
-                                        <q-item-label class="card-value"><span class="summary-value">{{entry.value}}</span> {{entry.units}}</q-item-label>
+                                        <q-item-label>{{entry.name}}</q-item-label>
+                                        <q-item-label class="card-value text-faded">
+                                            <span class="summary-value">{{entry.value}}</span>
+                                            {{entry.units}}
+                                        </q-item-label>
                                     </q-item-section>
                                 </div>
                             </q-card>

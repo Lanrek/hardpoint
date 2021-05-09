@@ -3,15 +3,46 @@
 	--spacer-inset: 8px;
 }
 
+body {
+	font-size: 13px;
+}
+
+.text-faded {
+	color: #616161;
+}
+
 .version {
 	padding-left: 24px;
 	color: #bdbdbd;
 	font-size: 18px;
 }
 
+.section-header {
+	background-color: #e0e0e0;
+	border-bottom: 4px solid #616161;
+	font-size: 18px;
+}
+
+.selector .q-list {
+	border: 2px solid #bdbdbd;
+	background-color: #fafafa;
+}
+
+.selector-header {
+	padding: 8px;
+}
+
+.selector-table {
+	background-color: #fafafa;
+}
+
+.selector-table-title {
+	font-size: 18px;
+}
+
 /* Sticky header for the vehicle grid. */
 .vehicle-grid thead tr th {
-	background-color: white;
+	background-color: #e0e0e0;
 	position: sticky;
 	z-index: 1;
 	top: 0;
@@ -60,13 +91,18 @@
 }
 
 /* Summary cards for the loadout page. */
-.card-label {
-	font-size: 13px;
+.q-card {
+	box-shadow: none;
+	border: 2px solid #bdbdbd;
+	background-color: #fafafa;
+}
+
+.card-title {
+	font-size: 18px;
 }
 
 .card-value {
 	font-size: 18px;
-	color: #616161;
 }
 
 .summary-value {
