@@ -143,7 +143,7 @@ def _make_turret(components_element):
         if "@turretrotation" in angle_element:
             result["turretRotation"] = float(angle_element["@turretrotation"])
 
-        return result;
+        return result
 
     def make_axis_limit(axis_element):
         limits_element = axis_element.single("scitemturretjointmovementaxisparams").single("anglelimits")
@@ -316,9 +316,11 @@ def make_item(item_element):
                     baseline["ports"][port["name"]] = port
 
                 # TODO Doesn't handle containers with mixed types of ports.
-                prefix = [baseline["type"], str(len(baseline["ports"]))]
-                sizes = [str(x["minSize"]) + "-" + str(x["maxSize"]) for x in baseline["ports"].values()]
-                baseline["container_hash"] = "_".join(prefix + sizes)
+                sorted_port_values = list(baseline["ports"].values())
+                sorted_port_values.sort(key=lambda x: x["name"])
+                prefix = [baseline["type"]]
+                sizes = [x["name"] + ":" + str(x["minSize"]) + "-" + str(x["maxSize"]) for x in sorted_port_values]
+                baseline["containerHash"] = "/".join(prefix + sizes)
 
             # TODO Default loadouts for items! That'll handle the Hornet cargo container.
 

@@ -235,6 +235,13 @@ class ItemBinding {
         return this.port.flags && this.port.flags.includes("uneditable");
     }
 
+	get customized() {
+		// TODO This doesn't handle that case where a port has been set back to its default component,
+		// but now has empty child ports -- it shows as not customized, although the children are changed.
+		const hasDefaultItem = this.itemName != this._loadout.getDefaultItem(this.path);
+		return hasDefaultItem || Object.values(this.bindings).some(n => n.customized);
+	}
+
     getMatchingItems(typeFilter=undefined) {
         const matchesType = (portType, itemType, itemSubtype) => {
             return portType.type == itemType && (!portType.subtype || portType.subtype == itemSubtype);

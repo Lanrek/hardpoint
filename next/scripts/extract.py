@@ -224,7 +224,8 @@ def convert_vehicles(game_xml_root, extracted_path, localization, prices):
         converted = make_vehicle(definition)
         if converted:
             converted["name"] = identifier
-            converted["modificationName"] = modification_name
+            if modification_name:
+                converted["modificationName"] = modification_name
 
             loadout_component = entity.single("components").single("sentitycomponentdefaultloadoutparams")
             converted["defaultItems"] = make_loadout(loadout_component, extracted_path)
