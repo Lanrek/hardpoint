@@ -323,6 +323,10 @@ app.component("selector-group", {
     }
 });
 
+hoveredBindings = {
+    values: []
+};
+
 // Accepts multiple bindings and assumes they're all identical to the first.
 app.component("item-selector", {
     template: "#item-selector",
@@ -333,9 +337,12 @@ app.component("item-selector", {
     data: function() {
         return {
             prototype: this.bindings[0],
+
             allRowsPagination: {
                 rowsPerPage: 0
-            }
+            },
+
+            hoveredBindings: hoveredBindings
         };
     },
     computed: {
@@ -381,6 +388,9 @@ app.component("item-selector", {
         },
         makeGroups(bindings) {
             return BindingGroup.makeGroups(bindings);
+        },
+        setHoveredBindings(bindings) {
+            this.hoveredBindings.values = bindings;
         },
         select(itemName) {
             this.$refs.expansion.hide();
@@ -586,7 +596,18 @@ app.component("vehicle-details", {
             }
 
             return result;
-        }
+        },
+        showTurretCoverage() {
+			if (!turretRotationsDefined[this.vehicleLoadout.vehicle.name]) {
+				return false;
+			}
+
+			const turretTypes = ["Turret", "TurretBase"];
+			const turrets = Object.values(this.vehicleLoadout.bindings).filter(
+				n => n.item && turretTypes.includes(n.item.type));
+
+			return turrets.length > 0;
+		},
     },
     methods: {
         makeGroups(bindings) {

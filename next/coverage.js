@@ -140,11 +140,20 @@ app.component("coverage-display", {
     },
 	data: function() {
 		return {
-			selectedView: "Side"
+			selectedView: "Side",
+
+			hoveredBindings: hoveredBindings
 		}
 	},
 	watch: {
 		loadout: {
+			handler: function(value) {
+				this.makeCoverageSegments();
+				this.renderScene();
+			},
+			deep: true
+		},
+		hoveredBindings: {
 			handler: function(value) {
 				this.makeCoverageSegments();
 				this.renderScene();
@@ -368,11 +377,9 @@ app.component("coverage-display", {
 			};
 
 			let material = actualMaterial;
-            /*
-			if (this.customization.hoveredBindings.some(b => b == binding || b.parentBinding == binding)) {
+			if (this.hoveredBindings.values.some(b => b == turret._binding || b.parent == turret._binding)) {
 				material = hoverMaterial;
 			}
-            */
 
 			result.actual.add(new THREE.Mesh(geometry, material));
 			result.actual.add(new THREE.AmbientLight());
