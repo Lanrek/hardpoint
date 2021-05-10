@@ -66,7 +66,7 @@ class DefaultExtension {
     constructor(binding, item) {
         this._binding = binding;
         this._item = item;
-        this._loadout = binding._loadout;;
+        this._loadout = binding._loadout;
     }
 
     get powerConsumed() {
@@ -88,6 +88,24 @@ class DefaultExtension {
         }
 
         return 0;
+    }
+}
+
+class ContainerExtension extends DefaultExtension {
+    get cargo() {
+        let result = 0;
+
+        // TODO This only looks one level deep at defaults; good enough for now...
+        if (this._item.defaultItems) {
+            for (const defaultEntry of Object.values(this._item.defaultItems)) {
+                const defaultItem = allItems[defaultEntry.itemName];
+                if (defaultItem && defaultItem.cargo) {
+                    result += defaultItem.cargo;
+                }
+            }
+        }
+
+        return result;
     }
 }
 
@@ -259,6 +277,7 @@ class WeaponGunExtension extends DefaultExtension {
 }
 
 const extensionClasses = {
+    Container: ContainerExtension,
     MainThruster: ThrusterExtension,
     ManneuverThruster: ThrusterExtension,
     Missile: MissileExtension,
@@ -360,6 +379,11 @@ class ItemBinding {
             this.bindings = {};
             for (const port of Object.values(this.item.ports)) {
                 this.bindings[port.name] = new ItemBinding(this._loadout, port, this);
+
+                const defaultItemName = _.get(this, "item.defaultItems." + port.name + ".itemName");
+                if (defaultItemName && defaultItemName in allItems) {
+                    this.bindings[port.name].setItem(defaultItemName);
+                }
             }
         }
         else {
@@ -386,9 +410,11 @@ class VehicleLoadout {
 
         const setDefaultItems = (container) => {
             for (const binding of Object.values(container.bindings)) {
-
-                binding.setItem(this.getDefaultItem(binding.path));
-                setDefaultItems(binding);
+                // Skip items added by their parent item's default loadout.
+                if (!binding.item) {
+                    binding.setItem(this.getDefaultItem(binding.path));
+                    setDefaultItems(binding);
+                }
             }
         };
         setDefaultItems(this);

@@ -187,7 +187,7 @@
                     <q-list dense class="full-width">
                         <q-item v-for="entry in requiredItems">
                             <q-item-section>
-                                {{entry.count}}x {{entry.displayName}}
+                                {{entry.count}}x {{entry.displayName || entry.name}}
                             </q-item-section>
                             <q-item-section class="text-faded" side v-if="entry.available">
                                 {{_formatNumber(0)(entry.count * entry.basePrice / 1000)}}k

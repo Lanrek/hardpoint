@@ -74,13 +74,19 @@ const _evaluateSummaryPattern = (binding, pattern) => {
 const _defaultSummaryFactory = (binding) => "No further information available";
 
 const itemProjections = {
-    Cargo: {
-        columns: _defaultColumns,
-        summary: _defaultSummaryFactory
-    },
     Container: {
-        columns: _defaultColumns,
-        summary: _defaultSummaryFactory
+        columns: _prefixColumns.concat([
+            {
+                name: "cargo",
+                label: "Cargo",
+                field: row => row.extension.cargo,
+                format: _formatNumber(0),
+                sortable: true
+            }],
+            _suffixColumns),
+        summary: (binding) => _evaluateSummaryPattern(binding, [
+            "{extension.cargo} SCUs cargo capacity"
+        ])
     },
     Cooler: {
         columns: _defaultColumns,

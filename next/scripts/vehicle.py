@@ -1,6 +1,9 @@
+
+import os
 import re
 
-from .common import _make_item_port
+from common import _make_item_port
+from xml_reader import read_xml_file
 
 
 def make_loadout(loadout_component, extracted_path):
@@ -18,32 +21,28 @@ def make_loadout(loadout_component, extracted_path):
 
             container[data["@itemportname"].lower()] = entry
 
-    def add_file_entries(container, items):
-        elements = element_array(items.get("Item"))
-        for data in elements:
-            entry = {}
-            entry["itemName"] = data.get("@itemName") or data.get("@itemname")
-            entry["children"] = {}
-            child_items = data.get("Items")
-            if child_items:
-                add_file_entries(entry["children"], child_items)
+    def add_file_entries(container, loadout):
+        items = loadout.single("items")
+        if items:
+            for item in items.get("item", []):
+                entry = {}
+                entry["itemName"] = item.get("@itemname")
+                entry["children"] = {}
+                add_file_entries(entry["children"], item)
 
-            container[data["@portname"].lower()] = entry
+                container[item["@portname"].lower()] = entry
 
     manual_params = loadout_component.single("loadout").single("sitemportloadoutmanualparams")
 
     if manual_params:
         add_manual_entries(result, manual_params)
     else:
-        # TODO Update this path for items that require it.
-        path = loadout_component["loadout"]["SItemPortLoadoutXMLParams"]["@loadoutPath"]
+        path = loadout_component.single("loadout").single("sitemportloadoutxmlparams")["@loadoutpath"]
         if path:
             path = os.path.join(extracted_path, "Data", path)
             if os.path.exists(path):
-                loadout = read_json_file(path)
-                items = loadout["Loadout"].get("Items")
-                if items:
-                    add_file_entries(result, items)
+                loadout = read_xml_file(path)
+                add_file_entries(result, loadout)
 
     return result
 

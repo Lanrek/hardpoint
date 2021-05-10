@@ -1,4 +1,4 @@
-from .item import _make_damage
+from item import _make_damage
 
 
 def make_ammo_params(ammo_params_element):

@@ -1,4 +1,4 @@
-from .common import _make_item_port
+from common import _make_item_port
 
 
 def _make_cargo(components_element):
@@ -14,10 +14,20 @@ def _make_cargo(components_element):
     }
 
 
+def _make_container(components_element):
+    return {
+    }
+
+
 def _make_cooler(components_element):
     params_element = components_element.single("scitemcoolerparams")
     return {
         "coolingRate": float(params_element.get("@coolingrate", 0))
+    }
+
+
+def _make_door(components_element):
+    return {
     }
 
 
@@ -246,7 +256,9 @@ def _make_weapon_gun(components_element):
 
 _item_type_methods = {
     "Cargo": _make_cargo,
+    "Container": _make_container,
     "Cooler": _make_cooler,
+    "Door": _make_door,
     "EMP": _make_emp,
     "FlightController": _make_flight_controller,
     "FuelIntake": _make_fuel_intake,
@@ -331,8 +343,6 @@ def make_item(item_element):
                 prefix = [baseline["type"]]
                 sizes = [x["name"] + ":" + str(x["minSize"]) + "-" + str(x["maxSize"]) for x in sorted_port_values]
                 baseline["containerHash"] = "/".join(prefix + sizes)
-
-            # TODO Default loadouts for items! That'll handle the Hornet cargo container.
 
             heat_element = components_element.single("entitycomponentheatconnection")
             if heat_element:

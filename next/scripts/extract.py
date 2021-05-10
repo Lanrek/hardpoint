@@ -6,49 +6,13 @@ import subprocess
 
 from xml.etree import ElementTree
 
-from factory.vehicle import make_vehicle, make_loadout
-from factory.item import make_item
-from factory.ammo_params import make_ammo_params
+from xml_reader import read_xml_file, read_xml_tree
+from vehicle import make_vehicle, make_loadout
+from item import make_item
+from ammo_params import make_ammo_params
 
 
 source_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-
-
-class ElementDictionary(dict):
-    def single(self, key):
-        entry = self.get(key)
-
-        if entry is None:
-            return None
-
-        if not isinstance(entry, list):
-            raise KeyError(key + " was not a list type")
-
-        if len(entry) > 1:
-            print("    Warning: Element " + key + " has more than one value")
-
-        if len(entry) == 0:
-            return None
-        else:
-            return entry[0]
-
-
-def read_xml_tree(element):
-    tag = ElementDictionary({"@" + k.lower() : v for k, v in element.attrib.items()})
-    if element.text and not element.text.isspace():
-        tag["#text"] = element.text
-
-    for child in element:
-        key = child.tag.lower()
-        if not key in tag:
-            tag[key] = []
-        tag[key].append(read_xml_tree(child))
-    return tag
-
-
-def read_xml_file(path):
-    root = ElementTree.parse(path).getroot()
-    return read_xml_tree(root)
 
 
 def read_lines_file(path):
@@ -263,6 +227,10 @@ def convert_items(game_xml_root, extracted_path, localization, prices):
         if converted:
             converted["name"] = identifier
             localize_key(converted, "displayName", localization)
+
+            loadout_component = entity.single("components").single("sentitycomponentdefaultloadoutparams")
+            if loadout_component:
+                converted["defaultItems"] = make_loadout(loadout_component, extracted_path)
 
             price_details = prices.get(identifier)
             if price_details:
