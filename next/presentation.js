@@ -349,14 +349,14 @@ const itemProjections = {
         {
             name: "fireRate",
             label: "Fire Rate",
-            field: row => row.item.weaponAction.fireRate,
+            field: row => _.get(row, "item.weaponAction.fireRate"),
             format: _format_number(0),
             sortable: true
         },
         {
             name: "minSpread",
             label: "Spread",
-            field: row => row.item.weaponAction.spread.min,
+            field: row => _.get(row, "item.weaponAction.spread.min"),
             format: _format_number(1),
             sortable: true
         },
@@ -377,19 +377,23 @@ const itemProjections = {
         {
             name: "speed",
             label: "Speed",
-            field: row => row.extension.ammo.speed,
+            field: row => _.get(row, "extension.ammo.speed"),
             format: _format_number(0),
             sortable: true
         },
         {
             name: "lifetime",
             label: "Duration",
-            field: row => row.extension.ammo.lifetime,
+            field: row => _.get(row, "extension.ammo.lifetime"),
             format: _format_number(2),
             sortable: true
         }],
         _suffixColumns),
         summary: (binding) => {
+            if (!binding.item.weaponAction) {
+                return _defaultSummaryFactory(binding);
+            }
+
             const patterns = [
                 "{extension.burstDps.total} damage/sec = {extension.alpha.total} {extension.alpha.type} damage at {item.weaponAction.fireRate} rounds/minute",
                 "{extension.range} meter range = {extension.ammo.speed} m/sec projectile speed for {extension.ammo.lifetime} seconds"
@@ -400,7 +404,6 @@ const itemProjections = {
             }
 
             if (binding.item.weaponAction.spread && binding.item.weaponAction.spread.min > 0) {
-                console.log(binding)
                 patterns.push("{item.weaponAction.spread.min} to {item.weaponAction.spread.max} deg spread increasing at {item.weaponAction.spread.attack} deg/shot and recovering at {item.weaponAction.spread.decay} deg/sec");
             }
 

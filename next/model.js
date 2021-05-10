@@ -163,10 +163,18 @@ class WeaponGunExtensions {
     }
 
     get range() {
+        if (!this.ammo) {
+            return 0;
+        }
+
         return this.ammo.speed * this.ammo.lifetime;
     }
 
     get alpha() {
+        if (!this.ammo) {
+            return new Damage();
+        }
+
         let result = new Damage(this.ammo.damage);
 
         const explosion = new Damage(this.ammo.explosionDamage);
@@ -202,7 +210,7 @@ class WeaponGunExtensions {
     }
 
     get dropStartRange() {
-        if (this.ammo.damageDrop) {
+        if (this.ammo && this.ammo.damageDrop) {
             // TODO Support other and mixed damage types for damage drop.
             const key = "energy";
             const minDistance = new Damage(this.ammo.damageDrop.minDistance);
@@ -211,7 +219,7 @@ class WeaponGunExtensions {
     }
 
     get dropEndRange() {
-        if (this.ammo.damageDrop) {
+        if (this.ammo && this.ammo.damageDrop) {
             // TODO Support other and mixed damage types for damage drop.
             const key = "energy";
             const minDamage = new Damage(this.ammo.damageDrop.minDamage);
