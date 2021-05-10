@@ -488,92 +488,6 @@ app.component("vehicle-details", {
                 "Guns": ["WeaponGun", "Turret", "TurretBase"],
                 "Systems": ["Cooler", "Shield", "PowerPlant", "QuantumDrive", "FuelIntake"],
                 "Flight": ["MainThruster", "ManneuverThruster"]
-            },
-
-            summaryCards: {
-                "Maneuver": [
-                    {
-                        name: "Combat Speed",
-                        value: "flightController.item.scmSpeed",
-                        units: "m/sec"
-                    },
-                    {
-                        name: "Pitch Rate",
-                        value: "flightController.item.maxAngularVelocityX",
-                        units: "deg/sec"
-                    },
-                    {
-                        name: "Max Speed",
-                        value: "flightController.item.maxSpeed",
-                        units: "m/sec"
-                    },
-                    {
-                        name: "Yaw Rate",
-                        value: "flightController.item.maxAngularVelocityZ",
-                        units: "deg/sec"
-                    },
-                    {
-                        name: "Main Acceleration",
-                        value: "mainAccelerationGs",
-                        units: "Gs"
-                    },
-                    {
-                        name: "Roll Rate",
-                        value: "flightController.item.maxAngularVelocityY",
-                        units: "deg/sec"
-                    }
-                ],
-                "Combat": [
-                    {
-                        name: "Burst DPS",
-                        value: "burstDps",
-                        units: "dps"
-                    },
-                    {
-                        name: "Shield Capacity",
-                        value: "shieldCapacity",
-                        units: "hp"
-                    },
-                    {
-                        name: "Min Hitpoints",
-                        value: "vehicle.damageMin",
-                        units: "hp"
-                    },
-                    {
-                        name: "Max Hitpoints",
-                        value: "vehicle.damageMax",
-                        units: "hp"
-                    }
-                ],
-                "Travel": [
-                    {
-                        name: "Hydrogen Fuel",
-                        value: "hydrogenFuelCapacity",
-                        units: "units"
-                    },
-                    {
-                        name: "Quantum Fuel",
-                        value: "quantumFuelCapacity",
-                        units: "units"
-                    },
-                    {
-                        name: "Cargo Capacity",
-                        value: "cargoCapacity",
-                        units: "SCU"
-                    }
-                ],
-                "Power": [
-                    {
-                        name: "Power Usage",
-                        value: "powerUsagePercent",
-                        units: "%"
-                    },
-                    {
-                        name: "EM Signature",
-                        value: "emSignature",
-                        units: ""
-                    }
-                ]
             }
         };
     },
@@ -615,7 +529,14 @@ app.component("vehicle-details", {
             return result;
         },
         summaryValues() {
-            const result = _.cloneDeep(this.summaryCards);
+            let result;
+            if (this.vehicleLoadout.flightController.item) {
+                result = _.cloneDeep(spaceSummaryCards);
+            }
+            else {
+                result = _.cloneDeep(groundSummaryCards);
+            }
+
             for (const card of Object.values(result)) {
                 for (const entry of card) {
                     entry.value = _roundNumber(_.get(this.vehicleLoadout, entry.value));

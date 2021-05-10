@@ -456,13 +456,15 @@ class VehicleLoadout {
     }
 
     get mainAccelerationGs() {
-        let result = 0;
-        this._walkBindings(this, "MainThruster", (binding) => {
-            if (binding.item.thrusterType == "Main") {
-                result += binding.extension.accelerationGs;
-            }
-        });
-        return result;
+        if (this.flightController.item) {
+            let result = 0;
+            this._walkBindings(this, "MainThruster", (binding) => {
+                if (binding.item.thrusterType == "Main") {
+                    result += binding.extension.accelerationGs;
+                }
+            });
+            return result;
+        }
     }
 
     get burstDps() {

@@ -541,3 +541,93 @@ const vehicleColumns = [
         sortable: true
     }
 ];
+
+const groundSummaryCards = {
+    "Combat": [
+        {
+            name: "Burst DPS",
+            value: "burstDps",
+            units: "dps"
+        },
+        {
+            name: "Shield Capacity",
+            value: "shieldCapacity",
+            units: "hp"
+        },
+        {
+            name: "Min Hitpoints",
+            value: "vehicle.damageMin",
+            units: "hp"
+        },
+        {
+            name: "Max Hitpoints",
+            value: "vehicle.damageMax",
+            units: "hp"
+        }
+    ],
+    "Travel": [
+        {
+            name: "Hydrogen Fuel",
+            value: "hydrogenFuelCapacity",
+            units: "units"
+        },
+        {
+            name: "Quantum Fuel",
+            value: "quantumFuelCapacity",
+            units: "units"
+        },
+        {
+            name: "Cargo Capacity",
+            value: "cargoCapacity",
+            units: "SCU"
+        }
+    ],
+    "Power": [
+        {
+            name: "Power Usage",
+            value: "powerUsagePercent",
+            units: "%"
+        },
+        {
+            name: "EM Signature",
+            value: "emSignature",
+            units: ""
+        }
+    ]
+};
+
+const spaceSummaryCards = {
+    "Maneuver": [
+        {
+            name: "Combat Speed",
+            value: "flightController.item.scmSpeed",
+            units: "m/sec"
+        },
+        {
+            name: "Pitch Rate",
+            value: "flightController.item.maxAngularVelocityX",
+            units: "deg/sec"
+        },
+        {
+            name: "Max Speed",
+            value: "flightController.item.maxSpeed",
+            units: "m/sec"
+        },
+        {
+            name: "Yaw Rate",
+            value: "flightController.item.maxAngularVelocityZ",
+            units: "deg/sec"
+        },
+        {
+            name: "Main Acceleration",
+            value: "mainAccelerationGs",
+            units: "Gs"
+        },
+        {
+            name: "Roll Rate",
+            value: "flightController.item.maxAngularVelocityY",
+            units: "deg/sec"
+        }
+    ],
+};
+Object.assign(spaceSummaryCards, groundSummaryCards);
