@@ -443,7 +443,7 @@ const vehicleColumns = [
     {
         name: "size",
         label: "Size",
-        field: row => row.vehicle.size,
+        field: row => row.sizeCategory,
         sortable: true
     },
     {

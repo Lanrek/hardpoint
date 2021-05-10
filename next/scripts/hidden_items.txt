@@ -8,3 +8,14 @@ test_*
 
 # Recolors
 *_Shark
+
+# NPC turret weapons
+HRST_LaserRepeater_S4_Turret
+
+# Unavailable and unused
+BEHR_BallisticGatling_S4
+MXOX_NeutronCannon_S3
+Default_Fixed_Mount_S3
+Default_Fixed_Mount_S4
+BEHR_PC2_Dual_S1
+RPOD_S3_THCN_12x_S2

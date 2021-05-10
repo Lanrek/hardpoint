@@ -87,6 +87,8 @@ def make_vehicle(definition_element):
 
                 damage_max += part_damage
                 mass += float(re.sub("[^0-9.]", "", part_element.get("@mass", "0")))
+                if part_element.get("@mass", "").endswith("d"):
+                    mass *= 64
 
                 if part_element["@class"] == "ItemPort":
                     item_port_element = part_element.single("itemport")

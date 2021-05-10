@@ -374,6 +374,23 @@ class VehicleLoadout {
 		return split.slice(1).join(" ").trim();
 	}
 
+    get sizeCategory() {
+        if (!this.flightController.item) {
+            return "Ground";
+        }
+
+        const categories = {
+            1: "Small",
+            2: "Small",
+            3: "Medium",
+            4: "Large",
+            5: "Large",
+            6: "Capital"
+        }
+
+        return categories[this.vehicle.size];
+    }
+
     get cargoCapacity() {
         let result = 0;
         this._walkBindings(this, "Cargo", (binding) => result += binding.item.cargo);
@@ -410,7 +427,11 @@ class VehicleLoadout {
 
     get mainAccelerationGs() {
         let result = 0;
-        this._walkBindings(this, "MainThruster", (binding) => result += binding.extension.accelerationGs);
+        this._walkBindings(this, "MainThruster", (binding) => {
+            if (binding.item.thrusterType == "Main") {
+                result += binding.extension.accelerationGs;
+            }
+        });
         return result;
     }
 
