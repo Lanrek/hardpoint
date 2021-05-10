@@ -70,31 +70,43 @@
 
         <template id="item-selector">
             <div class="spacer col-2" v-for="leftpad in level"></div>
-            <div class="selector col-8 q-pa-sm">
+            <div class="selector col-8 row q-pa-sm">
                 <q-expansion-item
                     @mouseover="setHoveredBindings(bindings)"
                     @mouseleave="setHoveredBindings([])"
-                    header-class="selector-header"
+                    header-class="q-pa-sm"
                     ref="expansion"
                     :disable="prototype.uneditable">
                     <template v-slot:header>
-                        <q-item-section v-if="!prototype.item">
-                            Empty
-                        </q-item-section>
-                        <q-item-section top v-if="prototype.item">
-                            <q-item dense class="q-pa-none">
-                                <b>{{prototype.item.displayName || prototype.item.name}}</b>
-                            </q-item>
-                            <q-item dense class="q-pa-none" v-html="summary">
-                            </q-item>
-                        </q-item-section>
-                        <q-item-section top v-if="prototype.item" class="col-2">
-                            <q-item dense class="q-pa-none">
-                                <b>Size {{prototype.item.size}} {{prototype.item.type}}</b>
-                            </q-item>
-                            <q-item dense class="q-pa-none">
-                                Placeholder
-                            </q-item>
+                        <q-item-section class="selector-header q-pa-none">
+                            <q-list>
+                                <q-item class="q-pa-none" v-if="!prototype.item">
+                                    Empty
+                                </q-item>
+                                <q-item class="q-pa-none" v-if="prototype.item">
+                                    <q-item-section top>
+                                        <b>{{prototype.item.displayName || prototype.item.name}}</b>
+                                    </q-item-section>
+                                    <q-item-section top side class="text-black">
+                                        <b>Size {{prototype.item.size}} {{prototype.item.type}}</b>
+                                    </q-item-section>
+                                </q-item>
+                                <q-item class="q-pa-none" v-if="prototype.item">
+                                    <q-item-section top v-html="summary">
+                                    </q-item-section>
+                                    <q-item-section top side class="text-black">
+                                        <span>
+                                            <span v-if="prototype.extension.powerConsumed > 0">
+                                                {{prototype.extension.powerConsumed}}
+                                                <q-icon style="color: lightseagreen" name="flash_on" display="inline-block"></q-icon>
+                                            </span>
+                                            <span v-if="prototype.extension.emSignature > 0">
+                                                {{_formatNumber(0)(prototype.extension.emSignature)}} EM
+                                            </span>
+                                        </span>
+                                    </q-item-section>
+                                </q-item>
+                            </q-list>
                         </q-item-section>
                     </template>
                     <div v-for="type in distinctTypes">
@@ -123,6 +135,26 @@
                         </q-table>
                     </div>
                 </q-expansion-item>
+                <q-list dense separator class="power-selector">
+                    <q-item
+                        disabled
+                        clickable
+                        :active="prototype.powerLevel == 'overclocked'">
+                        Overclk
+                    </q-item>
+                    <q-item
+                        clickable
+                        :active="prototype.powerLevel == 'active'"
+                        @click="setPowerLevel('active')">
+                        Active
+                    </q-item>
+                    <q-item
+                        clickable
+                        :active="prototype.powerLevel == 'standby'"
+                        @click="setPowerLevel('standby')">
+                        Standby
+                    </q-item>
+                </q-list>
             </div>
             <q-item class="spacer col-2" v-for="rightpad in 2 - level"></q-item>
             <selector-group :level="level + 1" :groups="array" v-for="array in groupArrays" :key="randomKey()">

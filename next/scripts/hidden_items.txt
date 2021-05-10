@@ -11,6 +11,7 @@ test_*
 
 # NPC turret weapons
 HRST_LaserRepeater_S4_Turret
+Orbital_Sentry_SCItem_AI_Turret
 
 # Unavailable and unused
 BEHR_BallisticGatling_S4
@@ -19,3 +20,6 @@ Default_Fixed_Mount_S3
 Default_Fixed_Mount_S4
 BEHR_PC2_Dual_S1
 RPOD_S3_THCN_12x_S2
+
+# Unfinished ships
+AEGS_Javelin_Manned_Turret_Gimbal_S5

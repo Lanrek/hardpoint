@@ -23,14 +23,26 @@ body {
 	font-size: 18px;
 }
 
+/* Item and power selector for the loadout page. */
+
+.selector {
+	align-items: center;
+}
+
 .selector .q-expansion-item {
 	border-radius: 4px;
 	border: 2px solid #bdbdbd;
 	background-color: #fafafa;
+	width: calc(100% - 76px);
 }
 
 .selector-header {
-	padding: 8px;
+	justify-content: start;
+	min-height: 60px;
+}
+
+.selector-header .q-item {
+	min-height: 30px;
 }
 
 .selector-table {
@@ -39,6 +51,23 @@ body {
 
 .selector-table-title {
 	font-size: 18px;
+}
+
+.power-selector {
+	margin-left: 8px;
+	border-radius: 4px;
+	border: 2px solid #bdbdbd;
+	background-color: #fafafa;
+	width: 68px;
+	height: 80px;
+}
+
+.power-selector .q-item {
+	padding: 6px 8px;
+	line-height: 1em;
+	width: auto;
+	min-height: 0;
+	min-width: 0;
 }
 
 /* Sticky header for the vehicle grid. */
@@ -171,7 +200,7 @@ body {
 }
 
 .group-indicator .q-btn {
-	font-size: 12px;
+	font-size: 13px;
 	line-height: 1em;
 	padding: 8px;
 	min-height: 0;

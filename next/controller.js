@@ -402,6 +402,11 @@ app.component("item-selector", {
                 }
             }
         },
+        setPowerLevel(level) {
+            for (binding of this.bindings) {
+                binding.powerLevel = level;
+            }
+        },
         randomKey() {
             return _.random(0, 2 ** 64);
         }
@@ -559,9 +564,14 @@ app.component("vehicle-details", {
                 ],
                 "Power": [
                     {
-                        name: "Cargo Capacity",
-                        value: "cargoCapacity",
-                        units: "SCU"
+                        name: "Power Usage",
+                        value: "powerUsagePercent",
+                        units: "%"
+                    },
+                    {
+                        name: "EM Signature",
+                        value: "emSignature",
+                        units: ""
                     }
                 ]
             }
@@ -608,7 +618,7 @@ app.component("vehicle-details", {
             const result = _.cloneDeep(this.summaryCards);
             for (const card of Object.values(result)) {
                 for (const entry of card) {
-                    entry.value = _round_number(_.get(this.vehicleLoadout, entry.value));
+                    entry.value = _roundNumber(_.get(this.vehicleLoadout, entry.value));
                 }
             }
 

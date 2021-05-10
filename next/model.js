@@ -62,12 +62,36 @@ class Damage {
     }
 }
 
-class MissileExtensions {
-    constructor(item, loadout) {
+class DefaultExtension {
+    constructor(binding, item) {
+        this._binding = binding;
         this._item = item;
-        this._loadout = loadout;
+        this._loadout = binding._loadout;;
     }
 
+    get powerConsumed() {
+        if (this._item.power) {
+            if (this._binding.powerLevel == "active") {
+                return this._item.power.powerDraw;
+            }
+            else {
+                return this._item.power.powerBase;
+            }
+        }
+
+        return 0;
+    }
+
+    get emSignature() {
+        if (this._item.power) {
+            return this.powerConsumed * this._item.power.powerToEM;
+        }
+
+        return 0;
+    }
+}
+
+class MissileExtension extends DefaultExtension {
     get damage() {
         return new Damage(this._item.damage);
     }
@@ -81,12 +105,7 @@ class MissileExtensions {
     }
 }
 
-class PortContainerExtensions {
-    constructor(item, loadout) {
-        this._item = item;
-        this._loadout = loadout;
-    }
-
+class PortContainerExtension extends DefaultExtension {
     get portCount() {
         return Object.keys(this._item.ports).length;
     }
@@ -98,12 +117,21 @@ class PortContainerExtensions {
     }
 }
 
-class QuantumDriveExtensions {
-    constructor(item, loadout) {
-        this._item = item;
-        this._loadout = loadout;
+class PowerPlantExtension extends DefaultExtension {
+    get powerConsumed() {
+        return 0;
     }
 
+    get powerProduced() {
+        return this._item.power.powerDraw;
+    }
+
+    get emSignature() {
+        return this.powerProduced * this._item.power.powerToEM;
+    }
+}
+
+class QuantumDriveExtension extends DefaultExtension {
     get driveSpeedMm() {
         return this._item.driveSpeed / (1000 * 1000);
     }
@@ -121,12 +149,7 @@ class QuantumDriveExtensions {
     }
 }
 
-class ThrusterExtensions {
-    constructor(item, loadout) {
-        this._item = item;
-        this._loadout = loadout;
-    }
-
+class ThrusterExtension extends DefaultExtension {
     get thrustMn() {
         return this._item.thrustCapacity / (1000 * 1000)
     }
@@ -144,12 +167,17 @@ class ThrusterExtensions {
     }
 }
 
-class WeaponGunExtensions {
-    constructor(item, loadout) {
-        this._item = item;
-        this._loadout = loadout;
-    }
+class TurretExtension extends PortContainerExtension {
+    get powerConsumed() {
+        if (this._item.power) {
+            return this._item.power.powerDraw;
+        }
 
+        return 0;
+    }
+}
+
+class WeaponGunExtension extends DefaultExtension {
     get ammo() {
         return allAmmoParams[this._item.ammoParamsReference];
     }
@@ -231,14 +259,15 @@ class WeaponGunExtensions {
 }
 
 const extensionClasses = {
-    MainThruster: ThrusterExtensions,
-    ManneuverThruster: ThrusterExtensions,
-    Missile: MissileExtensions,
-    MissileLauncher: PortContainerExtensions,
-    QuantumDrive : QuantumDriveExtensions,
-    Turret: PortContainerExtensions,
-    TurretBase: PortContainerExtensions,
-    WeaponGun: WeaponGunExtensions
+    MainThruster: ThrusterExtension,
+    ManneuverThruster: ThrusterExtension,
+    Missile: MissileExtension,
+    MissileLauncher: PortContainerExtension,
+    PowerPlant: PowerPlantExtension,
+    QuantumDrive : QuantumDriveExtension,
+    Turret: TurretExtension,
+    TurretBase: TurretExtension,
+    WeaponGun: WeaponGunExtension
 };
 
 class ExtendedItem {
@@ -253,6 +282,8 @@ class ItemBinding {
         this._loadout = loadout;
         this.port = port;
         this.parent = parent;
+
+        this.powerLevel = "active";
 
         this.setItem(undefined);
     }
@@ -338,10 +369,9 @@ class ItemBinding {
     }
 
     _makeExtension(item) {
-        const extensionClass = extensionClasses[item.type];
-        if (extensionClass) {
-            return new extensionClass(item, this._loadout);
-        }
+        const extensionClass = extensionClasses[item.type] || DefaultExtension;
+        const extension = new extensionClass(this, item);
+        return extension;
     }
 }
 
@@ -447,6 +477,26 @@ class VehicleLoadout {
         return result;
     }
 
+    get powerUsagePercent() {
+        let powerProduced = 0;
+        let powerConsumed = 0;
+        this._walkBindings(this, undefined, (binding) => {
+            if (binding.item.type == "PowerPlant") {
+                powerProduced += binding.extension.powerProduced;
+            }
+
+            powerConsumed += binding.extension.powerConsumed;
+        });
+
+        return 100 * powerConsumed / powerProduced;
+    }
+
+    get emSignature() {
+        let result = 0;
+        this._walkBindings(this, undefined, (binding) => result += binding.extension.emSignature);
+        return result;
+    }
+
     getDefaultItem(path) {
         let container = this.vehicle.defaultItems;
         let entry;
@@ -465,7 +515,7 @@ class VehicleLoadout {
     _walkBindings(container, itemType, callback) {
         for (const binding of Object.values(container.bindings)) {
             if (binding.item) {
-                if (binding.item.type == itemType) {
+                if (!itemType || binding.item.type == itemType) {
                     callback(binding);
                 }
                 this._walkBindings(binding, itemType, callback);
