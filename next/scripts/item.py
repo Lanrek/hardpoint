@@ -6,11 +6,11 @@ def _make_cargo(components_element):
 
     cargo_capacity = 1
     for dimension in ["x", "y", "z"]:
-        scu = float(params_element.single("dimensions").get("@" + dimension, 0)) / 1.25
+        scu = int(float(params_element.single("dimensions").get("@" + dimension, 0)) / 1.25)
         cargo_capacity *= scu
 
     return {
-        "cargo": int(cargo_capacity)
+        "cargo": cargo_capacity
     }
 
 
