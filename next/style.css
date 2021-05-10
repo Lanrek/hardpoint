@@ -17,9 +17,17 @@ body {
 	font-size: 18px;
 }
 
+.details-sections {
+	width: calc(100% - 300px) !important;
+}
+
+.details-cards {
+	width: 300px !important;
+}
+
 .section-header {
-	background-color: #e0e0e0;
-	border-bottom: 4px solid #616161;
+	background-color: #616161;
+	color: white;
 	font-size: 18px;
 }
 

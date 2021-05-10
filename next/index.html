@@ -190,7 +190,7 @@
                                 {{entry.count}}x {{entry.displayName}}
                             </q-item-section>
                             <q-item-section class="text-faded" side v-if="entry.available">
-                                {{entry.count * entry.basePrice}} aUEC
+                                {{_formatNumber(0)(entry.count * entry.basePrice / 1000)}}k
                             </q-item-section>
                             <q-item-section class="text-faded" side v-else>
                                 Unavailable
@@ -206,22 +206,23 @@
                 <h4>{{vehicleLoadout.vehicle.displayName}}</h4>
             </div>
             <div class="row q-pa-md">
-                <div class="col-9">
-                <q-expansion-item
-                    class="q-pa-sm"
-                    header-class="section-header"
-                    default-opened
-                    :label="sectionName"
-                    v-for="sectionName in sectionNames">
-                    <selector-group
-                        :level="1"
-                        :groups="[group]"
-                        v-for="group in makeGroups(sectionBindings[sectionName])"
-                        :key="randomKey()">
-                    </selector-group>
-                </q-expansion-item>
+                <div class="details-sections col-9">
+                    <q-expansion-item
+                        class="q-pa-sm"
+                        header-class="section-header"
+                        dark
+                        default-opened
+                        :label="sectionName"
+                        v-for="sectionName in sectionNames">
+                        <selector-group
+                            :level="1"
+                            :groups="[group]"
+                            v-for="group in makeGroups(sectionBindings[sectionName])"
+                            :key="randomKey()">
+                        </selector-group>
+                    </q-expansion-item>
                 </div>
-                <div class="col-3">
+                <div class="details-cards col-3">
                     <required-items :loadout="vehicleLoadout">
                     </required-items>
                     <div class="q-pa-sm row" v-if="showTurretCoverage">
