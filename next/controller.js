@@ -356,10 +356,6 @@ app.component("item-selector", {
             return distinct.filter(n => n in itemProjections);
         },
         groupArrays() {
-            // Don't recurse more than two layers deep!
-            if (this.level > 2) {
-                return [];
-            }
 
             const filterBindings = (parent) => {
                 const children = Object.values(parent.bindings);
@@ -367,6 +363,13 @@ app.component("item-selector", {
             };
 
             const groups = this.bindings.map(n => BindingGroup.makeGroups(filterBindings(n)));
+
+            // Don't recurse more than two layers deep!
+            if (this.level > 1 && groups[0].length > 0) {
+                console.log("Warning: Found third-level ports with significant types!", groups[0])
+                return [];
+            }
+
             return _.zip(...groups);
         }
     },

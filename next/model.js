@@ -145,7 +145,7 @@ class PowerPlantExtension extends DefaultExtension {
     }
 
     get emSignature() {
-        return this.powerProduced * this._item.power.powerToEM;
+        return this.powerProduced * this._item.power.powerToEM * this._loadout.powerUsagePercent / 100;
     }
 }
 
