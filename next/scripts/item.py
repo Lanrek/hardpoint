@@ -2,12 +2,14 @@ from common import _make_item_port
 
 
 def _make_cargo(components_element):
-    params_element = components_element.single("scitemcargogridparams")
+    cargo_capacity = 0
 
-    cargo_capacity = 1
-    for dimension in ["x", "y", "z"]:
-        scu = int(float(params_element.single("dimensions").get("@" + dimension, 0)) / 1.25)
-        cargo_capacity *= scu
+    params_element = components_element.single("scitemcargogridparams")
+    if params_element["@miningonly"] != "1":
+        cargo_capacity = 1
+        for dimension in ["x", "y", "z"]:
+            scu = int(float(params_element.single("dimensions").get("@" + dimension, 0)) / 1.25)
+            cargo_capacity *= scu
 
     return {
         "cargo": cargo_capacity

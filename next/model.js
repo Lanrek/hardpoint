@@ -378,12 +378,14 @@ class ItemBinding {
             
             this.bindings = {};
             for (const port of Object.values(this.item.ports)) {
-                this.bindings[port.name] = new ItemBinding(this._loadout, port, this);
+                const child = new ItemBinding(this._loadout, port, this);
 
                 const defaultItemName = _.get(this, "item.defaultItems." + port.name + ".itemName");
                 if (defaultItemName && defaultItemName in allItems) {
-                    this.bindings[port.name].setItem(defaultItemName);
+                    child.setItem(defaultItemName);
                 }
+
+                this.bindings[port.name] = child;
             }
         }
         else {

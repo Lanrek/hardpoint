@@ -362,20 +362,8 @@ app.component("item-selector", {
             }
 
             const filterBindings = (parent) => {
-                let children = Object.values(parent.bindings);
-
-                // TODO Make this into an allowlist instead; it'll save the maintenance headache.
-    
-                // Hide embbedded cargo grids since they're fixed.
-                let filtered = children.filter(n => n.port.types.some(t => t.type != "Cargo"));
-    
-                // Hide magazine slots until they're worth customizing; they're distinguished by lack of types.
-                filtered = filtered.filter(n => n.port.types.length);
-    
-                // Also hide weapon attachments until they're implemented.
-                filtered = filtered.filter(n => n.port.types.some(t => t.type != "WeaponAttachment"));
-    
-                return filtered;
+                const children = Object.values(parent.bindings);
+                return children.filter(n => n.port.types.some(t => significantTypes.includes(t.type)));
             };
 
             const groups = this.bindings.map(n => BindingGroup.makeGroups(filterBindings(n)));
@@ -442,7 +430,9 @@ app.component("required-items", {
             const walkBindings = (container) => {
                 for (const binding of Object.values(container.bindings)) {
                     if (binding.itemName) {
-                        result[binding.itemName] = (result[binding.itemName] || 0) + 1;
+                        if (!binding.uneditable) {
+                            result[binding.itemName] = (result[binding.itemName] || 0) + 1;
+                        }
                         walkBindings(binding);
                     }
                 }
@@ -473,6 +463,15 @@ app.component("required-items", {
     }
 });
 
+const sectionTypes = {
+    "Missiles": ["MissileLauncher", "Missile"],
+    "Guns": ["WeaponGun", "Turret", "TurretBase"],
+    "Systems": ["Cooler", "Shield", "PowerPlant", "QuantumDrive", "FuelIntake"],
+    "Flight": ["MainThruster", "ManneuverThruster"]
+};
+const significantTypes = _.flatten(Object.values(sectionTypes));
+
+
 app.component("vehicle-details", {
     template: "#vehicle-details",
     data: function() {
@@ -483,12 +482,7 @@ app.component("vehicle-details", {
             sectionNames: ["Guns", "Missiles", "Systems", "Flight"],
             // Also defines the section precedence order; highest precedence is first.
             // Rockets are classified as WeaponGun but generally share MissileLauncher hardpoints.
-            sectionTypes: {
-                "Missiles": ["MissileLauncher"],
-                "Guns": ["WeaponGun", "Turret", "TurretBase"],
-                "Systems": ["Cooler", "Shield", "PowerPlant", "QuantumDrive", "FuelIntake"],
-                "Flight": ["MainThruster", "ManneuverThruster"]
-            }
+            sectionTypes: sectionTypes
         };
     },
     watch: {
