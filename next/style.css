@@ -25,6 +25,22 @@ body {
 	width: 300px !important;
 }
 
+.custom-loadout .q-btn {
+	font-size: 13px;
+	line-height: 1em;
+	padding: 8px;
+	min-height: 0;
+	margin-right: 8px;
+}
+
+.custom-loadout .delete-button {
+	padding: 4px;
+}
+
+.custom-loadout .delete-button .q-icon {
+	font-size: 21px;
+}
+
 .section-header {
 	background-color: #616161;
 	color: white;

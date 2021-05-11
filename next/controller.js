@@ -1,177 +1,3 @@
-var hashString = function(str) {
-    let hash = 0;
-    if (!str) {
-        return hash;
-    }
-
-    for (let i = 0; i < str.length; i++) {
-        const c = str.charCodeAt(i);
-        hash = (hash * 31) + c;
-        hash |= 0;
-    }
-
-    return hash;
-};
-
- // Align to 24 bits for nice alignment with four base64 characters.
-var encodeInt24 = function(num) {
-    const unencoded =
-        String.fromCharCode((num & 0xff0000) >> 16) +
-        String.fromCharCode((num & 0xff00) >> 8) +
-        String.fromCharCode(num & 0xff);
-
-    return btoa(unencoded).replace(/\+/g, '-').replace(/\//g, '_');
-}
-
-var decodeSmallInt = function(str) {
-    const start = "A";
-    const num = str.charCodeAt(0);
-    return num - start.charCodeAt(0);
-}
-
-var hashAndEncode = function(str) {
-    const hash = hashString(str);
-    return encodeInt24(hash);
-}
-
-// Limited to ints between 0 and 25.
-var encodeSmallInt = function(num) {
-    const start = "A";
-    return String.fromCharCode(start.charCodeAt(0) + num);
-}
-
-// Serialization format: <version><bindingList> with the vehicleName alongside
-// <bindingList>: <count>{<typeDiscriminator><groupName or portName><componentName><bindingList of children>}
-// All string keys and values are hashed to 24 bits. All elements are individually base64 encoded.
-const serialize = (loadout) => {
-    let str = "2";
-
-    const walk = (bindings) => {
-        const serializeBinding = (binding) => {
-            const children = walk(binding.bindings);
-            return "B" + hashAndEncode(binding.port.name) + hashAndEncode(binding.itemName) + children;
-        };
-
-        const serializeGroup = (group) => {
-            const template = group.members[0];
-
-            // Select the children for the template by preferring those that were customized. This ensures any child
-            // set on a group is serialized, and doesn't rely on defaults which are inconsistent within the group.
-            // TODO This probably isn't correct for third-level ports...
-            let childBindings = {};
-            for (const portName of Object.keys(template.bindings)) {
-                const customized = group.members.map(m => m.bindings[portName]).find(b => b.customized);
-                childBindings[portName] = customized || template.bindings[portName];
-            }
-
-            const children = walk(childBindings);
-            return "G" + hashAndEncode(group.name) + hashAndEncode(template.itemName) + children;
-        };
-
-        let result = "";
-        let count = 0;
-        const groups = BindingGroup.makeGroups(Object.values(bindings));
-        let remaining = Object.values(bindings).filter(b => b.customized);
-        remaining = remaining.filter(b => b.port.types.some(t => t.type in itemProjections));
-
-        for (const group of groups.filter(g => g.members.length > 1)) {
-            if (group.identical && group.members.some(m => remaining.some(r => r.port.name == m.port.name))) {
-                result += serializeGroup(group);
-                count += 1;
-                remaining = remaining.filter(r => !group.members.some(g => g.port.name == r.port.name));
-            }
-        }
-
-        for (const binding of remaining) {
-            result += serializeBinding(binding);
-            count += 1;
-        }
-
-        return encodeSmallInt(count) + result;
-    };
-
-    str += walk(loadout.bindings);
-    return str;
-}
-
-const deserialize = (str, vehicleName) => {
-    let prefix = 1;
-    const version = str.substr(0, 1);
-
-    if (version == "1") {
-        // Skip the old inline shipId.
-        prefix += 12;
-    }
-
-    let loadout = new VehicleLoadout(vehicleName);
-
-    const findItem = (hashedName, prototypeBinding) => {
-        return prototypeBinding.getMatchingItems().map(n => n.item.name).find(k => hashAndEncode(k) == hashedName);
-    };
-
-    const walk = (containers, index) => {
-        const count = decodeSmallInt(str.substr(index, 1));
-        index += 1;
-
-        for (let current = 0; current < count; current += 1) {
-            const discriminator = str.substr(index, 1);
-            const name = str.substr(index + 1, 4);
-            const value = str.substr(index + 5, 4);
-            index += 9;
-
-            let bindings = [];
-            if (discriminator == "B") {
-                const portName = Object.keys(containers[0].bindings).find(k => hashAndEncode(k) == name);
-
-                for (const container of containers) {
-                    const binding = container.bindings[portName];
-                    bindings.push(binding);
-                }
-            }
-            else if (discriminator == "G") {
-                const groups = BindingGroup.makeGroups(Object.values(containers[0].bindings));
-                const groupName = groups.map(g => g.name).find(n => hashAndEncode(n) == name);
-
-                for (const container of containers) {
-                    const prototypeGroup = groups.find(g => g.name == groupName);
-                    for (const portName of prototypeGroup.members.map(n => n.port.name)) {
-                        bindings.push(container.bindings[portName]);
-                    }
-                }
-            }
-            else {
-                throw new Error("Invalid discriminator '" + discriminator + "'");
-            }
-
-            const itemName = findItem(value, bindings[0]);
-
-            // Don't set the item if it didn't change, because that would clear the child ports unnecessarily.
-            // Set it if it's changing for other group members, though.
-            if (!bindings.every(b => b.itemName == itemName)) {
-                bindings.forEach(b => b.setItem(itemName));
-            }
-
-            index = walk(bindings, index);
-        }
-
-        return index;
-    };
-
-    walk([loadout], prefix);
-    return loadout;
-}
-
-const deserializeV1VehicleName = (str) => {
-    const hashedbaseName = str.substr(1, 4);
-    const hashedModificationName = str.substr(5, 4);
-    const match = Object.values(allVehicles).find(n =>
-        hashAndEncode(n.baseName) == hashedbaseName &&
-        hashAndEncode(n.modificationName) == hashedModificationName);
-    if (match) {
-        return match.name;
-    }
-}
-
 class BindingGroup {
     constructor(members) {
         this.members = members;
@@ -262,7 +88,7 @@ const app = Vue.createApp({
             for (const [name, vehicle] of Object.entries(allVehicles)) {
                 result.push({
                     name: vehicle.displayName,
-                    target: { name: "loadout", params: { vehicleName: name }}
+                    target: { name: "vehicle", params: { vehicleName: name }}
                 });
             }
 
@@ -404,13 +230,15 @@ app.component("item-selector", {
     }
 });
 
-app.component("required-items", {
-    template: "#required-items",
+app.component("custom-loadout", {
+    template: "#custom-loadout",
     props: {
         loadout: VehicleLoadout
     },
     data: function() {
         return {
+            saveDialog: false,
+            loadoutName: this.loadout.loadoutName
         };
     },
     computed: {
@@ -463,6 +291,37 @@ app.component("required-items", {
             result = result.filter(n => n.count > 0);
             return result;
         }
+    },
+    methods: {
+        clickSave() {
+            if (this.$route.name == "loadout") {
+                loadoutStorage.set(this.loadout.vehicle.name, this.loadoutName, this.loadout);
+            }
+            else {
+                this.saveDialog = true;
+            }
+        },
+        saveLoadout() {
+            loadoutStorage.set(this.loadout.vehicle.name, this.loadoutName, this.loadout);
+            this.$router.replace({
+                name: "loadout",
+                params: {
+                    vehicleName: this.loadout.vehicle.name,
+                    loadoutName: this.loadoutName,
+                    serialized: serialize(this.loadout)
+                }
+            });
+        },
+        removeLoadout() {
+            loadoutStorage.set(this.loadout.vehicle.name, this.loadoutName, undefined);
+            this.$router.replace({
+                name: "vehicle",
+                params: {
+                    vehicleName: this.loadout.vehicle.name,
+                    serialized: serialize(this.loadout)
+                }
+            });
+        }
     }
 });
 
@@ -473,7 +332,6 @@ const sectionTypes = {
     "Flight": ["MainThruster", "ManneuverThruster"]
 };
 const significantTypes = _.flatten(Object.values(sectionTypes));
-
 
 app.component("vehicle-details", {
     template: "#vehicle-details",
@@ -495,7 +353,11 @@ app.component("vehicle-details", {
 
                 let url = new URL(location.href);
                 const previous = url.href;
-                url.hash = url.hash.split("/").slice(0, 3).concat(serialized).join("/");
+                let depth = 3;
+                if (this.$route.name == "loadout") {
+                    depth += 2;
+                }
+                url.hash = url.hash.split("/").slice(0, depth).concat(serialized).join("/");
 
                 if (url != previous) {
                     // Hack around the router not tracking changes to the URL and breaking the back button.
@@ -564,9 +426,12 @@ app.component("vehicle-details", {
     },
     created() {
         setLoadout = () => {
-            if (this.$route.name == "loadout") {
+            if (this.$route.name == "vehicle" || this.$route.name == "loadout") {
                 if (this.$route.params.serialized) {
-                    this.vehicleLoadout = deserialize(this.$route.params.serialized, this.$route.params.vehicleName)
+                    this.vehicleLoadout = deserialize(
+                        this.$route.params.serialized,
+                        this.$route.params.vehicleName,
+                        this.$route.params.loadoutName)
                 }
                 else {
                     this.vehicleLoadout = new VehicleLoadout(this.$route.params.vehicleName);
@@ -588,14 +453,21 @@ app.component("vehicle-grid", {
                 rowsPerPage: 0
             },
 
-            searchText: null,
-
-            columns: vehicleColumns
+            searchText: null
         };
     },
     computed: {
+        columns() {
+            let columns = vehicleColumns;
+            if (!loadoutStorage.all.length) {
+                columns = columns.filter(n => n.name != "loadoutName");
+            }
+
+            return columns;
+        },
         loadouts() {
-            return _.sortBy(Object.values(defaultLoadouts), "vehicle.name");
+            const combined = Object.values(defaultLoadouts).concat(loadoutStorage.all)
+            return _.sortBy(combined, "loadoutName", "vehicle.name");
         }
     },
     methods: {
@@ -603,18 +475,37 @@ app.component("vehicle-grid", {
             return rows.filter(n => n.vehicle.displayName.toLowerCase().includes(this.searchText.toLowerCase()));
         },
         navigate(row) {
-            this.$router.push({ name: "loadout", params: { vehicleName: row.vehicle.name }});
+            if (row.loadoutName) {
+                this.$router.push({
+                    name: "loadout",
+                    params: {
+                        vehicleName: row.vehicle.name,
+                        loadoutName: row.loadoutName,
+                        serialized: serialize(row)
+                    }
+                });
+            }
+            else {
+                this.$router.push({ name: "vehicle", params: { vehicleName: row.vehicle.name }});
+            }
         }
     }
 });
 const vehicleGrid = app.component("vehicle-grid");
 
+const loadoutStorage = new LoadoutStorage();
+
 const router = VueRouter.createRouter({
     history: VueRouter.createWebHashHistory(),
     routes: [
         {
+            name: "vehicle",
+            path: "/vehicles/:vehicleName/:serialized?",
+            component: vehicleDetails
+        },
+        {
             name: "loadout",
-            path: "/loadouts/:vehicleName/:serialized?",
+            path: "/vehicles/:vehicleName/loadouts/:loadoutName/:serialized?",
             component: vehicleDetails
         },
         {
@@ -633,7 +524,7 @@ const router = VueRouter.createRouter({
                 }
 
                 return {
-                    name: "loadout",
+                    name: "vehicle",
                     params: {
                         vehicleName: vehicleName,
                         serialized: to.params.serialized
@@ -649,7 +540,7 @@ const router = VueRouter.createRouter({
                 }
 
                 return {
-                    name: "loadout",
+                    name: "vehicle",
                     params: {
                         vehicleName: to.params.vehicleName
                     }

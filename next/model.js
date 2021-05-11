@@ -314,27 +314,27 @@ class ItemBinding {
     }
 
     get path() {
-		let result = [];
-		let binding = this;
+        let result = [];
+        let binding = this;
 
-		while (binding) {
-			result.unshift(binding.port.name);
-			binding = binding.parent;
-		}
+        while (binding) {
+            result.unshift(binding.port.name);
+            binding = binding.parent;
+        }
 
-		return result;
-	}
+        return result;
+    }
     
     get uneditable() {
         return this.port.flags && this.port.flags.includes("uneditable");
     }
 
-	get customized() {
-		// TODO This doesn't handle that case where a port has been set back to its default component,
-		// but now has empty child ports -- it shows as not customized, although the children are changed.
-		const hasDefaultItem = this.itemName != this._loadout.getDefaultItem(this.path);
-		return hasDefaultItem || Object.values(this.bindings).some(n => n.customized);
-	}
+    get customized() {
+        // TODO This doesn't handle that case where a port has been set back to its default component,
+        // but now has empty child ports -- it shows as not customized, although the children are changed.
+        const hasDefaultItem = this.itemName != this._loadout.getDefaultItem(this.path);
+        return hasDefaultItem || Object.values(this.bindings).some(n => n.customized);
+    }
 
     getMatchingItems(typeFilter=undefined) {
         const matchesType = (portType, itemType, itemSubtype) => {
@@ -365,8 +365,8 @@ class ItemBinding {
             return true;
         };
 
-		const keys = Object.keys(allItems);
-		const filtered = keys.filter(n => matchesPort(allItems[n]));
+        const keys = Object.keys(allItems);
+        const filtered = keys.filter(n => matchesPort(allItems[n]));
         return filtered.map(n => allItems[n]).map(n => new ExtendedItem(n, this._makeExtension(n)));
     }
 
@@ -402,13 +402,14 @@ class ItemBinding {
 }
 
 class VehicleLoadout {
-	constructor(vehicleName) {
+    constructor(vehicleName, loadoutName=undefined) {
         this.vehicle = allVehicles[vehicleName];
+        this.loadoutName = loadoutName;
 
         this.bindings = {};
-		for (const port of this.vehicle.ports) {
-			this.bindings[port.name] = new ItemBinding(this, port, null);
-		}
+        for (const port of this.vehicle.ports) {
+            this.bindings[port.name] = new ItemBinding(this, port, null);
+        }
 
         const setDefaultItems = (container) => {
             for (const binding of Object.values(container.bindings)) {
@@ -423,14 +424,14 @@ class VehicleLoadout {
     }
 
     get manufacturerDisplayName() {
-		const split = this.vehicle.displayName.split(/[ _]/);
-		return split[0].trim();
-	}
+        const split = this.vehicle.displayName.split(/[ _]/);
+        return split[0].trim();
+    }
 
-	get vehicleDisplayName() {
-		const split = this.vehicle.displayName.split(/[ _]/);
-		return split.slice(1).join(" ").trim();
-	}
+    get vehicleDisplayName() {
+        const split = this.vehicle.displayName.split(/[ _]/);
+        return split.slice(1).join(" ").trim();
+    }
 
     get sizeCategory() {
         if (!this.flightController.item) {

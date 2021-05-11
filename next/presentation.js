@@ -461,6 +461,13 @@ const vehicleColumns = [
         sortable: true
     },
     {
+        name: "loadoutName",
+        label: "Loadout",
+        field: row => row.loadoutName,
+        align: "left",
+        sortable: true
+    },
+    {
         name: "size",
         label: "Size",
         field: row => row.sizeCategory,

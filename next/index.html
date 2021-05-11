@@ -29,7 +29,7 @@
                                 </q-item>
                             </q-list>
                         </q-btn-dropdown>
-                        <q-btn stretch flat no-caps label="Comparison" to="/"></q-btn>
+                        <q-btn stretch flat no-caps label="Vehicle Comparison" to="/"></q-btn>
                     </q-toolbar>
                 </q-header>
 
@@ -178,11 +178,35 @@
             </div>
         </template>
 
-        <template id="required-items">
-            <div class="q-pa-sm row" v-if="requiredItems.length > 0">
-                <q-card class="col-12 row">
-                    <q-item class="col-12 card-title">
-                        Required Items
+        <template id="custom-loadout">
+            <div class="custom-loadout q-pa-sm" v-if="requiredItems.length > 0">
+                <q-card>
+                    <q-item class="card-title">
+                        Custom Loadout
+                    </q-item>
+                    <q-item>
+                        <div>
+                            <q-btn
+                                disabled
+                                no-caps
+                                color="primary"
+                                label="Share Link">
+                            </q-btn>
+                            <q-btn
+                                @click="clickSave()"
+                                no-caps
+                                color="primary"
+                                label="Save Locally">
+                            </q-btn>
+                            <q-btn
+                                class="delete-button"
+                                @click="removeLoadout()"
+                                no-caps
+                                color="negative"
+                                icon="delete"
+                                v-if="$route.name == 'loadout'">
+                            </q-btn>
+                        </div>
                     </q-item>
                     <q-list dense class="full-width">
                         <q-item v-for="entry in requiredItems">
@@ -198,12 +222,38 @@
                         </q-item>
                     </q-list>
                 </q-card>
+
+                <q-dialog v-model="saveDialog">
+                    <q-card style="min-width: 350px">
+                        <q-card-section>
+                            <div class="text-h6">Loadout Name</div>
+                        </q-card-section>
+
+                        <q-card-section class="q-pt-none">
+                            <q-input
+                                dense
+                                v-model="loadoutName"
+                                autofocus
+                                :rules="[val => val && val.length <= 24 || 'Maximumum 24 characters']"
+                                @keyup.enter="saveLoadout()">
+                            </q-input>
+                        </q-card-section>
+
+                        <q-card-actions align="right" class="text-primary">
+                            <q-btn no-caps color="primary" label="Cancel" v-close-popup></q-btn>
+                            <q-btn no-caps color="primary" :disabled="!loadoutName" label="Save" @click="saveLoadout()" v-close-popup></q-btn>
+                        </q-card-actions>
+                    </q-card>
+                </q-dialog>
             </div>
         </template>
 
         <template id="vehicle-details">
             <div class="subheader">
-                <h4>{{vehicleLoadout.vehicle.displayName}}</h4>
+                <h4>
+                    {{vehicleLoadout.vehicle.displayName}}
+                    <template v-if="$route.params.loadoutName"> / {{$route.params.loadoutName}}</template>
+                </h4>
             </div>
             <div class="row q-pa-md">
                 <div class="details-sections col-9">
@@ -223,11 +273,11 @@
                     </q-expansion-item>
                 </div>
                 <div class="details-cards col-3">
-                    <required-items :loadout="vehicleLoadout">
-                    </required-items>
-                    <div class="q-pa-sm row" v-if="showTurretCoverage">
-                        <q-card class="col-12 row">
-                            <q-item class="col-12 card-title">
+                    <custom-loadout :key="randomKey()" :loadout="vehicleLoadout">
+                    </custom-loadout>
+                    <div class="q-pa-sm" v-if="showTurretCoverage">
+                        <q-card>
+                            <q-item class="card-title">
                                 Turret Coverage
                             </q-item>
                             <coverage-display :loadout="vehicleLoadout">
@@ -263,7 +313,7 @@
                         <template v-slot:prepend>
                         <q-icon name="search"></q-icon>
                         </template>
-                    </q-input>          
+                    </q-input>
                 </div>
                 <q-table
                     class="vehicle-grid"
@@ -305,6 +355,7 @@
 
         <script src="model.js"></script>
         <script src="presentation.js"></script>
+        <script src="storage.js"></script>
         <script src="controller.js"></script>
         <script src="coverage.js"></script>
 
