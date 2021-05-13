@@ -350,7 +350,7 @@ def make_item(item_element):
             if heat_element:
                 baseline["heat"] = {
                     "temperatureToIR": float(heat_element.get("@temperaturetoir", 0)),
-                    "overheatTemperature": float(heat_element.get("@overheattemperature", 0)),
+                    "maxTemperature": float(heat_element.get("@maxtemperature", 0)),
                     "specificHeatCapacity": float(heat_element.get("@specificheatcapacity", 0)),
                     "mass": float(heat_element.get("@mass", 0)),
                     "maxCoolingRate": float(heat_element.get("@maxcoolingrate", 0)),
