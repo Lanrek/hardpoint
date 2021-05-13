@@ -7,6 +7,13 @@ body {
 	font-size: 13px;
 }
 
+.compact {
+	font-size: 13px;
+	line-height: 1em;
+	padding: 8px;
+	min-height: 0;
+}
+
 .text-faded {
 	color: #616161;
 }
@@ -23,22 +30,6 @@ body {
 
 .details-cards {
 	width: 300px !important;
-}
-
-.custom-loadout .q-btn {
-	font-size: 13px;
-	line-height: 1em;
-	padding: 8px;
-	min-height: 0;
-	margin-right: 8px;
-}
-
-.custom-loadout .delete-button {
-	padding: 4px;
-}
-
-.custom-loadout .delete-button .q-icon {
-	font-size: 21px;
 }
 
 .section-header {
@@ -221,11 +212,4 @@ body {
 
 .level2 .group-indicator {
 	left: var(--spacer-width);
-}
-
-.group-indicator .q-btn {
-	font-size: 13px;
-	line-height: 1em;
-	padding: 8px;
-	min-height: 0;
 }

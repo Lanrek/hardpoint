@@ -173,57 +173,69 @@ const deserializeV1VehicleName = (str) => {
 }
 
 class LoadoutStorage {
-	constructor() {
-        const previous = localStorage.getItem("loadouts") || "{}";
-		this._stored = JSON.parse(previous);
-
+    constructor() {
         this._loadouts = {};
-        for (const [key, value] of Object.entries(this._stored)) {
-            this._loadouts[key] = deserialize(value.serialized, value.vehicleName, value.loadoutName);
+
+        try {
+            for (const [storageKey, value] of Object.entries(localStorage)) {
+                try {
+                    const entry = JSON.parse(value);
+
+                    // Migrate old saved loadouts.
+                    if (!entry.vehicleName) {
+                        entry.vehicleName = deserializeV1VehicleName(entry.value);
+                        entry.loadoutName = entry.name;
+                        entry.serialized = serialize(deserialize(entry.value, entry.vehicleName));
+
+                        this.set(entry.vehicleName, entry.loadoutName, entry.serialized);
+                        localStorage.removeItem(storageKey);
+                    }
+
+                    const key = this._make_key(entry.vehicleName, entry.loadoutName);
+                    this._loadouts[key] = deserialize(entry.serialized, entry.vehicleName, entry.loadoutName);
+                }
+                catch (ex) {
+                    console.warn("Failed to read loadout", ex);
+                }
+            }
         }
-	}
+        catch (ex) {
+            console.warn("Failed to read local storage", ex);
+        }
+    }
 
     get all() {
         return Object.values(this._loadouts);
     }
 
-    get(vehicleName, loadoutName) {
-        return this._loadouts[this._make_key(vehicleName, loadoutName)];
-    }
-
-    set(vehicleName, loadoutName, vehicleLoadout) {
+    set(vehicleName, loadoutName, serialized) {
         const key = this._make_key(vehicleName, loadoutName);
 
-        if (vehicleLoadout) {
-            const serialized = serialize(vehicleLoadout);
-            this._stored[key] = {
-                loadoutName: loadoutName,
-                vehicleName: vehicleName,
-                serialized: serialized
-            };
+        try {
+            if (serialized) {
+                const entry = {
+                    vehicleName: vehicleName,
+                    loadoutName: loadoutName,
+                    serialized: serialized
+                };
 
-            // Make a copy to avoid unintentional mutation of the cache.
-            this._loadouts[key] = deserialize(serialized, vehicleName, loadoutName);
+                // Make a copy to avoid unintentional mutation of the cache.
+                this._loadouts[key] = deserialize(serialized, vehicleName, loadoutName);
+
+                localStorage.setItem(key, JSON.stringify(entry));
+            }
+            else {
+                delete this._loadouts[key];
+
+                localStorage.removeItem(key);
+            }
         }
-        else {
-            delete this._stored[key];
-            delete this._loadouts[key];
+        catch (ex) {
+            console.warn("Failed to write local storage", ex);
         }
-        
-        this._flush();
     }
 
     _make_key(vehicleName, loadoutName) {
         return vehicleName + "." + loadoutName;
-    }
-
-    _flush() {
-        try {
-			localStorage.setItem("loadouts", JSON.stringify(this._stored));
-		}
-		catch (ex) {
-			console.warn(ex);
-			console.warn("Write to local storage failed", this._stored);
-		}
     }
 }

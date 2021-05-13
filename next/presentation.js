@@ -632,7 +632,7 @@ const spaceSummaryCards = {
             units: "deg/sec"
         },
         {
-            name: "Main Acceleration",
+            name: "Forward Acceleration",
             value: "mainAccelerationGs",
             units: "Gs"
         },

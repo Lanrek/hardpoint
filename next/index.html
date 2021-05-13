@@ -55,6 +55,7 @@
                     {{prototype.members.length}}x
                     <br />
                     <q-btn
+                        class="compact"
                         @click="toggle"
                         no-caps
                         color="primary"
@@ -185,28 +186,37 @@
                         Custom Loadout
                     </q-item>
                     <q-item>
-                        <div>
-                            <q-btn
-                                disabled
-                                no-caps
-                                color="primary"
-                                label="Share Link">
-                            </q-btn>
-                            <q-btn
-                                @click="clickSave()"
-                                no-caps
-                                color="primary"
-                                label="Save Locally">
-                            </q-btn>
-                            <q-btn
-                                class="delete-button"
-                                @click="removeLoadout()"
-                                no-caps
-                                color="negative"
-                                icon="delete"
-                                v-if="$route.name == 'loadout'">
-                            </q-btn>
-                        </div>
+                        <q-item-section>
+                            <div>
+                                <q-btn
+                                    class="compact"
+                                    disabled
+                                    no-caps
+                                    color="primary"
+                                    label="Share Link">
+                                </q-btn>
+                            </div>
+                        </q-item-section>
+                        <q-item-section side>
+                            <div>
+                                <q-btn
+                                    class="compact"
+                                    @click="clickSave()"
+                                    no-caps
+                                    color="primary"
+                                    label="Save"
+                                    v-if="$route.name == 'vehicle'">
+                                </q-btn>
+                                <q-btn
+                                    class="compact"
+                                    @click="removeLoadout()"
+                                    no-caps
+                                    color="negative"
+                                    label="Delete"
+                                    v-else>
+                                </q-btn>
+                            </div>
+                        </q-item-section>
                     </q-item>
                     <q-list dense class="full-width">
                         <q-item v-for="entry in requiredItems">
@@ -234,7 +244,7 @@
                                 dense
                                 v-model="loadoutName"
                                 autofocus
-                                :rules="[val => val && val.length <= 24 || 'Maximumum 24 characters']"
+                                :rules="[val => !val || val.length <= 24 || 'Maximum 24 characters']"
                                 @keyup.enter="saveLoadout()">
                             </q-input>
                         </q-card-section>
@@ -327,9 +337,9 @@
                     <template v-slot:body-cell-edit="props">
                         <q-td :props="props">
                             <q-btn
+                                class="compact"
                                 @click="navigate(props.row)"
                                 no-caps
-                                size="sm"
                                 color="primary"
                                 label="Edit">
                             </q-btn>

@@ -294,31 +294,28 @@ app.component("custom-loadout", {
     },
     methods: {
         clickSave() {
-            if (this.$route.name == "loadout") {
-                loadoutStorage.set(this.loadout.vehicle.name, this.loadoutName, this.loadout);
-            }
-            else {
-                this.saveDialog = true;
-            }
+            this.saveDialog = true;
         },
         saveLoadout() {
-            loadoutStorage.set(this.loadout.vehicle.name, this.loadoutName, this.loadout);
+            const serialized = serialize(this.loadout);
+            loadoutStorage.set(this.loadout.vehicle.name, this.loadoutName, serialized);
             this.$router.replace({
                 name: "loadout",
                 params: {
                     vehicleName: this.loadout.vehicle.name,
                     loadoutName: this.loadoutName,
-                    serialized: serialize(this.loadout)
+                    serialized: serialized
                 }
             });
         },
         removeLoadout() {
+            const serialized = serialize(this.loadout);
             loadoutStorage.set(this.loadout.vehicle.name, this.loadoutName, undefined);
             this.$router.replace({
                 name: "vehicle",
                 params: {
                     vehicleName: this.loadout.vehicle.name,
-                    serialized: serialize(this.loadout)
+                    serialized: serialized
                 }
             });
         }
@@ -364,6 +361,10 @@ app.component("vehicle-details", {
                     history.state.current = url.hash.replace("#", "");
 
                     history.replaceState(history.state, "", url.href);
+                }
+
+                if (this.$route.name == "loadout") {
+                    loadoutStorage.set(this.vehicleLoadout.vehicle.name, this.$route.params.loadoutName, serialized);
                 }
             },
             deep: true
