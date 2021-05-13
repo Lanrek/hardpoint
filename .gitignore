@@ -1,1 +1,5 @@
-snapshots
+__pycache__/
+extracted/
+
+.vscode
+todo.txt

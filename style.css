@@ -1,470 +1,231 @@
 :root {
-	--iview-primary: #2d8cf0;
-	--iview-primary-light: #5cadff;
-	--iview-content: #515a6e;
-	--iview-background: #f8f8f9;
-
-	--title-background: #1c2438;
-	--title-text: rgba(255,255,255,.7);
-
-	--section-header-background: #495060;
-
-	--min-width: 920px;
-	--max-width: 1200px;
+	--spacer-width: 80px;
+	--spacer-inset: 8px;
 }
 
-.large-icon-button {
-	height: 32px;
-	font-size: 24px;
-	line-height: normal;
-	padding-top: 0px;
-	padding-bottom: 0px;
-	padding-left: 3px;
-	padding-right: 3px;
+body {
+	font-size: 13px;
 }
 
-.large-icon-button .ivu-icon {
-	margin-top: -2px;
+.q-footer img {
+	vertical-align:top;
+	padding: 4px 8px;
 }
 
-.horizontal-buttons button + button {
-    margin-left: 16px;
-}
-
-.ivu-checkbox-wrapper {
-	margin-right: 0px;
-}
-
-.spaced-row {
-	margin-bottom: 16px;
-}
-
-.spaced-row:last-child {
-	margin-bottom: 0px;
- }
-
-.ship-list-controls {
-	height: 32px;
-}
-
-.ship-list-controls .ivu-input {
-	background-color: var(--iview-background);
-}
-
-.summary-value {
-	color: #B10DC9;
-	font-weight: bolder;
-}
-
-.summary-value-increase {
-	color: #006c49;
-	font-weight: bolder;
-}
-
-.summary-value-decrease {
-	color: DarkRed;
-	font-weight: bolder;
-}
-
-.summary-value-equal {
-	color: var(--iview-content);
-	font-weight: bolder;
-}
-
-.nav-button {
-	text-align: center;
-	width: 100%;
-	margin-bottom: 16px;
-}
-
-.right {
-	text-align: right;
-}
-
-.component-details {
-	padding-top: 8px;
-}
-
-/* Cloaking technology. */
-[v-cloak] .cloaked {
-	display: none;
-}
-
-[v-cloak] .anticloaked {
-	display: block;
-}
-
-.anticloaked {
-	display: none;
-}
-
-/* Splash screen that masks the loading mess. */
-.splash {
-	font-size: 2em;
-	position: absolute;
-	left: 50%;
-	top: 50%;
-	-webkit-transform: translate(-50%, -50%);
-	transform: translate(-50%, -50%);
-}
-
-/* Fancy spinner for the splash screen! */
-.lds-dual-ring {
-	position: relative;
-	left: calc(50% - 40px);
+.footer-text {
 	display: inline-block;
-	width: 80px;
-	height: 80px;
+	vertical-align: top;
+	color: #bdbdbd;
+	padding: 16px 8px;
 }
 
-.lds-dual-ring:after {
-	content: " ";
-	display: block;
-	width: 64px;
-	height: 64px;
-	margin: 8px;
-	border-radius: 50%;
-	border: 6px solid #495060;
-	border-color: #495060 transparent #495060 transparent;
-	animation: lds-dual-ring 1.2s linear infinite;
+.footer-text a {
+	color: #bdbdbd;
 }
 
-@keyframes lds-dual-ring {
-	0% {
-		transform: rotate(0deg);
-	}
-	100% {
-		transform: rotate(360deg);
-	}
+.version {
+	padding-left: 24px;
+	color: #bdbdbd;
+	font-size: 18px;
 }
 
-/* Sticky summary table on the ship details page. */
-.sticky-summary {
-	padding-bottom: 16px;
-	position: -webkit-sticky;
-	position: sticky;
-	top: 0;
-	z-index: 101;
-	background-color: white;
+.details-sections {
+	width: calc(100% - 300px) !important;
 }
 
-.sticky-summary tr td {
-	border-bottom: 0px;
+.compact {
+	font-size: 13px;
+	line-height: 1em;
+	padding: 8px;
+	min-height: 0;
 }
 
-.sticky-summary .ivu-table-cell .ivu-tooltip-rel {
-	padding-top: 15px;
-	padding-bottom: 15px;
+.text-faded {
+	color: #616161;
 }
 
-/* 3D turret coverage display canvas and container. */
-.coverage-display {
-	border: 1px solid #dcdee2;
-	text-align: center;
+.details-cards {
+	width: 300px !important;
 }
 
-.coverage-display .title {
-	text-align: left;
-	background-color: var(--section-header-background);
-	height: 38px;
-	border-bottom: 1px solid #e8eaec;
-	padding-left: 8px;
-    padding-right: 8px;
+.section-header {
+	background-color: #616161;
 	color: white;
-	font-size: 12px;
-	font-weight: bold;
+	font-size: 18px;
 }
 
-.coverage-display .title:before {
-	content: ' ';
-	display: inline-block;
-	height: 100%;
-	vertical-align: middle;
+/* Item and power selector for the loadout page. */
+
+.selector {
+	align-items: center;
 }
 
-.coverage-display .ivu-radio-group {
-	margin: 8px;
-	margin-left: auto;
-	margin-right: auto;
+.selector .q-expansion-item {
+	border-radius: 4px;
+	border: 2px solid #bdbdbd;
+	background-color: #fafafa;
+	width: calc(100% - 76px);
 }
 
-.coverage-display .ivu-radio-group .ivu-radio-group-item {
-	height: 20px;
-	line-height: 20px;
+.selector-header {
+	justify-content: start;
+	min-height: 60px;
 }
 
-.coverage-display .canvas-container {
-	margin: 8px;
+.selector-header .q-item {
+	min-height: 30px;
 }
 
-/* Component selector header and power selector. */
-.component-selector-header {
-	margin-bottom: 8px;
+.selector-table {
+	background-color: #fafafa;
+}
+
+.selector-table-title {
+	font-size: 18px;
 }
 
 .power-selector {
-	float:right;
+	margin-left: 8px;
+	border-radius: 4px;
+	border: 2px solid #bdbdbd;
+	background-color: #fafafa;
+	width: 68px;
+	height: 80px;
 }
 
-.power-selector .ivu-radio-group .ivu-radio-group-item {
-	height: 20px;
-	line-height: 20px;
+.power-selector .q-item {
+	padding: 6px 8px;
+	line-height: 1em;
+	width: auto;
+	min-height: 0;
+	min-width: 0;
 }
 
-/* Make tooltips from table headers render nicely. */
-.ivu-table th .ivu-tooltip-rel {
-	padding-top: 8px;
-	padding-bottom: 8px;
-}
-
-.summary-tables .ivu-table-cell .ivu-tooltip-rel {
-	padding-top: 15px;
-	padding-bottom: 15px;
-	padding-left: 4px;
-	margin-left: -4px;
-}
-
-.ivu-tooltip-inner {
-	white-space: normal;
-}
-
-/* Group indicator through the magic of after selectors. */
-.group-indicator-label {
-	position: relative;
+/* Sticky header for the vehicle grid. */
+.vehicle-grid thead tr th {
+	background-color: #e0e0e0;
+	position: sticky;
 	z-index: 1;
-	background-color: white;
-	padding-top: 4px;
-	padding-bottom: 4px;
+	top: 0;
 }
 
-.group-indicator-label > p {
-	line-height: normal;
+/* Diagonal subheader for the loadout page title. */
+.subheader {
+	text-align: center;
 }
 
-.group-indicator-border {
-	position:relative;
+.subheader h4 {
+	display: inline-block;
+	position: relative;
+	margin: 0;
+	padding: 0;
+	color: white;
+	text-align: center;
+	font-size: 20px;
+	line-height: 2em;
 }
 
-.group-indicator-border:after {
+.subheader h4:before {
+	content: '';
+	z-index: -1;
+	display: block;
+	position: absolute;
+	height: 100%;
+	width: calc(60% + 24px);
+	top: 0;
+	right:40%;
+	transform:skewX(20deg);
+	background-color: #616161;
+}
+
+.subheader h4:after {
+	content: '';
+	z-index: -1;
+	display: block;
+	position: absolute;
+	height: 100%;
+	width: calc(60% + 24px);
+	top: 0;
+	left:40%;
+	transform:skewX(-20deg);
+	background-color: #616161;
+}
+
+/* Summary cards for the loadout page. */
+.q-card {
+	box-shadow: none;
+	border: 2px solid #bdbdbd;
+	background-color: #fafafa;
+}
+
+.card-title {
+	font-size: 18px;
+}
+
+.card-value {
+	font-size: 18px;
+}
+
+.summary-value {
+	font-weight: bold;
+	color: var(--q-accent);
+}
+
+.sticky-side {
+	position: sticky;
+	top: 0;
+}
+
+.coverage-display .q-tab {
+	padding: 0;
+}
+
+/* Item group layout and lines for the loadout page. */
+.group-container {
+	position: relative;
+	width: 100%;
+}
+
+.spacer {
+	width: var(--spacer-width) !important;
+}
+
+.selector {
+	width: calc(100% - var(--spacer-width) * 2) !important;
+}
+
+.group-bracket:after {
 	content: '';
 	display: block;
 	position: absolute;
-	top: 0;
-	width: 25%;
-	height: 100%;
-	left: 50%;
+	top: var(--spacer-inset);
+	width: calc(var(--spacer-width) / 4);
+	height: calc(100% - var(--spacer-inset) * 2);
+	margin-left: calc(var(--spacer-width) / 2);
 	border-width: 2px 0px 2px 2px;
 	border-style: solid;
-	border-color: var(--iview-primary);
+	border-color: var(--q-primary);
 }
 
-/* Spacing between component selectors and item port groups. */
-.group-content-entry + .group-content-entry,
-.component-and-children-selector + .component-and-children-selector,
-.item-port-group + .item-port-group {
-	padding-top: 16px;
-}
-
-.component-selector + .item-port-group {
-	margin-top: 16px;
-}
-
-/* Adjust location of inline icons on the ship details display. */
-.ship-details .ivu-icon {
-	padding-bottom: 2px;
-}
-
-/* Item port group table layout. */
-.item-port-group {
-	width: 100%;
-	display:table;
-}
-
-.group-row {
-	display: table-row;
+.level2.group-bracket:after {
+	left: var(--spacer-width);
 }
 
 .group-indicator {
+	z-index: 1;
+	position: absolute;
+	top: 50%;
+	transform: translate(0, -50%);
+	width:var(--spacer-width);
+	padding-bottom: 8px;
 	text-align: center;
 	vertical-align: middle;
-	width: 60px;
-	display: table-cell;
+	background-color: white;
+
+	font-size: 24px;
+	line-height: 1.25em;
 }
 
-.group-content {
-	display: table-cell;
-}
-
-.group-indicator p {
-	font-size: 2em;
-}
-
-/* Navigational menu in the header */
-.menu {
-	text-align: right;
-}
-
-.menu .rightmost {
-	margin-right: 0px;
-}
-
-.menu > a,
-.menu .dropdown-title {
-	display: inline-block;
-	margin-left: 20px;
-	margin-right: 20px;
-	line-height: 60px;
-	font-size: 14px;
-	color: var(--title-text);
-}
-
-.menu .dropdown-title {
-	transition: color .2s ease;
-	cursor: pointer;
-}
-
-.menu > a:hover,
-.menu .dropdown-title:hover {
-	color: white;
-}
-
-.menu .ivu-select-dropdown {
-	text-align: left;
-}
-
-.menu .ivu-dropdown-item {
-	padding: 0px;
-	font-size: 14px !important;
-}
-
-.menu .ivu-dropdown-item a {
-	display: list-item;
-	padding: 7px 16px;
-	color: var(--iview-content);
-}
-
-/* Main layout specification. */
-.centered-narrow {
-	min-width: var(--min-width);
-	max-width: var(--max-width);
-	margin-left: auto;
-	margin-right: auto;
-	padding-left: 16px;
-	padding-right: 16px;
-}
-
-.header {
-	min-width: var(--min-width);
-	height: 60px;
-	background-color: var(--title-background);
-	line-height: normal;
-}
-
-.header h1 a {
-	color: var(--iview-background);
-	line-height: 40px;
-}
-
-.header p {
-	color: var(--title-text);
-	padding-bottom: 6px;
-}
-
-.content {
-	padding-top: 16px;
-	padding-bottom: 16px;
-}
-
-.not-footer {
-	min-height: calc(100vh - 52px);
-}
-
-.footer {
-	min-width: var(--min-width);
-	height: 52px;
-	background-color: var(--title-background);
-	color: var(--title-text);
-	text-align: center;
-	padding-top: 8px;
-	padding-bottom: 8px;
-}
-
-.footer a, .footer .ivu-tooltip {
-	color: var(--iview-background);
-}
-
-/* Color the section headers differently from the buttons. */
-.ivu-collapse-header {
-	background-color: var(--section-header-background);
-	color: white !important;
-	font-weight: bold;
-}
-
-.ivu-table th {
-	background-color: var(--section-header-background);
-	color: white !important;
-}
-
-.ivu-table-filter i.on,
-.ivu-table-sort i.on {
-	color: var(--iview-primary-light);
-}
-
-/* Drop the padding significantly to allow more columns. */
-.ivu-table-cell {
-	padding-left: 8px;
-	padding-right: 8px;
-}
-
-/* Separate stacked tables. */
-.ivu-table-wrapper {
-	margin-top: 16px;
-}
-.ivu-table-wrapper:first-child {
-	margin-top: 0px;
-}
-
-/* Make table headers and collapse headers identically sized. */
-.ivu-table th {
-	height: 38px;
-}
-
-/* Add a bit of space between the collapse section dropdown arrow and the header text. */
-.ivu-collapse-header > i {
-	margin-right: 8px;
-}
-
-/* Component selection dropdown -- make it look and behave like a form select. */
-.component-selector {
-	width: 100%;
-	box-sizing: border-box;
-}
-
-.component-selector .ivu-btn {
-	padding-left: 8px;
-	padding-right: 8px;
-	text-align: left;
-	width: 100%;
-}
-
-.flip-icon > i {
-	-webkit-transform: rotate(180deg);
-	-ms-transform: rotate(180deg);
-	transform: rotate(180deg);
-}
-
-/* Increase the weight of the drop shadows on dropdowns so they don't fade into the content. */
-.ivu-dropdown .ivu-select-dropdown,
-.ivu-menu-submenu .ivu-select-dropdown {
-	box-shadow: 0 1px 8px 2px rgba(0,0,0,.4);
-}
-
-/* Add scrollbars back to dropdowns. */
-.ivu-dropdown .ivu-select-dropdown {
-	overflow: auto;
-}
-
-/* Change the max height of all dropdown types. */
-.ivu-select-dropdown {
-	max-height: 400px !important;
+.level2 .group-indicator {
+	left: var(--spacer-width);
 }

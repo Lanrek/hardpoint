@@ -1,31 +1,4 @@
-var shipAttributeOverrides = {
-	"MISC_Reliant": {
-		"Size Category": "Small"
-	},
-	"XIAN_Scout": {
-		"Size Category": "Small"
-	},
-	"VNCL_Scythe": {
-		"Size Category": "Medium"
-	},
-	"VNCL_Glaive_Glaive": {
-		"Size Category": "Medium"
-	},
-	"AEGS_Idris": {
-		"Size Category": "Capital"
-	},
-	"AEGS_Vanguard": {
-		"Size Category": "Medium"
-	},
-	"AEGS_Vanguard_Harbinger": {
-		"Size Category": "Medium"
-	},
-	"AEGS_Vanguard_Hoplite": {
-		"Size Category": "Medium"
-	}
-};
-
-var turretRotations = {
+const turretRotations = {
 	"AEGS_Avenger": {
 		"hardpoint_weapon_class2_nose": {
 		},

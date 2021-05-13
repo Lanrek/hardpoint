@@ -1,0 +1,49 @@
+# Not implemented yet
+AEGS_Javelin
+
+# Not actually vehicles
+*_OLD
+*_NoInterior
+*_Template
+*_Showdown
+*_ShipShowdown
+*_Thruster_*
+*_CitizenCon*
+
+# NPCs
+*_AI
+*_AI_*
+*_Wreck
+*_Wreck_*
+probe_*
+*_Pirate
+*_PIR
+*_Hijacked
+Orbital_Sentry_*
+*_CRIM
+*_Drone
+*_EA_*
+*_SDF_*
+*_Shubin
+*_Drug_*
+EAObjectiveDestructable*
+*_Derelict_*
+*_Advocacy
+*_PU_*
+
+# Other game modes
+XIAN_Nox_SM_TE
+*_SimPod
+*_ToW
+*_Swarm
+*_S42
+
+# Recolors
+XIAN_Nox_Kue
+DRAK_Dragonfly_*
+RSI_Constellation_Phoenix_*
+ORIG_600i_Executive_Edition
+ARGO_MOLE_*
+ANVL_Ballista_*
+*_Emerald
+*_BIS2950
