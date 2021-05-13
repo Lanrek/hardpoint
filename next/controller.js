@@ -252,7 +252,7 @@ app.component("item-selector", {
             sendEvent("Loadout", "PowerLevel", level);
         },
         trackExpansion(evt) {
-            sendEvent("Loadout", "ViewItems", level);
+            sendEvent("Loadout", "ViewItems", this.prototype.port.name);
         },
         randomKey() {
             return _.random(0, 2 ** 64);
