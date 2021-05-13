@@ -220,7 +220,7 @@
                                     no-caps
                                     color="primary"
                                     label="Save"
-                                    v-if="$route.name == 'vehicle'">
+                                    v-if="!loadout.storageKey">
                                 </q-btn>
                                 <q-btn
                                     class="compact"
@@ -277,7 +277,7 @@
             <div class="subheader">
                 <h4>
                     {{vehicleLoadout.vehicle.displayName}}
-                    <template v-if="$route.params.loadoutName"> / {{$route.params.loadoutName}}</template>
+                    <template v-if="vehicleLoadout.loadoutName"> / {{vehicleLoadout.loadoutName}}</template>
                 </h4>
             </div>
             <div class="row q-pa-md">

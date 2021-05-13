@@ -402,9 +402,10 @@ class ItemBinding {
 }
 
 class VehicleLoadout {
-    constructor(vehicleName, loadoutName=undefined) {
+    constructor(vehicleName, loadoutName=undefined, storageKey=undefined) {
         this.vehicle = allVehicles[vehicleName];
         this.loadoutName = loadoutName;
+        this.storageKey = storageKey;
 
         this.bindings = {};
         for (const port of this.vehicle.ports) {

@@ -328,12 +328,15 @@ app.component("custom-loadout", {
         },
         saveLoadout() {
             const serialized = serialize(this.loadout);
-            loadoutStorage.set(this.loadout.vehicle.name, this.loadoutName, serialized);
+            this.loadout.storageKey = encodeInt24(_.random(0, 2 ** 24)) + encodeInt24(_.random(0, 2 ** 24));
+            this.loadout.loadoutName = this.loadoutName;
+            loadoutStorage.set(this.loadout, serialized);
+
             this.$router.replace({
                 name: "loadout",
                 params: {
                     vehicleName: this.loadout.vehicle.name,
-                    loadoutName: this.loadoutName,
+                    storageKey: this.loadout.storageKey,
                     serialized: serialized
                 }
             });
@@ -342,7 +345,8 @@ app.component("custom-loadout", {
         },
         removeLoadout() {
             const serialized = serialize(this.loadout);
-            loadoutStorage.set(this.loadout.vehicle.name, this.loadoutName, undefined);
+            loadoutStorage.remove(this.loadout.storageKey);
+
             this.$router.replace({
                 name: "vehicle",
                 params: {
@@ -397,8 +401,8 @@ app.component("vehicle-details", {
                     history.replaceState(history.state, "", url.href);
                 }
 
-                if (this.$route.name == "loadout") {
-                    loadoutStorage.set(this.vehicleLoadout.vehicle.name, this.$route.params.loadoutName, serialized);
+                if (this.$route.name == "loadout" && loadoutStorage.get(this.$route.params.storageKey)) {
+                    loadoutStorage.set(this.vehicleLoadout, serialized);
                 }
             },
             deep: true
@@ -461,22 +465,34 @@ app.component("vehicle-details", {
     },
     created() {
         setLoadout = () => {
-            if (this.$route.name == "loadout" && !loadoutStorage.contains(this.$route.params.vehicleName, this.$route.params.loadoutName)) {
-                this.$router.push({
-                    name: "vehicle",
-                    params: {
-                        vehicleName: this.$route.params.vehicleName,
-                        serialized: this.$route.params.serialized
-                    }
-                });
-            }
-
-            if (this.$route.name == "vehicle" || this.$route.name == "loadout") {
-                if (this.$route.params.serialized) {
+            if (this.$route.name == "loadout") {
+                const stored = loadoutStorage.get(this.$route.params.storageKey);
+                if (stored) {
                     this.vehicleLoadout = deserialize(
                         this.$route.params.serialized,
                         this.$route.params.vehicleName,
-                        this.$route.params.loadoutName)
+                        stored.loadoutName,
+                        this.$route.params.storageKey)
+                }
+                else {
+                    // Give the templates something valid to render while waiting for the navigation.
+                    this.vehicleLoadout = new VehicleLoadout(this.$route.params.vehicleName);
+
+                    this.$router.push({
+                        name: "vehicle",
+                        params: {
+                            vehicleName: this.$route.params.vehicleName,
+                            serialized: this.$route.params.serialized
+                        }
+                    });
+                }
+            }
+
+            if (this.$route.name == "vehicle") {
+                if (this.$route.params.serialized) {
+                    this.vehicleLoadout = deserialize(
+                        this.$route.params.serialized,
+                        this.$route.params.vehicleName)
                 }
                 else {
                     this.vehicleLoadout = new VehicleLoadout(this.$route.params.vehicleName);
@@ -520,12 +536,12 @@ app.component("vehicle-grid", {
             return rows.filter(n => n.vehicle.displayName.toLowerCase().includes(this.searchText.toLowerCase()));
         },
         navigate(row) {
-            if (row.loadoutName) {
+            if (row.storageKey) {
                 this.$router.push({
                     name: "loadout",
                     params: {
                         vehicleName: row.vehicle.name,
-                        loadoutName: row.loadoutName,
+                        storageKey: row.storageKey,
                         serialized: serialize(row)
                     }
                 });
@@ -550,7 +566,7 @@ const router = VueRouter.createRouter({
         },
         {
             name: "loadout",
-            path: "/vehicles/:vehicleName/loadouts/:loadoutName/:serialized?",
+            path: "/vehicles/:vehicleName/loadouts/:storageKey/:serialized?",
             component: vehicleDetails
         },
         {
