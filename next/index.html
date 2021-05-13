@@ -1,10 +1,19 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
     <head>
+        <!-- Global site tag (gtag.js) - Google Analytics -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=UA-117108133-1"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'UA-117108133-1', { 'send_page_view': false });
+        </script>
+
         <meta charset="utf-8">
-		<title>Hardpoint.io - Star Citizen ship fitting and comparison tool</title>
-		<meta name="description" content="Web application for planning and comparing loadouts of Star Citizen ships with detailed component breakdown and summary statistics." />
-		<meta name="keywords" content="star citizen,sc,cig,ship,vehicle,spaceship,loadout,fitting,equipment,gear,items,tool,planner,app,theory,comparison" />
+        <title>Hardpoint.io - Star Citizen ship fitting and comparison tool</title>
+        <meta name="description" content="Web application for planning and comparing loadouts of Star Citizen ships with detailed component breakdown and summary statistics." />
+        <meta name="keywords" content="star citizen,sc,cig,ship,vehicle,spaceship,loadout,fitting,equipment,gear,items,tool,planner,app,theory,comparison" />
 
         <link href="https://fonts.googleapis.com/css?family=Material+Icons" rel="stylesheet" type="text/css">
         <link href="https://cdn.jsdelivr.net/npm/quasar@2.0.0-beta.14/dist/quasar.prod.css" rel="stylesheet" type="text/css">
@@ -79,6 +88,7 @@
             <div class="spacer col-2" v-for="leftpad in level"></div>
             <div class="selector col-8 row q-pa-sm">
                 <q-expansion-item
+                    @show="trackExpansion"
                     @mouseover="setHoveredBindings(bindings)"
                     @mouseleave="setHoveredBindings([])"
                     header-class="q-pa-sm"

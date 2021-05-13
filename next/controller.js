@@ -1,3 +1,10 @@
+const sendEvent = function(category, action, label) {
+	gtag("event", action, {
+		"event_category": category,
+		"event_label": label
+	});
+}
+
 const shareableLink = new ClipboardJS(".clipboard-button", {
 	text: function() {
         Quasar.Notify.create({
@@ -6,6 +13,9 @@ const shareableLink = new ClipboardJS(".clipboard-button", {
             position: "top",
             group: false
         });
+
+        sendEvent("Loadout", "CopyLink", location.href);
+
 		return location.href.replace(/\/loadouts\/[^/]+\//, "/");
 	}
 });
@@ -154,6 +164,8 @@ app.component("selector-group", {
                     }
                 }
             }
+
+            sendEvent("Loadout", "Group", this.grouped);
         },
         randomKey() {
             return _.random(0, 2 ** 64);
@@ -194,7 +206,6 @@ app.component("item-selector", {
             return distinct.filter(n => n in itemProjections);
         },
         groupArrays() {
-
             const filterBindings = (parent) => {
                 const children = Object.values(parent.bindings);
                 return children.filter(n => n.port.types.some(t => significantTypes.includes(t.type)));
@@ -230,11 +241,18 @@ app.component("item-selector", {
                     binding.setItem(itemName);
                 }
             }
+
+            sendEvent("Loadout", "SelectItem", itemName);
         },
         setPowerLevel(level) {
             for (binding of this.bindings) {
                 binding.powerLevel = level;
             }
+
+            sendEvent("Loadout", "PowerLevel", level);
+        },
+        trackExpansion(evt) {
+            sendEvent("Loadout", "ViewItems", level);
         },
         randomKey() {
             return _.random(0, 2 ** 64);
@@ -319,6 +337,8 @@ app.component("custom-loadout", {
                     serialized: serialized
                 }
             });
+
+            sendEvent("Loadout", "Save", this.loadoutName);
         },
         removeLoadout() {
             const serialized = serialize(this.loadout);
@@ -330,6 +350,8 @@ app.component("custom-loadout", {
                     serialized: serialized
                 }
             });
+
+            sendEvent("Loadout", "Delete", this.loadoutName);
         }
     }
 });
@@ -573,5 +595,10 @@ const router = VueRouter.createRouter({
     ],
 });
 app.use(router);
+
+const gaTrackingId = "UA-117108133-1";
+router.afterEach((to, from) => {
+    gtag("config", gaTrackingId, {"page_path": to.path, "page_title": to.name});
+});
 
 app.use(Quasar);

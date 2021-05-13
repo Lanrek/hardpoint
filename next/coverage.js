@@ -165,6 +165,8 @@ app.component("coverage-display", {
                 this.positionCamera();
                 this.renderScene();
             }
+
+            sendEvent("Loadout", "CoverageView", this.selectedView);
         }
     },
     methods: {
