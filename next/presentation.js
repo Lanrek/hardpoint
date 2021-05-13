@@ -89,8 +89,18 @@ const itemProjections = {
         ])
     },
     Cooler: {
-        columns: _defaultColumns,
-        summary: _defaultSummaryFactory
+        columns: _prefixColumns.concat([
+            {
+                name: "coolingRate",
+                label: "Cooling Rate",
+                field: row => row.item.coolingRate,
+                format: _formatNumber(0),
+                sortable: true
+            }],
+            _suffixColumns),
+        summary: (binding) => _evaluateSummaryPattern(binding, [
+            "Provides {item.coolingRate} cooling / second"
+        ])
     },
     EMP: {
         columns: _defaultColumns,

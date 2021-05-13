@@ -7,15 +7,20 @@ body {
 	font-size: 13px;
 }
 
-.compact {
-	font-size: 13px;
-	line-height: 1em;
-	padding: 8px;
-	min-height: 0;
+.q-footer img {
+	vertical-align:top;
+	padding: 4px 8px;
 }
 
-.text-faded {
-	color: #616161;
+.footer-text {
+	display: inline-block;
+	vertical-align: top;
+	color: #bdbdbd;
+	padding: 16px 8px;
+}
+
+.footer-text a {
+	color: #bdbdbd;
 }
 
 .version {
@@ -26,6 +31,17 @@ body {
 
 .details-sections {
 	width: calc(100% - 300px) !important;
+}
+
+.compact {
+	font-size: 13px;
+	line-height: 1em;
+	padding: 8px;
+	min-height: 0;
+}
+
+.text-faded {
+	color: #616161;
 }
 
 .details-cards {

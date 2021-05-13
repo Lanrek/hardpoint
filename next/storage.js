@@ -235,6 +235,10 @@ class LoadoutStorage {
         }
     }
 
+    contains(vehicleName, loadoutName) {
+        return Object.values(this._loadouts).some(n => n.vehicle.name == vehicleName && n.loadoutName == loadoutName);
+    }
+
     _make_key(vehicleName, loadoutName) {
         return vehicleName + "." + loadoutName;
     }

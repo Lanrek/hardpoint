@@ -1,3 +1,15 @@
+const shareableLink = new ClipboardJS(".clipboard-button", {
+	text: function() {
+        Quasar.Notify.create({
+            color: "accent",
+            message: "Loadout URL copied to clipboard!",
+            position: "top",
+            group: false
+        });
+		return location.href.replace(/\/loadouts\/[^/]+\//, "/");
+	}
+});
+
 class BindingGroup {
     constructor(members) {
         this.members = members;
@@ -427,6 +439,16 @@ app.component("vehicle-details", {
     },
     created() {
         setLoadout = () => {
+            if (this.$route.name == "loadout" && !loadoutStorage.contains(this.$route.params.vehicleName, this.$route.params.loadoutName)) {
+                this.$router.push({
+                    name: "vehicle",
+                    params: {
+                        vehicleName: this.$route.params.vehicleName,
+                        serialized: this.$route.params.serialized
+                    }
+                });
+            }
+
             if (this.$route.name == "vehicle" || this.$route.name == "loadout") {
                 if (this.$route.params.serialized) {
                     this.vehicleLoadout = deserialize(
