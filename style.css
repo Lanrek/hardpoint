@@ -102,6 +102,10 @@ body {
 }
 
 /* Sticky header for the vehicle grid. */
+.vehicle-grid {
+	height: calc(100vh - 218px);
+}
+
 .vehicle-grid thead tr th {
 	background-color: #e0e0e0;
 	position: sticky;
