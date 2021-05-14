@@ -215,20 +215,20 @@
                         <q-item-section side>
                             <div>
                                 <q-btn
-                                    class="compact"
-                                    @click="clickSave()"
-                                    no-caps
-                                    color="primary"
-                                    label="Save"
-                                    v-if="!loadout.storageKey">
-                                </q-btn>
-                                <q-btn
-                                    class="compact"
+                                    class="compact q-mr-sm"
                                     @click="removeLoadout()"
                                     no-caps
                                     color="negative"
                                     label="Delete"
-                                    v-else>
+                                    v-if="metadata.storageKey">
+                                </q-btn>
+                                <q-btn
+                                    :disabled="saveDisabled"
+                                    class="compact"
+                                    @click="clickSave()"
+                                    no-caps
+                                    color="primary"
+                                    label="Save">
                                 </q-btn>
                             </div>
                         </q-item-section>
@@ -277,7 +277,7 @@
             <div class="subheader">
                 <h4>
                     {{vehicleLoadout.vehicle.displayName}}
-                    <template v-if="vehicleLoadout.loadoutName"> / {{vehicleLoadout.loadoutName}}</template>
+                    <template v-if="metadata.loadoutName"> / {{metadata.loadoutName}}</template>
                 </h4>
             </div>
             <div class="row q-pa-md">
@@ -298,7 +298,7 @@
                     </q-expansion-item>
                 </div>
                 <div class="details-cards col-3">
-                    <custom-loadout :key="randomKey()" :loadout="vehicleLoadout">
+                    <custom-loadout :key="randomKey()" :loadout="vehicleLoadout" :metadata="metadata">
                     </custom-loadout>
                     <div class="q-pa-sm" v-if="showTurretCoverage">
                         <q-card>

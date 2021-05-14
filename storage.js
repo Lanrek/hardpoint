@@ -94,7 +94,7 @@ const serialize = (loadout) => {
     return str;
 }
 
-const deserialize = (str, vehicleName, loadoutName=undefined, storageKey=undefined) => {
+const deserialize = (str, vehicleName) => {
     let prefix = 1;
     const version = str.substr(0, 1);
 
@@ -103,7 +103,7 @@ const deserialize = (str, vehicleName, loadoutName=undefined, storageKey=undefin
         prefix += 12;
     }
 
-    let loadout = new VehicleLoadout(vehicleName, loadoutName, storageKey);
+    let loadout = new VehicleLoadout(vehicleName);
 
     const findItem = (hashedName, prototypeBinding) => {
         return prototypeBinding.getMatchingItems().map(n => n.item.name).find(k => hashAndEncode(k) == hashedName);
@@ -190,7 +190,8 @@ class LoadoutStorage {
                         this.set(entry.vehicleName, entry.loadoutName, storageKey, entry.serialized);
                     }
 
-                    this._loadouts[storageKey] = deserialize(entry.serialized, entry.vehicleName, entry.loadoutName, storageKey);
+                    this._loadouts[storageKey] = deserialize(entry.serialized, entry.vehicleName);
+                    this._loadouts[storageKey].metadata = new LoadoutMetadata(entry.vehicleName, entry.serialized, entry.loadoutName, storageKey);
                 }
                 catch (ex) {
                     console.warn("Failed to read loadout", ex);
@@ -202,25 +203,23 @@ class LoadoutStorage {
         }
     }
 
-    get all() {
+    get loadouts() {
         return Object.values(this._loadouts);
     }
 
     get(storageKey) {
-        return this._loadouts[storageKey];
+        if (storageKey in this._loadouts) {
+            return _.clone(this._loadouts[storageKey].metadata);
+        }
     }
 
-    set(loadout, serialized) {
+    set(metadata) {
         try {
-            const entry = {
-                vehicleName: loadout.vehicle.name,
-                loadoutName: loadout.loadoutName,
-                serialized: serialized
-            };
-
             // Make a copy to avoid unintentional mutation of the cache.
-            this._loadouts[loadout.storageKey] = deserialize(serialized, loadout.vehicle.name, loadout.loadoutName, loadout.storageKey);
-            localStorage.setItem(loadout.storageKey, JSON.stringify(entry));
+            this._loadouts[metadata.storageKey] = deserialize(metadata.serialized, metadata.vehicleName);
+            this._loadouts[metadata.storageKey].metadata = _.clone(metadata);
+
+            localStorage.setItem(metadata.storageKey, JSON.stringify(metadata));
         }
         catch (ex) {
             console.warn("Failed to write local storage", ex);
@@ -230,6 +229,7 @@ class LoadoutStorage {
     remove(storageKey) {
         try {
             delete this._loadouts[storageKey];
+
             localStorage.removeItem(storageKey);
         }
         catch (ex) {

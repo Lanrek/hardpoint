@@ -44,7 +44,7 @@ class Damage {
     }
 
     add(other) {
-        const result = _.cloneDeep(this);
+        const result = _.clone(this);
         for (const key of this._keys) {
             result[key] += other[key];
         }
@@ -53,7 +53,7 @@ class Damage {
     }
 
     scale(coefficient) {
-        const result = _.cloneDeep(this);
+        const result = _.clone(this);
         for (const key of this._keys) {
             result[key] *= coefficient;
         }
@@ -402,10 +402,8 @@ class ItemBinding {
 }
 
 class VehicleLoadout {
-    constructor(vehicleName, loadoutName=undefined, storageKey=undefined) {
+    constructor(vehicleName) {
         this.vehicle = allVehicles[vehicleName];
-        this.loadoutName = loadoutName;
-        this.storageKey = storageKey;
 
         this.bindings = {};
         for (const port of this.vehicle.ports) {

@@ -103,6 +103,15 @@ class BindingGroup {
     }
 }
 
+class LoadoutMetadata {
+    constructor(vehicleName, serialized, loadoutName=undefined, storageKey=undefined) {
+        this.vehicleName = vehicleName;
+        this.serialized = serialized;
+        this.loadoutName = loadoutName;
+        this.storageKey = storageKey;
+    }
+}
+
 const app = Vue.createApp({
     computed: {
         vehicleLinks() {
@@ -263,12 +272,14 @@ app.component("item-selector", {
 app.component("custom-loadout", {
     template: "#custom-loadout",
     props: {
-        loadout: VehicleLoadout
+        loadout: VehicleLoadout,
+        metadata: LoadoutMetadata
     },
     data: function() {
         return {
             saveDialog: false,
-            loadoutName: this.loadout.loadoutName
+            saveCount: 0,
+            loadoutName: this.metadata.loadoutName
         };
     },
     computed: {
@@ -320,38 +331,57 @@ app.component("custom-loadout", {
 
             result = result.filter(n => n.count > 0);
             return result;
+        },
+        saveDisabled() {
+            if (!this.metadata.storageKey) {
+                return false;
+            }
+
+            // This is a terrible hack around loadoutStorage not being reactive.
+            // Reference a variable that is incremented to trigger a forced update.
+            const unused = this.saveCount;
+
+            const stored = loadoutStorage.get(this.metadata.storageKey);
+            return stored.serialized == this.metadata.serialized;
         }
     },
     methods: {
         clickSave() {
-            this.saveDialog = true;
+            if (this.metadata.storageKey) {
+                loadoutStorage.set(this.metadata);
+                this.saveCount += 1;
+
+                sendEvent("Loadout", "Save", this.loadoutName);
+            }
+            else {
+                this.saveDialog = true;
+            }
         },
         saveLoadout() {
-            const serialized = serialize(this.loadout);
-            this.loadout.storageKey = encodeInt24(_.random(0, 2 ** 24)) + encodeInt24(_.random(0, 2 ** 24));
-            this.loadout.loadoutName = this.loadoutName;
-            loadoutStorage.set(this.loadout, serialized);
+            this.metadata.storageKey = encodeInt24(_.random(0, 2 ** 24)) + encodeInt24(_.random(0, 2 ** 24));
+            this.metadata.loadoutName = this.loadoutName;
+            loadoutStorage.set(this.metadata);
+            this.saveCount += 1;
+
+            sendEvent("Loadout", "Save", this.loadoutName);
 
             this.$router.replace({
                 name: "loadout",
                 params: {
                     vehicleName: this.loadout.vehicle.name,
-                    storageKey: this.loadout.storageKey,
-                    serialized: serialized
+                    storageKey: this.metadata.storageKey,
+                    serialized: this.metadata.serialized
                 }
             });
-
-            sendEvent("Loadout", "Save", this.loadoutName);
         },
         removeLoadout() {
-            const serialized = serialize(this.loadout);
-            loadoutStorage.remove(this.loadout.storageKey);
+            loadoutStorage.remove(this.metadata.storageKey);
 
             this.$router.replace({
                 name: "vehicle",
                 params: {
                     vehicleName: this.loadout.vehicle.name,
-                    serialized: serialized
+                    serialized: this.metadata.serialized
                 }
             });
 
@@ -373,6 +403,7 @@ app.component("vehicle-details", {
     data: function() {
         return {
             vehicleLoadout: {},
+            metadata: {},
 
             // Also defines the section display order.
             sectionNames: ["Guns", "Missiles", "Systems", "Flight"],
@@ -384,7 +415,7 @@ app.component("vehicle-details", {
     watch: {
         vehicleLoadout: {
             handler: function(val) {
-                const serialized = serialize(val);
+                this.metadata.serialized = serialize(val);
 
                 let url = new URL(location.href);
                 const previous = url.href;
@@ -392,17 +423,13 @@ app.component("vehicle-details", {
                 if (this.$route.name == "loadout") {
                     depth += 2;
                 }
-                url.hash = url.hash.split("/").slice(0, depth).concat(serialized).join("/");
+                url.hash = url.hash.split("/").slice(0, depth).concat(this.metadata.serialized).join("/");
 
                 if (url != previous) {
                     // Hack around the router not tracking changes to the URL and breaking the back button.
                     history.state.current = url.hash.replace("#", "");
 
                     history.replaceState(history.state, "", url.href);
-                }
-
-                if (this.$route.name == "loadout" && loadoutStorage.get(this.$route.params.storageKey)) {
-                    loadoutStorage.set(this.vehicleLoadout, serialized);
                 }
             },
             deep: true
@@ -465,30 +492,19 @@ app.component("vehicle-details", {
     },
     created() {
         setLoadout = () => {
-            if (this.$route.name == "loadout") {
-                const stored = loadoutStorage.get(this.$route.params.storageKey);
-                if (stored) {
+            if (this.$route.name == "vehicle" || this.$route.name == "loadout") {
+                this.metadata = loadoutStorage.get(this.$route.params.storageKey);
+                if (this.metadata) {
                     this.vehicleLoadout = deserialize(
                         this.$route.params.serialized,
                         this.$route.params.vehicleName,
-                        stored.loadoutName,
+                        this.metadata.loadoutName,
                         this.$route.params.storageKey)
-                }
-                else {
-                    // Give the templates something valid to render while waiting for the navigation.
-                    this.vehicleLoadout = new VehicleLoadout(this.$route.params.vehicleName);
 
-                    this.$router.push({
-                        name: "vehicle",
-                        params: {
-                            vehicleName: this.$route.params.vehicleName,
-                            serialized: this.$route.params.serialized
-                        }
-                    });
+                    return;
                 }
-            }
 
-            if (this.$route.name == "vehicle") {
+                this.metadata = new LoadoutMetadata(this.$route.params.vehicleName, this.$route.params.serialized);
                 if (this.$route.params.serialized) {
                     this.vehicleLoadout = deserialize(
                         this.$route.params.serialized,
@@ -496,6 +512,16 @@ app.component("vehicle-details", {
                 }
                 else {
                     this.vehicleLoadout = new VehicleLoadout(this.$route.params.vehicleName);
+                }
+
+                if (this.$route.name == "loadout") {
+                    this.$router.push({
+                        name: "vehicle",
+                        params: {
+                            vehicleName: this.$route.params.vehicleName,
+                            serialized: this.$route.params.serialized
+                        }
+                    });
                 }
             }
         };
@@ -520,15 +546,15 @@ app.component("vehicle-grid", {
     computed: {
         columns() {
             let columns = vehicleColumns;
-            if (!loadoutStorage.all.length) {
+            if (!loadoutStorage.loadouts.length) {
                 columns = columns.filter(n => n.name != "loadoutName");
             }
 
             return columns;
         },
         loadouts() {
-            const combined = Object.values(defaultLoadouts).concat(loadoutStorage.all)
-            return _.sortBy(combined, "loadoutName", "vehicle.name");
+            const combined = Object.values(defaultLoadouts).concat(loadoutStorage.loadouts)
+            return _.sortBy(combined, "metadata.loadoutName", "vehicle.name");
         }
     },
     methods: {
@@ -536,12 +562,12 @@ app.component("vehicle-grid", {
             return rows.filter(n => n.vehicle.displayName.toLowerCase().includes(this.searchText.toLowerCase()));
         },
         navigate(row) {
-            if (row.storageKey) {
+            if (row.metadata) {
                 this.$router.push({
                     name: "loadout",
                     params: {
                         vehicleName: row.vehicle.name,
-                        storageKey: row.storageKey,
+                        storageKey: row.metadata.storageKey,
                         serialized: serialize(row)
                     }
                 });

@@ -473,7 +473,7 @@ const vehicleColumns = [
     {
         name: "loadoutName",
         label: "Loadout",
-        field: row => row.loadoutName,
+        field: row => _.get(row, "metadata.loadoutName"),
         align: "left",
         sortable: true
     },
