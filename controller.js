@@ -402,8 +402,8 @@ app.component("vehicle-details", {
     template: "#vehicle-details",
     data: function() {
         return {
-            vehicleLoadout: {},
-            metadata: {},
+            loadout: null,
+            metadata: null,
 
             // Also defines the section display order.
             sectionNames: ["Guns", "Missiles", "Systems", "Flight"],
@@ -413,7 +413,7 @@ app.component("vehicle-details", {
         };
     },
     watch: {
-        vehicleLoadout: {
+        loadout: {
             handler: function(val) {
                 this.metadata.serialized = serialize(val);
 
@@ -442,7 +442,7 @@ app.component("vehicle-details", {
                 result[name] = [];
             }
 
-            for (const binding of Object.values(this.vehicleLoadout.bindings)) {
+            for (const binding of Object.values(this.loadout.bindings)) {
                 for (const [name, types] of Object.entries(this.sectionTypes)) {
                     if (binding.port.types.filter(pair => types.includes(pair.type)).length > 0) {
                         result[name].push(binding);
@@ -455,7 +455,7 @@ app.component("vehicle-details", {
         },
         summaryValues() {
             let result;
-            if (this.vehicleLoadout.flightController.item) {
+            if (this.loadout.flightController.item) {
                 result = _.cloneDeep(spaceSummaryCards);
             }
             else {
@@ -464,19 +464,19 @@ app.component("vehicle-details", {
 
             for (const card of Object.values(result)) {
                 for (const entry of card) {
-                    entry.value = _roundNumber(_.get(this.vehicleLoadout, entry.value));
+                    entry.value = _roundNumber(_.get(this.loadout, entry.value));
                 }
             }
 
             return result;
         },
         showTurretCoverage() {
-			if (!turretRotationsDefined[this.vehicleLoadout.vehicle.name]) {
+			if (!turretRotationsDefined[this.loadout.vehicle.name]) {
 				return false;
 			}
 
 			const turretTypes = ["Turret", "TurretBase"];
-			const turrets = Object.values(this.vehicleLoadout.bindings).filter(
+			const turrets = Object.values(this.loadout.bindings).filter(
 				n => n.item && turretTypes.includes(n.item.type));
 
 			return turrets.length > 0;
@@ -495,7 +495,7 @@ app.component("vehicle-details", {
             if (this.$route.name == "vehicle" || this.$route.name == "loadout") {
                 this.metadata = loadoutStorage.get(this.$route.params.storageKey);
                 if (this.metadata) {
-                    this.vehicleLoadout = deserialize(
+                    this.loadout = deserialize(
                         this.$route.params.serialized,
                         this.$route.params.vehicleName,
                         this.metadata.loadoutName,
@@ -506,12 +506,12 @@ app.component("vehicle-details", {
 
                 this.metadata = new LoadoutMetadata(this.$route.params.vehicleName, this.$route.params.serialized);
                 if (this.$route.params.serialized) {
-                    this.vehicleLoadout = deserialize(
+                    this.loadout = deserialize(
                         this.$route.params.serialized,
                         this.$route.params.vehicleName)
                 }
                 else {
-                    this.vehicleLoadout = new VehicleLoadout(this.$route.params.vehicleName);
+                    this.loadout = new VehicleLoadout(this.$route.params.vehicleName);
                 }
 
                 if (this.$route.name == "loadout") {

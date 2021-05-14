@@ -276,7 +276,7 @@
         <template id="vehicle-details">
             <div class="subheader">
                 <h4>
-                    {{vehicleLoadout.vehicle.displayName}}
+                    {{loadout.vehicle.displayName}}
                     <template v-if="metadata.loadoutName"> / {{metadata.loadoutName}}</template>
                 </h4>
             </div>
@@ -298,14 +298,14 @@
                     </q-expansion-item>
                 </div>
                 <div class="details-cards col-3">
-                    <custom-loadout :key="randomKey()" :loadout="vehicleLoadout" :metadata="metadata">
+                    <custom-loadout :key="randomKey()" :loadout="loadout" :metadata="metadata">
                     </custom-loadout>
                     <div class="q-pa-sm" v-if="showTurretCoverage">
                         <q-card>
                             <q-item class="card-title">
                                 Turret Coverage
                             </q-item>
-                            <coverage-display :loadout="vehicleLoadout">
+                            <coverage-display :loadout="loadout">
                             </coverage-display>
                         </q-card>
                     </div>
