@@ -5,21 +5,6 @@ const sendEvent = function(category, action, label) {
 	});
 }
 
-const shareableLink = new ClipboardJS(".clipboard-button", {
-	text: function() {
-        Quasar.Notify.create({
-            color: "accent",
-            message: "Loadout URL copied to clipboard!",
-            position: "top",
-            group: false
-        });
-
-        sendEvent("Loadout", "CopyLink", location.href);
-
-		return location.href.replace(/\/loadouts\/[^/]+\//, "/");
-	}
-});
-
 class BindingGroup {
     constructor(members) {
         this.members = members;
