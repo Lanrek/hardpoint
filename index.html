@@ -118,7 +118,7 @@
                                                 <q-icon style="color: lightseagreen" name="flash_on" display="inline-block"></q-icon>
                                             </span>
                                             <span v-if="prototype.extension.emSignature > 0">
-                                                {{_formatNumber(0)(prototype.extension.emSignature)}} EM
+                                                {{_formatNumber(prototype.extension.emSignature, 0)}} EM
                                             </span>
                                         </span>
                                     </q-item-section>
@@ -239,7 +239,7 @@
                                 {{entry.count}}x {{entry.displayName || entry.name}}
                             </q-item-section>
                             <q-item-section class="text-faded" side v-if="entry.available">
-                                {{_formatNumber(0)(entry.count * entry.basePrice / 1000)}}k
+                                {{_formatNumber(entry.count * entry.basePrice / 1000, 0)}}k
                             </q-item-section>
                             <q-item-section class="text-faded" side v-else>
                                 Unavailable

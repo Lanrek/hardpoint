@@ -464,7 +464,7 @@ app.component("vehicle-details", {
 
             for (const card of Object.values(result)) {
                 for (const entry of card) {
-                    entry.value = _roundNumber(_.get(this.loadout, entry.value));
+                    entry.value = _formatNumber(_.get(this.loadout, entry.value), 2, 0);
                 }
             }
 

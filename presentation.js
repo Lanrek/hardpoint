@@ -1,14 +1,32 @@
-const _getDisplayName = (object) => object.displayName || object.name;
-const _roundNumber = (value) => Math.round(value * 100) / 100;
-const _formatNumber = (precision) => {
-    return (value) => {
-        if (isNaN(value)) {
-            return undefined;
-        }
+const _formatNumber = (value, maxPrecision=undefined, minPrecision=undefined) => {
+    if (isNaN(value) || value == null) {
+        return undefined;
+    }
 
-        return value.toFixed(precision);
-    };
+    if (maxPrecision == undefined) {
+        maxPrecision = 2;
+    }
+
+    if (minPrecision == undefined) {
+        minPrecision = maxPrecision;
+    }
+
+    if (value >= 1000) {
+        minPrecision = 0;
+        maxPrecision = 0;
+    }
+
+    return value.toLocaleString(undefined, {
+        minimumFractionDigits: minPrecision,
+        maximumFractionDigits: maxPrecision
+    });
 };
+
+const _formatNumberFactory = (precision) => {
+    return (value) => _formatNumber(value, precision, precision);
+}
+
+const _getDisplayName = (object) => object.displayName || object.name;
 
 const _prefixColumns = [
     {
@@ -22,6 +40,7 @@ const _prefixColumns = [
         name: "basePrice",
         label: "Price",
         field: row => row.item.basePrice,
+        format: _formatNumberFactory(0),
         sortable: true
     }
 ];
@@ -31,27 +50,28 @@ const _suffixColumns = [
         name: "powerConsumed",
         label: "Power",
         field: row => row.extension.powerConsumed,
-        format: _formatNumber(0),
+        format: _formatNumberFactory(0),
         sortable: true
     },
     {
         name: "emSignature",
         label: "EM",
         field: row => row.extension.emSignature,
-        format: _formatNumber(0),
+        format: _formatNumberFactory(0),
         sortable: true
     },
     {
         name: "size",
         label: "Size",
         field: row => row.item.size,
+        format: _formatNumberFactory(0),
         sortable: true
     },
     {
         name: "maxLifetimeHours",
         label: "Lifetime",
         field: row => row.item.maxLifetimeHours,
-        format: _formatNumber(0),
+        format: _formatNumberFactory(0),
         sortable: true
     }
 ];
@@ -63,7 +83,7 @@ const _evaluateSummaryPattern = (binding, pattern) => {
         let value = _.get(binding, key);
 
         if (!isNaN(value)) {
-            value = _roundNumber(value);
+            value = _formatNumber(value, 2, 0);
         }
 
         return "<span class='summary-value'>" + value + "</span>";
@@ -80,7 +100,7 @@ const itemProjections = {
                 name: "cargo",
                 label: "Cargo",
                 field: row => row.extension.cargo,
-                format: _formatNumber(0),
+                format: _formatNumberFactory(0),
                 sortable: true
             }],
             _suffixColumns),
@@ -94,7 +114,7 @@ const itemProjections = {
                 name: "coolingRate",
                 label: "Cooling Rate",
                 field: row => row.item.coolingRate,
-                format: _formatNumber(0),
+                format: _formatNumberFactory(0),
                 sortable: true
             }],
             _suffixColumns),
@@ -112,7 +132,7 @@ const itemProjections = {
                 name: "fuelPushRate",
                 label: "Intake Rate",
                 field: row => row.item.fuelPushRate,
-                format: _formatNumber(0),
+                format: _formatNumberFactory(0),
                 sortable: true
             }],
             _suffixColumns),
@@ -126,21 +146,21 @@ const itemProjections = {
                 name: "thrustMn",
                 label: "Thrust",
                 field: row => row.extension.thrustMn,
-                format: _formatNumber(2),
+                format: _formatNumberFactory(2),
                 sortable: true
             },
             {
                 name: "accelerationGs",
                 label: "Acceleration",
                 field: row => row.extension.accelerationGs,
-                format: _formatNumber(2),
+                format: _formatNumberFactory(2),
                 sortable: true
             },
             {
                 name: "maxFuelBurn",
                 label: "Fuel / Sec",
                 field: row => row.extension.maxFuelBurn,
-                format: _formatNumber(0),
+                format: _formatNumberFactory(0),
                 sortable: true
             }],
             _suffixColumns),
@@ -155,7 +175,7 @@ const itemProjections = {
                 name: "damageTotal",
                 label: "Damage",
                 field: row => row.extension.damage.total,
-                format: _formatNumber(0),
+                format: _formatNumberFactory(0),
                 sortable: true
             },
             {
@@ -166,48 +186,54 @@ const itemProjections = {
                 sortable: true
             },
             {
-                name: "trackingSignalType",
+                name: "trackingAngle",
                 label: "Tracking Angle",
                 field: row => row.item.trackingAngle,
+                format: _formatNumberFactory(0),
                 sortable: true
             },
             {
                 name: "trackingDistanceMax",
                 label: "Tracking Range",
                 field: row => row.item.trackingDistanceMax,
+                format: _formatNumberFactory(0),
                 sortable: true
             },
             {
                 name: "lockRangeMin",
                 label: "Min Lock Range",
                 field: row => row.item.lockRangeMin,
+                format: _formatNumberFactory(0),
                 sortable: true
             },
             {
                 name: "lockTime",
                 label: "Lock Time",
                 field: row => row.item.lockTime,
+                format: _formatNumberFactory(1),
                 sortable: true
             },
             {
                 name: "linearSpeed",
                 label: "Speed",
                 field: row => row.item.linearSpeed,
+                format: _formatNumberFactory(0),
                 sortable: true
             },
             {
                 name: "flightTime",
                 label: "Flight Time",
                 field: row => row.extension.flightTime,
+                format: _formatNumberFactory(0),
                 sortable: true
             },
             {
                 name: "flightRange",
                 label: "Flight Range",
                 field: row => row.extension.flightRange,
+                format: _formatNumberFactory(0),
                 sortable: true
-            }],
-            _suffixColumns),
+            }]),
         summary: (binding) => _evaluateSummaryPattern(binding, [
             "{extension.damage.total} total damage",
             "{item.trackingSignalType} sensors with {item.trackingAngle} degree view and {item.trackingDistanceMax} meter tracking range",
@@ -221,12 +247,14 @@ const itemProjections = {
                 name: "portCount",
                 label: "Missiles",
                 field: row => row.extension.portCount,
+                format: _formatNumberFactory(0),
                 sortable: true
             },
             {
                 name: "maxPortSize",
                 label: "Missile Size",
                 field: row => row.extension.maxPortSize,
+                format: _formatNumberFactory(0),
                 sortable: true
             }],
             _suffixColumns),
@@ -240,7 +268,7 @@ const itemProjections = {
                 name: "powerDraw",
                 label: "Power",
                 field: row => row.item.power.powerDraw,
-                format: _formatNumber(0),
+                format: _formatNumberFactory(0),
                 sortable: true
             }],
             _suffixColumns.filter(n => n.name != "powerConsumed")),
@@ -254,41 +282,42 @@ const itemProjections = {
                 name: "driveSpeedMm",
                 label: "Max Speed",
                 field: row => row.extension.driveSpeedMm,
-                format: _formatNumber(0),
+                format: _formatNumberFactory(0),
                 sortable: true
             },
             {
                 name: "fuelPerGm",
                 label: "Fuel / Gm",
                 field: row => row.extension.fuelPerGm,
-                format: _formatNumber(2),
+                format: _formatNumberFactory(2),
                 sortable: true
             },
             {
                 name: "fuelRangeGm",
                 label: "Max Range",
                 field: row => row.extension.fuelRangeGm,
-                format: _formatNumber(0),
+                format: _formatNumberFactory(0),
                 sortable: true
             },
             {
                 name: "spoolUpTime",
                 label: "Spool Time",
                 field: row => row.item.spoolUpTime,
-                format: _formatNumber(1),
+                format: _formatNumberFactory(1),
                 sortable: true
             },
             {
                 name: "minCalibrationTime",
                 label: "Min Calibration",
                 field: row => row.extension.minCalibrationTime,
+                format: _formatNumberFactory(1),
                 sortable: true
             },
             {
                 name: "cooldownTime",
                 label: "Cooldown",
                 field: row => row.item.cooldownTime,
-                format: _formatNumber(1),
+                format: _formatNumberFactory(1),
                 sortable: true
             }],
             _suffixColumns),
@@ -304,28 +333,28 @@ const itemProjections = {
                 name: "maxShieldHealth",
                 label: "Capacity",
                 field: row => row.item.maxShieldHealth,
-                format: _formatNumber(0),
+                format: _formatNumberFactory(0),
                 sortable: true
             },
             {
                 name: "maxShieldRegen",
                 label: "Regeneration",
                 field: row => row.item.maxShieldRegen,
-                format: _formatNumber(0),
+                format: _formatNumberFactory(0),
                 sortable: true
             },
             {
                 name: "damagedRegenDelay",
                 label: "Damage Delay",
                 field: row => row.item.damagedRegenDelay,
-                format: _formatNumber(1),
+                format: _formatNumberFactory(1),
                 sortable: true
             },
             {
                 name: "downedRegenDelay",
                 label: "Drop Delay",
                 field: row => row.item.downedRegenDelay,
-                format: _formatNumber(1),
+                format: _formatNumberFactory(1),
                 sortable: true
             }],
             _suffixColumns),
@@ -340,12 +369,14 @@ const itemProjections = {
                 name: "portCount",
                 label: "Ports",
                 field: row => row.extension.portCount,
+                format: _formatNumberFactory(0),
                 sortable: true
             },
             {
                 name: "maxPortSize",
                 label: "Port Size",
                 field: row => row.extension.maxPortSize,
+                format: _formatNumberFactory(0),
                 sortable: true
             }],
             _suffixColumns),
@@ -366,56 +397,56 @@ const itemProjections = {
             name: "burstDps",
             label: "Burst DPS",
             field: row => row.extension.burstDps.total,
-            format: _formatNumber(0),
+            format: _formatNumberFactory(0),
             sortable: true
         },
         {
             name: "alpha",
             label: "Alpha",
             field: row => row.extension.alpha.total,
-            format: _formatNumber(0),
+            format: _formatNumberFactory(0),
             sortable: true
         },
         {
             name: "fireRate",
             label: "Fire Rate",
             field: row => _.get(row, "item.weaponAction.fireRate"),
-            format: _formatNumber(0),
+            format: _formatNumberFactory(0),
             sortable: true
         },
         {
             name: "minSpread",
             label: "Spread",
             field: row => _.get(row, "item.weaponAction.spread.min"),
-            format: _formatNumber(1),
+            format: _formatNumberFactory(1),
             sortable: true
         },
         {
             name: "dropStartRange",
             label: "Falloff",
             field: row => row.extension.dropStartRange,
-            format: _formatNumber(0),
+            format: _formatNumberFactory(0),
             sortable: true
         },
         {
             name: "range",
             label: "Range",
             field: row => row.extension.range,
-            format: _formatNumber(0),
+            format: _formatNumberFactory(0),
             sortable: true
         },
         {
             name: "speed",
             label: "Speed",
             field: row => _.get(row, "extension.ammo.speed"),
-            format: _formatNumber(0),
+            format: _formatNumberFactory(0),
             sortable: true
         },
         {
             name: "lifetime",
             label: "Duration",
             field: row => _.get(row, "extension.ammo.lifetime"),
-            format: _formatNumber(2),
+            format: _formatNumberFactory(2),
             sortable: true
         }],
         _suffixColumns),
@@ -487,80 +518,84 @@ const vehicleColumns = [
         name: "crew",
         label: "Crew",
         field: row => row.vehicle.controlSeats,
+        format: _formatNumberFactory(0),
         sortable: true
     },
     {
         name: "cargo",
         label: "Cargo",
         field: row => row.cargoCapacity,
+        format: _formatNumberFactory(0),
         sortable: true
     },
     {
         name: "maxTurnRate",
         label: "Turn Rate",
         field: row => row.maxTurnRate,
-        format: _formatNumber(0),
+        format: _formatNumberFactory(0),
         sortable: true
     },
     {
         name: "scmSpeed",
         label: "SCM",
         field: row => _.get(row, "flightController.item.scmSpeed"),
-        format: _formatNumber(0),
+        format: _formatNumberFactory(0),
         sortable: true
     },
     {
         name: "maxSpeed",
         label: "Speed",
         field: row => _.get(row, "flightController.item.maxSpeed"),
-        format: _formatNumber(0),
+        format: _formatNumberFactory(0),
         sortable: true
     },
     {
         name: "mainAccelerationGs",
         label: "Accel",
         field: row => row.mainAccelerationGs,
-        format: _formatNumber(2),
+        format: _formatNumberFactory(2),
         sortable: true
     },
     {
         name: "damageMin",
         label: "Min HP",
         field: row => row.vehicle.damageMin,
+        format: _formatNumberFactory(0),
         sortable: true
     },
     {
         name: "damageMax",
         label: "Max HP",
         field: row => row.vehicle.damageMax,
+        format: _formatNumberFactory(0),
         sortable: true
     },
     {
         name: "shieldCapacity",
         label: "Shields",
         field: row => row.shieldCapacity,
-        format: _formatNumber(0),
+        format: _formatNumberFactory(0),
         sortable: true
     },
     {
         name: "burstDps",
         label: "DPS",
         field: row => row.burstDps,
-        format: _formatNumber(0),
+        format: _formatNumberFactory(0),
         sortable: true
     },
     {
         name: "driveSpeedMm",
         label: "Qntm Speed",
         field: row => _.get(row, "quantumDrive.extension.driveSpeedMm"),
-        format: _formatNumber(0),
+        format: _formatNumberFactory(0),
         sortable: true
     },
     {
         name: "fuelRangeGm",
         label: "Qntm Range",
         field: row => _.get(row, "quantumDrive.extension.fuelRangeGm"),
-        format: _formatNumber(0),
+        format: _formatNumberFactory(0),
         sortable: true
     }
 ];
