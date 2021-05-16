@@ -358,8 +358,16 @@ class ItemBinding {
                 return false;
             }
 
-            if (item.requiredTags && item.requiredTags != this._loadout.vehicle.itemPortTags) {
-                return false;
+            for (const tag of item.requiredTags) {
+                if (!this.port.requiredTags.includes(tag) && !this._loadout.vehicle.itemPortTags.includes(tag)) {
+                    return false;
+                }
+            }
+
+            for (const tag of this.port.requiredTags) {
+                if (!item.requiredTags.includes(tag)) {
+                    return false;
+                }
             }
 
             return true;

@@ -18,9 +18,10 @@ def _make_item_port(item_port_element, name_override, types):
 
     port["flags"] = [x.replace("$", "") for x in port["flags"]]
 
-    # TODO Also need to split tags but the delimiter is unknown; no examples.
-    if port["requiredTags"] == "":
-        port["requiredTags"] = None
+    if not port["requiredTags"]:
+        port["requiredTags"] = []
+    else:
+        port["requiredTags"] = port["requiredTags"].split()
 
     port["flags"].sort()
     port["types"].sort(key=lambda x: x.get("type") + "_" + str(x.get("subtype")))

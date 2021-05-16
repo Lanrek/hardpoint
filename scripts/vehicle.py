@@ -136,8 +136,9 @@ def make_vehicle(definition_element):
         "ports": ports
     }
 
-    # TODO Also need to split tags but the delimiter is unknown; no examples.
-    if result["itemPortTags"] == "":
-        result["itemPortTags"] = None
+    if not result["itemPortTags"]:
+        result["itemPortTags"] = []
+    else:
+        result["itemPortTags"] = result["itemPortTags"].split()
 
     return result

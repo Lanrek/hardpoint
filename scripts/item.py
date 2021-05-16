@@ -300,8 +300,10 @@ def make_item(item_element):
                 baseline["subtype"] = None
 
             # TODO Also need to split tags but the delimiter is unknown; no examples.
-            if baseline["requiredTags"] == "":
-                baseline["requiredTags"] = None
+            if not baseline["requiredTags"]:
+                baseline["requiredTags"] = []
+            else:
+                baseline["requiredTags"] = baseline["requiredTags"].split()
 
             degradation_element = components_element.single("sdegradationparams")
             if degradation_element:
