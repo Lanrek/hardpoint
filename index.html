@@ -224,7 +224,7 @@
                         </q-item-section>
                     </q-item>
                     <q-list dense class="full-width">
-                        <q-item v-for="entry in requiredItems">
+                        <q-item class="card-item-padding" v-for="entry in requiredItems">
                             <q-item-section>
                                 {{entry.count}}x {{entry.displayName || entry.name}}
                             </q-item-section>

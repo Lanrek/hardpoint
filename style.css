@@ -172,6 +172,13 @@ thead .q-checkbox {
 
 .card-title {
 	font-size: 18px;
+	min-height: 0;
+	padding: 8px
+}
+
+.card-item-padding {
+	padding-left: 8px !important;
+	padding-right: 8px !important;
 }
 
 .card-value {
