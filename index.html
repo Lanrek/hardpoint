@@ -143,7 +143,7 @@
                                     :props="props"
                                     class="cursor-pointer"
                                     :class="(props.row.item.name==prototype.itemName) ? 'bg-accent text-white' : ''"
-                                    @click=select(props.row.item.name)>
+                                    @click="select(props.row.item.name)">
                                     <q-td v-for="col in props.cols" :key="col.name" :props="props">
                                         {{col.value}}
                                     </q-td>
@@ -323,18 +323,32 @@
 
         <template id="vehicle-grid">
             <div class="q-pa-md">
-                <div class="row">
-                    <q-input class="col-3 q-pb-md" dense outlined clearable placeholder="Search" v-model="searchText">
-                        <template v-slot:prepend>
-                        <q-icon name="search"></q-icon>
-                        </template>
-                    </q-input>
-                </div>
+                <q-item class="q-pa-none q-pb-md">
+                    <q-item-section>
+                        <q-input class="vehicle-search" dense outlined clearable placeholder="Search" v-model="filter.searchText">
+                            <template v-slot:prepend>
+                            <q-icon name="search"></q-icon>
+                            </template>
+                        </q-input>
+                    </q-item-section>
+                    <q-item-section side>
+                        <q-btn
+                            @click="filter.compareSelected = !filter.compareSelected"
+                            :disabled="filter.selectedRows.length == 0 && !filter.compareSelected"
+                            no-caps
+                            color="primary"
+                            :label="filter.compareSelected ? 'Show All' : 'Compare Selected'">
+                        </q-btn>
+                    </q-item-section>
+                </q-item>
                 <q-table
                     class="vehicle-grid"
                     dense
-                    hide-pagination
-                    :filter="searchText"
+                    hide-bottom
+                    selection="multiple"
+                    v-model:selected="filter.selectedRows"
+                    :row-key="rowKey"
+                    :filter="filter"
                     :filter-method="filterRows"
                     :rows="loadouts"
                     :columns="columns"

@@ -527,7 +527,12 @@ app.component("vehicle-grid", {
                 rowsPerPage: 0
             },
 
-            searchText: null
+            filter: {
+                compareSelected: false,
+                selectedRows: [],
+
+                searchText: null
+            }
         };
     },
     computed: {
@@ -546,7 +551,26 @@ app.component("vehicle-grid", {
     },
     methods: {
         filterRows(rows, terms, cols, getCellValue) {
-            return rows.filter(n => n.vehicle.displayName.toLowerCase().includes(this.searchText.toLowerCase()));
+            let filtered = rows;
+
+            if (this.filter.searchText) {
+                filtered = filtered.filter(n => n.vehicle.displayName.toLowerCase().includes(this.filter.searchText.toLowerCase()));
+            }
+
+            if (this.filter.compareSelected) {
+                const selectedKeys = this.filter.selectedRows.map(n => this.rowKey(n));
+                filtered = filtered.filter(n => selectedKeys.includes(this.rowKey(n)));
+            }
+
+            return filtered;
+        },
+        rowKey(row) {
+            let result = row.vehicle.name;
+            if (row.metadata) {
+                result += row.metadata.storageKey;
+            }
+
+            return result;
         },
         navigate(row) {
             if (row.metadata) {

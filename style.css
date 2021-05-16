@@ -29,6 +29,14 @@ body {
 	font-size: 18px;
 }
 
+.vehicle-search {
+	width: 320px;
+}
+
+thead .q-checkbox {
+	display: none !important;
+}
+
 .details-sections {
 	width: calc(100% - 300px) !important;
 }
