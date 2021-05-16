@@ -1,3 +1,6 @@
+import uuid
+
+
 def _make_item_port(item_port_element, name_override, types):
     port = {
         "name": (name_override or item_port_element.get("@name", "")).lower(),
@@ -7,6 +10,11 @@ def _make_item_port(item_port_element, name_override, types):
         "maxSize": int(item_port_element.get("@maxsize", 0)),
         "requiredTags": item_port_element.get("@requiredTags") or item_port_element.get("@porttags"),
     }
+
+    # Nameless item ports on the C8X appear like a broken attempt at hiding them.
+    if not port["name"]:
+        print("    Warning: Adding uuid name to nameless item port")
+        port["name"] = str(uuid.uuid4())
 
     port["flags"] = [x.replace("$", "") for x in port["flags"]]
 
