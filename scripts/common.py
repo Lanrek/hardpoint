@@ -11,7 +11,7 @@ def _make_item_port(item_port_element, name_override, types):
         "requiredTags": item_port_element.get("@requiredTags") or item_port_element.get("@porttags"),
     }
 
-    # Nameless item ports on the C8X appear like a broken attempt at hiding them.
+    # Nameless item ports on the C8 Pisces appear like a broken attempt at hiding them.
     if not port["name"]:
         print("    Warning: Adding uuid name to nameless item port")
         port["name"] = str(uuid.uuid4())
