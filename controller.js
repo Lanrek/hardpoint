@@ -286,11 +286,13 @@ app.component("custom-loadout", {
             const result = {};
             const walkBindings = (container) => {
                 for (const binding of Object.values(container.bindings)) {
-                    if (binding.itemName) {
-                        if (!binding.uneditable) {
-                            result[binding.itemName] = (result[binding.itemName] || 0) + 1;
+                    if (binding.itemName && binding.itemName in allItems) {
+                        if (significantTypes.includes(allItems[binding.itemName].type)) {
+                            if (!binding.uneditable) {
+                                result[binding.itemName] = (result[binding.itemName] || 0) + 1;
+                            }
+                            walkBindings(binding);
                         }
-                        walkBindings(binding);
                     }
                 }
             };
