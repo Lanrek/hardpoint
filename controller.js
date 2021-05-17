@@ -160,9 +160,6 @@ app.component("selector-group", {
             }
 
             sendEvent("Loadout", "Group", this.grouped);
-        },
-        randomKey() {
-            return _.random(0, 2 ** 64);
         }
     }
 });
@@ -247,9 +244,6 @@ app.component("item-selector", {
         },
         trackExpansion(evt) {
             sendEvent("Loadout", "ViewItems", this.prototype.port.name);
-        },
-        randomKey() {
-            return _.random(0, 2 ** 64);
         }
     }
 });
@@ -472,9 +466,6 @@ app.component("vehicle-details", {
     methods: {
         makeGroups(bindings) {
             return BindingGroup.makeGroups(bindings);
-        },
-        randomKey() {
-            return _.random(0, 2 ** 64);
         }
     },
     created() {
