@@ -1,3 +1,5 @@
+const _numberFormats = {};
+
 const _formatNumber = (value, maxPrecision=undefined, minPrecision=undefined) => {
     if (isNaN(value) || value == null) {
         return undefined;
@@ -16,10 +18,18 @@ const _formatNumber = (value, maxPrecision=undefined, minPrecision=undefined) =>
         maxPrecision = 0;
     }
 
-    return value.toLocaleString(undefined, {
-        minimumFractionDigits: minPrecision,
-        maximumFractionDigits: maxPrecision
-    });
+    const formatKey = minPrecision + "_" + maxPrecision;
+    let numberFormat = _numberFormats[formatKey];
+    if (!numberFormat) {
+        numberFormat = new Intl.NumberFormat(undefined, {
+            minimumFractionDigits: minPrecision,
+            maximumFractionDigits: maxPrecision
+        });
+
+        _numberFormats[formatKey] = numberFormat
+    }
+
+    return numberFormat.format(value);
 };
 
 const _formatNumberFactory = (precision) => {
