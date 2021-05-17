@@ -180,7 +180,12 @@ def convert_vehicles(game_xml_root, extracted_path, localization, prices):
         definition_path = entity.single("components").single("vehiclecomponentparams")["@vehicledefinition"]
         modification_name = entity.single("components").single("vehiclecomponentparams")["@modification"]
 
-        definition = read_xml_file(os.path.join(extracted_path, "Data", definition_path))
+        definition_path = os.path.join(extracted_path, "Data", definition_path)
+        if not os.path.exists(definition_path):
+            print("    Warning: Unable to find definition file")
+            continue
+
+        definition = read_xml_file(definition_path)
 
         if modification_name:
             modify_vehicle(definition, modification_name, definition_path)
@@ -262,22 +267,20 @@ def convert_ammo_params(game_xml_root, extracted_path):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--extract", "-e", action="store_true")
+    parser.add_argument("--extract", "-e", metavar="DATA_P4K_PATH")
     parser.add_argument("--convert", "-c", action="store_true")
     parser.add_argument("--publish", "-p", action="store_true")
     parser.add_argument("--version", "-v", required=True)
     arguments = parser.parse_args()
 
-    # TODO Retrieve these from a config file.
-    # TODO Also support PTU variations.
-    unp4k_path = os.path.join(source_path, "..", "..", "unp4k-suite-v3.13.21")
-    p4k_path = "C:/Games/StarCitizen/LIVE/Data.p4k"
+    # TODO Retrieve this from a config file.
+    unp4k_path = os.path.join(source_path, "..", "unp4k-suite-v3.13.21")
 
     extracted_path = os.path.join(source_path, "extracted", arguments.version)
     if arguments.extract:
         os.makedirs(extracted_path)
-        subprocess.check_call([os.path.join(unp4k_path, "unp4k.exe"), p4k_path, "*.xml"], cwd=extracted_path)
-        subprocess.check_call([os.path.join(unp4k_path, "unp4k.exe"), p4k_path, "*.ini"], cwd=extracted_path)
+        subprocess.check_call([os.path.join(unp4k_path, "unp4k.exe"), arguments.extract, "*.xml"], cwd=extracted_path)
+        subprocess.check_call([os.path.join(unp4k_path, "unp4k.exe"), arguments.extract, "*.ini"], cwd=extracted_path)
         subprocess.check_call([os.path.join(unp4k_path, "unforge.exe"), "."], cwd=extracted_path)
 
     if arguments.convert:

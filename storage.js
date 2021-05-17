@@ -34,9 +34,13 @@ var hashAndEncode = function(str) {
     return encodeInt24(hash);
 }
 
-// Limited to ints between 0 and 25.
+// Limited to ints between 0 and 50.
 var encodeSmallInt = function(num) {
-    const start = "A";
+    let start = "A";
+    if (num > 25) {
+        start = "a";
+    }
+
     return String.fromCharCode(start.charCodeAt(0) + num);
 }
 

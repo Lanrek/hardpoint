@@ -126,15 +126,17 @@ def make_vehicle(definition_element):
 
     result = {
         "baseName": definition_element["@name"],
-        "size": definition_element["@size"], # TODO Map to size categories in preprocessing.
+        "size": definition_element.get("@size"),
         "itemPortTags": definition_element["@itemporttags"],
-        "damageMin": min(critical_part_damage.values()),
         "damageMax": damage_max,
         "damageCriticalPart": critical_part_damage,
         "mass": mass,
         "controlSeats": control_seats,
         "ports": ports
     }
+
+    if critical_part_damage:
+        result["damageMin"] = min(critical_part_damage.values())
 
     if not result["itemPortTags"]:
         result["itemPortTags"] = []

@@ -1,5 +1,10 @@
 # Not implemented yet
-AEGS_Javelin
+RSI_Constellation_Taurus_Hangar
+VNCL_Glaive_NEW
+VNCL_Scythe_NEW
+
+# Less interesting NPC variants
+ANVL_Hornet_F7A_Mk1
 
 # Not actually vehicles
 *_OLD
@@ -37,6 +42,7 @@ XIAN_Nox_SM_TE
 *_ToW
 *_Swarm
 *_S42
+*_S42_*
 
 # Recolors
 XIAN_Nox_Kue
@@ -47,3 +53,6 @@ ARGO_MOLE_*
 ANVL_Ballista_*
 *_Emerald
 *_BIS2950
+ANVL_Carrack_Expedition
+ANVL_Lightning_F8_*
+RSI_Bengal_*

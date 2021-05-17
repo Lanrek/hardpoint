@@ -330,10 +330,13 @@ class ItemBinding {
     }
 
     get customized() {
-        // TODO This doesn't handle that case where a port has been set back to its default component,
-        // but now has empty child ports -- it shows as not customized, although the children are changed.
-        const hasDefaultItem = this.itemName != this._loadout.getDefaultItem(this.path);
-        return hasDefaultItem || Object.values(this.bindings).some(n => n.customized);
+        // Don't consider ports without significant types customized.
+        if (!this.port.types.some(t => significantTypes.includes(t.type))) {
+            return false;
+        }
+
+        const defaultItemName = this._loadout.getDefaultItem(this.path) || this._defaultItem();
+        return this.itemName != defaultItemName || Object.values(this.bindings).some(n => n.customized);
     }
 
     getMatchingItems(typeFilter=undefined) {
@@ -388,7 +391,7 @@ class ItemBinding {
             for (const port of Object.values(this.item.ports)) {
                 const child = new ItemBinding(this._loadout, port, this);
 
-                const defaultItemName = _.get(this, "item.defaultItems." + port.name + ".itemName");
+                const defaultItemName = child._defaultItem();
                 if (defaultItemName && defaultItemName in allItems) {
                     child.setItem(defaultItemName);
                 }
@@ -399,6 +402,12 @@ class ItemBinding {
         else {
             this.extension = null;
             this.bindings = {};
+        }
+    }
+
+    _defaultItem() {
+        if (this.parent) {
+            return _.get(this.parent, "item.defaultItems." + this.port.name + ".itemName");
         }
     }
 
