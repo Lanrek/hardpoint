@@ -449,11 +449,15 @@ class VehicleLoadout {
         return split.slice(1).join(" ").trim();
     }
 
-    get sizeCategory() {
+    get vehicleType() {
         if (!this.flightController.item) {
             return "Ground";
         }
 
+        return "Space";
+    }
+
+    get sizeCategory() {
         const categories = {
             1: "Small",
             2: "Small",

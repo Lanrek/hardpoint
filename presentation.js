@@ -519,6 +519,12 @@ const vehicleColumns = [
         sortable: true
     },
     {
+        name: "type",
+        label: "Type",
+        field: row => row.vehicleType,
+        sortable: true
+    },
+    {
         name: "size",
         label: "Size",
         field: row => row.sizeCategory,

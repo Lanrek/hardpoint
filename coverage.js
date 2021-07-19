@@ -96,7 +96,7 @@ class TurretCoverage {
 
             const upperIndex = _.findIndex(pitchLimits, x => x.turretRotation > normalizedYaw);
             const upper = pitchLimits[upperIndex];
-            const lower = pitchLimits[upperIndex - 1];
+            const lower = pitchLimits[(upperIndex - 1 + pitchLimits.length) % pitchLimits.length];
 
             // Interpolate between the surrounding points.
             const alpha = (normalizedYaw - lower.turretRotation) / (upper.turretRotation - lower.turretRotation);
