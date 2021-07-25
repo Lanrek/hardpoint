@@ -374,7 +374,7 @@ app.component("custom-loadout", {
 const sectionTypes = {
     "Missiles": ["MissileLauncher", "Missile"],
     "Guns": ["WeaponGun", "Turret", "TurretBase"],
-    "Systems": ["Cooler", "Shield", "PowerPlant", "QuantumDrive", "FuelIntake"],
+    "Systems": ["WeaponRegenPool", "Cooler", "Shield", "PowerPlant", "QuantumDrive", "FuelIntake"],
     "Flight": ["MainThruster", "ManneuverThruster"]
 };
 const significantTypes = _.flatten(Object.values(sectionTypes));

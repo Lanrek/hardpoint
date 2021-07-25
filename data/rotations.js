@@ -372,10 +372,8 @@ const turretRotations = {
 	},
 	"RSI_Constellation": {
 		"hardpoint_turret_base_upper": {
-			"yaw": 180
 		},
 		"hardpoint_turret_base_lower": {
-			"yaw": 180
 		},
 		"hardpoint_gun_laser_bottom_left": {
 		},

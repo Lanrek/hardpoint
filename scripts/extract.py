@@ -216,7 +216,8 @@ def convert_items(game_xml_root, extracted_path, localization, prices):
     item_paths = [
         "libs/foundry/records/entities/scitem/doors",
         "libs/foundry/records/entities/scitem/ships",
-        "libs/foundry/records/entities/scitem/vehicles"]
+        "libs/foundry/records/entities/scitem/vehicles",
+        "libs/foundry/records/entities/scitem/weaponregenpools"]
 
     items = {}
 

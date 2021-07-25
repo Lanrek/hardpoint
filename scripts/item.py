@@ -83,18 +83,16 @@ def _make_missile(components_element):
     explosion_element = params_element.single("explosionparams")
 
     result = {
-        "trackingDistanceMax": float(targeting_element.get("@trackingdistancemax", 0)),
         "trackingSignalType": targeting_element.get("@trackingsignaltype"),
-        "trackingAngle": float(targeting_element.get("@trackingangle", 0)),
+        "lockingAngle": float(targeting_element.get("@lockingangle", 0)),
         "lockTime": float(targeting_element.get("@locktime", 0)),
-        "lockRangeMin": float(targeting_element.get("@lockrangemin", 0))
+        "lockRangeMin": float(targeting_element.get("@lockrangemin", 0)),
+        "lockRangeMax": float(targeting_element.get("@lockrangemax", 0))
     }
 
     if gcs_element:
         result.update({
-            "linearSpeed": float(gcs_element.get("@linearspeed", 0)),
-            "interceptTime": float(gcs_element.get("@intercepttime", 0)),
-            "terminalTime": float(gcs_element.get("@terminaltime", 0))
+            "linearSpeed": float(gcs_element.get("@linearspeed", 0))
         })
 
     if explosion_element:
@@ -245,6 +243,14 @@ def _make_weapon_gun(components_element):
         if connection_element:
             result["heatRateOnline"] = float(connection_element.get("@heatrateonline", 0))
 
+        regen_consumer_params = params_element.single("weaponregenconsumerparams")
+        regen_consumer_element = regen_consumer_params.single("sweaponregenconsumerparams")
+        if regen_consumer_element:
+            result["requestedRegenPerSec"] = float(regen_consumer_element.get("@requestedregenpersec"))
+            result["regenerationCooldown"] = float(regen_consumer_element.get("@regenerationcooldown"))
+            result["regenerationCostPerBullet"] = float(regen_consumer_element.get("@regenerationcostperbullet"))
+            result["requestedAmmoLoad"] = float(regen_consumer_element.get("@requestedammoload"))
+
         weapon_action_element = params_element.single("fireactions")
         result["weaponAction"] = make_weapon_action(weapon_action_element)
 
@@ -254,6 +260,14 @@ def _make_weapon_gun(components_element):
         result["maxAmmoCount"] = int(ammo_container_element.get("@maxammocount", 0))
 
     return result
+
+
+def _make_weapon_regen_pool(components_element):
+    params_element = components_element.single("scitemweaponregenpoolcomponentparams")
+    return {
+        "regenFillRate": float(params_element.get("@regenfillrate")),
+        "ammoLoad": float(params_element.get("@ammoload"))
+    }
 
 
 _item_type_methods = {
@@ -275,7 +289,8 @@ _item_type_methods = {
     "Shield": _make_shield,
     "Turret": _make_turret,
     "TurretBase": _make_turret,
-    "WeaponGun": _make_weapon_gun
+    "WeaponGun": _make_weapon_gun,
+    "WeaponRegenPool": _make_weapon_regen_pool
 }
 
 

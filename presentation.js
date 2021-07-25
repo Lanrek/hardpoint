@@ -196,16 +196,16 @@ const itemProjections = {
                 sortable: true
             },
             {
-                name: "trackingAngle",
-                label: "Tracking Angle",
-                field: row => row.item.trackingAngle,
+                name: "lockingAngle",
+                label: "Locking Angle",
+                field: row => row.item.lockingAngle,
                 format: _formatNumberFactory(0),
                 sortable: true
             },
             {
-                name: "trackingDistanceMax",
-                label: "Tracking Range",
-                field: row => row.item.trackingDistanceMax,
+                name: "lockRangeMax",
+                label: "Max Lock Range",
+                field: row => row.item.lockRangeMax,
                 format: _formatNumberFactory(0),
                 sortable: true
             },
@@ -229,26 +229,11 @@ const itemProjections = {
                 field: row => row.item.linearSpeed,
                 format: _formatNumberFactory(0),
                 sortable: true
-            },
-            {
-                name: "flightTime",
-                label: "Flight Time",
-                field: row => row.extension.flightTime,
-                format: _formatNumberFactory(0),
-                sortable: true
-            },
-            {
-                name: "flightRange",
-                label: "Flight Range",
-                field: row => row.extension.flightRange,
-                format: _formatNumberFactory(0),
-                sortable: true
             }]),
         summary: (binding) => _evaluateSummaryPattern(binding, [
-            "{extension.damage.total} total damage",
-            "{item.trackingSignalType} sensors with {item.trackingAngle} degree view and {item.trackingDistanceMax} meter tracking range",
-            "{item.lockTime} seconds lock time with {item.lockRangeMin} meters minimum lock range",
-            "{extension.flightRange} meters flight range = {item.linearSpeed} m/s speed for {extension.flightTime} seconds flight time"
+            "{extension.damage.total} total damage; {item.linearSpeed} m/s max speed",
+            "{item.trackingSignalType} sensors with {item.lockingAngle} degree locking angle",
+            "{item.lockTime} seconds lock time with {item.lockRangeMin} to {item.lockRangeMax} meters lock range"
         ])
     },
     MissileLauncher: {
@@ -482,8 +467,34 @@ const itemProjections = {
                 patterns.push("{item.maxAmmoCount} rounds deplete in {extension.magazineDuration} seconds for {extension.magazineDamage.total} potential damage");
             }
 
+            if (binding.item.requestedAmmoLoad) {
+                patterns.push("Energy for {extension.energyLoad} shots that deplete in {extension.energyLoadDuration} seconds for {extension.energyLoadDamage.total} potential damage")
+                patterns.push("Regenerates full energy in {extension.energyLoadRegen} seconds after a {item.regenerationCooldown} second delay")
+            }
+
             return _evaluateSummaryPattern(binding, patterns)
         }
+    },
+    WeaponRegenPool: {
+        columns: _prefixColumns.concat([
+            {
+                name: "ammoLoad",
+                label: "Capacity",
+                field: row => row.item.ammoLoad,
+                format: _formatNumberFactory(0),
+                sortable: true
+            },
+            {
+                name: "regenFillRate",
+                label: "Regeneration",
+                field: row => row.item.regenFillRate,
+                format: _formatNumberFactory(0),
+                sortable: true
+            }],
+            _suffixColumns),
+        summary: (binding) => _evaluateSummaryPattern(binding, [
+            "Holds {item.ammoLoad} weapon energy and regenerates {item.regenFillRate} per second"
+        ])
     }
 };
 

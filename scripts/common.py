@@ -9,7 +9,15 @@ def _make_item_port(item_port_element, name_override, types):
         "minSize": int(item_port_element.get("@minsize", 0)),
         "maxSize": int(item_port_element.get("@maxsize", 0)),
         "requiredTags": item_port_element.get("@requiredTags") or item_port_element.get("@porttags"),
+        "connections": {}
     }
+
+    connections_element = item_port_element.single("connections")
+    if connections_element:
+        for connection in connections_element.get("connection", []):
+            port["connections"][connection.get("@pipeclass")] = connection.get("@pipe")
+        for connection_param in connections_element.get("sitemportconnectionparam", []):
+            port["connections"][connection_param.get("@klass")] = connection_param.get("@name")
 
     # Nameless item ports on the C8 Pisces appear like a broken attempt at hiding them.
     if not port["name"]:

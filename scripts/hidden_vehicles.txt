@@ -2,6 +2,7 @@
 RSI_Constellation_Taurus_Hangar
 VNCL_Glaive_NEW
 VNCL_Scythe_NEW
+MISC_Prospector_Modifiers
 
 # Less interesting NPC variants
 ANVL_Hornet_F7A_Mk1

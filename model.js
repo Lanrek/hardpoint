@@ -113,14 +113,6 @@ class MissileExtension extends DefaultExtension {
     get damage() {
         return new Damage(this._item.damage);
     }
-
-    get flightTime() {
-        return this._item.interceptTime + this._item.terminalTime;
-    }
-
-    get flightRange() {
-        return this.flightTime * this._item.linearSpeed;
-    }
 }
 
 class PortContainerExtension extends DefaultExtension {
@@ -208,6 +200,50 @@ class WeaponGunExtension extends DefaultExtension {
         return this.alpha.scale(this._item.weaponAction.pelletCount).scale(this._item.maxAmmoCount);
     }
 
+    get energyLoadType() {
+        return this._binding.port.connections.WeaponAmmoLoad || this._binding.parent.port.connections.WeaponAmmoLoad;
+    }
+
+    get requestedWeaponRegen() {
+        if (this._binding.powerLevel == "active") {
+            return this._item.requestedRegenPerSec || 0;
+        }
+
+        return 0;
+    }
+
+    get requestedAmmoLoad() {
+        if (this._binding.powerLevel == "active") {
+            return this._item.requestedAmmoLoad || 0;
+        }
+
+        return 0;
+    }
+
+    get availableEnergyLoad() {
+        return this.requestedAmmoLoad / Math.max(1.0, this._loadout.ammoLoadUsage[this.energyLoadType]);
+    }
+
+    get availableEnergyRegen() {
+        return this.requestedWeaponRegen / Math.max(1.0, this._loadout.weaponRegenUsage[this.energyLoadType]);
+    }
+
+    get energyLoad() {
+        return Math.ceil(this.availableEnergyLoad / this._item.regenerationCostPerBullet);
+    }
+
+    get energyLoadDuration() {
+        return this.energyLoad * 60.0 / this._item.weaponAction.fireRate;
+    }
+
+    get energyLoadDamage() {
+        return this.alpha.scale(this._item.weaponAction.pelletCount).scale(this.energyLoad);
+    }
+
+    get energyLoadRegen() {
+        return this.availableEnergyLoad / this.availableEnergyRegen;
+    }
+
     get range() {
         if (!this.ammo) {
             return 0;
@@ -276,6 +312,28 @@ class WeaponGunExtension extends DefaultExtension {
     }
 }
 
+class WeaponRegenPoolExtension extends DefaultExtension {
+    get energyLoadType() {
+        return this._binding.port.connections.WeaponAmmoLoad || this._binding.parent.port.connections.WeaponAmmoLoad;
+    }
+
+    get availableWeaponRegen() {
+        if (this._binding.powerLevel == "active") {
+            return this._item.regenFillRate;
+        }
+
+        return 0;
+    }
+
+    get availableAmmoLoad() {
+        if (this._binding.powerLevel == "active") {
+            return this._item.ammoLoad;
+        }
+
+        return 0;
+    }
+}
+
 const extensionClasses = {
     Container: ContainerExtension,
     MainThruster: ThrusterExtension,
@@ -286,7 +344,8 @@ const extensionClasses = {
     QuantumDrive : QuantumDriveExtension,
     Turret: TurretExtension,
     TurretBase: TurretExtension,
-    WeaponGun: WeaponGunExtension
+    WeaponGun: WeaponGunExtension,
+    WeaponRegenPool: WeaponRegenPoolExtension
 };
 
 class ExtendedItem {
@@ -525,6 +584,58 @@ class VehicleLoadout {
     get shieldCapacity() {
         let result = 0;
         this._walkBindings(this, "Shield", (binding) => result += binding.item.maxShieldHealth);
+        return result;
+    }
+
+    get ammoLoadUsage() {
+        const result = {
+            "WeaponAmmoLoadCrew": 0,
+            "WeaponAmmoLoadTurret": 0
+        };
+
+        for (const key of Object.keys(result)) {
+            let produced = 0;
+            let consumed = 0;
+            this._walkBindings(this, "WeaponRegenPool", (binding) => {
+                if (binding.extension.energyLoadType == key) {
+                    produced += binding.extension.availableAmmoLoad;
+                }
+            });
+            this._walkBindings(this, "WeaponGun", (binding) => {
+                if (binding.extension.energyLoadType == key) {
+                    consumed += binding.extension.requestedAmmoLoad;
+                }
+            });
+
+            result[key] = consumed / produced;
+        }
+
+        return result;
+    }
+
+    get weaponRegenUsage() {
+        const result = {
+            "WeaponAmmoLoadCrew": 0,
+            "WeaponAmmoLoadTurret": 0
+        };
+
+        for (const key of Object.keys(result)) {
+            let produced = 0;
+            let consumed = 0;
+            this._walkBindings(this, "WeaponRegenPool", (binding) => {
+                if (binding.extension.energyLoadType == key) {
+                    produced += binding.extension.availableWeaponRegen;
+                }
+            });
+            this._walkBindings(this, "WeaponGun", (binding) => {
+                if (binding.extension.energyLoadType == key) {
+                    consumed += binding.extension.requestedWeaponRegen;
+                }
+            });
+
+            result[key] = consumed / produced;
+        }
+
         return result;
     }
 
