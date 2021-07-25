@@ -200,6 +200,10 @@ class WeaponGunExtension extends DefaultExtension {
         return this.alpha.scale(this._item.weaponAction.pelletCount).scale(this._item.maxAmmoCount);
     }
 
+    get ammoCount() {
+        return this._item.maxAmmoCount || this.energyLoad || 0;
+    }
+
     get energyLoadType() {
         return this._binding.port.connections.WeaponAmmoLoad || this._binding.parent.port.connections.WeaponAmmoLoad;
     }

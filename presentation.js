@@ -403,6 +403,13 @@ const itemProjections = {
             sortable: true
         },
         {
+            name: "ammoCount",
+            label: "Ammo",
+            field: row => row.extension.ammoCount,
+            format: _formatNumberFactory(0),
+            sortable: true
+        },
+        {
             name: "fireRate",
             label: "Fire Rate",
             field: row => _.get(row, "item.weaponAction.fireRate"),
