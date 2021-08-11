@@ -103,7 +103,7 @@ def make_vehicle(definition_element):
                                 for subtype in port_subtypes:
                                     types.append({
                                         "type": type_element["@type"],
-                                        "subtypes": subtype
+                                        "subtype": subtype
                                     })
 
                         port = _make_item_port(item_port_element, part_element["@name"], types)
