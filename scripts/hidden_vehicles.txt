@@ -1,8 +1,4 @@
 # Not implemented yet
-RSI_Constellation_Taurus_Hangar
-VNCL_Glaive_NEW
-VNCL_Scythe_NEW
-MISC_Prospector_Modifiers
 
 # Less interesting NPC variants
 ANVL_Hornet_F7A_Mk1
@@ -15,6 +11,12 @@ ANVL_Hornet_F7A_Mk1
 *_ShipShowdown
 *_Thruster_*
 *_CitizenCon*
+TEST_*
+*Test
+*Testing
+*_CINEMATIC_ONLY
+*_BIS2952_Temp
+*_FW22NFZ
 
 # NPCs
 *_AI

@@ -404,7 +404,7 @@ class ItemBinding {
 
     getMatchingItems(typeFilter=undefined) {
         const matchesType = (portType, itemType, itemSubtype) => {
-            return portType.type == itemType && (!portType.subtype || portType.subtype == itemSubtype);
+            return portType.type == itemType && (!portType.subtype || !itemSubtype || portType.subtype == itemSubtype);
         };
 
         const matchesPort = (item) => {

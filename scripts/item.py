@@ -5,7 +5,7 @@ def _make_cargo(components_element):
     cargo_capacity = 0
 
     params_element = components_element.single("scitemcargogridparams")
-    if params_element["@miningonly"] != "1":
+    if params_element and params_element["@miningonly"] != "1":
         cargo_capacity = 1
         for dimension in ["x", "y", "z"]:
             scu = int(float(params_element.single("dimensions").get("@" + dimension, 0)) / 1.25)
