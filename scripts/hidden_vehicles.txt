@@ -2,6 +2,8 @@
 
 # Less interesting NPC variants
 ANVL_Hornet_F7A_Mk1
+MISC_Prospector_Modifiers
+CRUS_Starlifter_A2_Bombless
 
 # Not actually vehicles
 *_OLD
@@ -17,6 +19,7 @@ TEST_*
 *_CINEMATIC_ONLY
 *_BIS2952_Temp
 *_FW22NFZ
+*_BIS2951
 
 # NPCs
 *_AI
