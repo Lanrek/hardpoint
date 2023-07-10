@@ -631,6 +631,13 @@ const vehicleColumns = [
         field: row => _.get(row, "quantumDrive.extension.fuelRangeGm"),
         format: _formatNumberFactory(0),
         sortable: true
+    },
+    {
+        name: "quantumFuelCapacity",
+        label: "Qntm Fuel",
+        field: row => _.get(row, "quantumFuelCapacity"),
+        format: _formatNumberFactory(0),
+        sortable: true
     }
 ];
 

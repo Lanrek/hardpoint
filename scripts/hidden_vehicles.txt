@@ -2,6 +2,7 @@
 
 # Less interesting NPC variants
 ANVL_Hornet_F7A_Mk1
+ANVL_Hornet_F7A_Mk1_*
 MISC_Prospector_Modifiers
 CRUS_Starlifter_A2_Bombless
 
@@ -41,8 +42,14 @@ EAObjectiveDestructable*
 *_Derelict_*
 *_Advocacy
 *_PU_*
+*_Indestructible
+*_Unmanned_*
+MISC_Prospector_Active1
 
 # Other game modes
+*_Tutorial
+*_Prison
+GRIN_PTV_NoCrimesAgainst
 XIAN_Nox_SM_TE
 *_SimPod
 *_ToW
