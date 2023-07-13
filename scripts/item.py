@@ -51,8 +51,8 @@ def _make_emp(components_element):
 def _make_flight_controller(components_element):
     params_element = components_element.single("ifcsparams")
     return {
-        "scmSpeed": float(params_element.get("@maxspeed", 0)),
-        "maxSpeed": float(params_element.get("@maxafterburnspeed", 0)),
+        "scmSpeed": float(params_element.get("@scmspeed", 0)),
+        "maxSpeed": float(params_element.get("@maxspeed", 0)),
         "maxAngularVelocityX": float(params_element.single("maxangularvelocity").get("@x", 0)),
         "maxAngularVelocityY": float(params_element.single("maxangularvelocity").get("@y", 0)),
         "maxAngularVelocityZ": float(params_element.single("maxangularvelocity").get("@z", 0))
