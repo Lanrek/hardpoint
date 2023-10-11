@@ -45,13 +45,6 @@ const _prefixColumns = [
         field: row => _getDisplayName(row.item),
         align: "left",
         sortable: true
-    },
-    {
-        name: "basePrice",
-        label: "Price",
-        field: row => row.item.basePrice,
-        format: _formatNumberFactory(0),
-        sortable: true
     }
 ];
 

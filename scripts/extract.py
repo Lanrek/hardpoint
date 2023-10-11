@@ -28,7 +28,7 @@ def read_lines_file(path):
 
 def read_localization_file(path):
     localization = {}
-    with open(path, "r", encoding="UTF-8") as ini_file:
+    with open(path, "r", encoding="UTF-8", errors="replace") as ini_file:
         for line in ini_file:
             split = line.strip().split("=", 1)
             key = "@" + split[0]
@@ -69,55 +69,6 @@ def find_forge_entries(game_xml_root, paths, type):
     for child in game_xml_root:
         if child.tag.startswith(type) and any(child.attrib["__path"].startswith(x) for x in paths):
             yield child
-
-
-def collect_prices(extracted_path):
-    hidden_patterns = read_lines_file(os.path.join(source_path, "scripts", "hidden_shops.txt"))
-    id_entries = {}
-
-    def read_price_element(element):
-        products = element.single("retailproducts")
-        if products:
-            for node in products.get("node", []):
-                id_entries[node["@id"]] = {
-                    "name": node["@name"],
-                    "basePrice": float(node["@baseprice"]),
-                    "shops": []
-                }
-
-                read_price_element(node)
-
-    prices = read_xml_file(os.path.join(extracted_path, "Data", "Libs", "Subsumption", "Shops", "RetailProductPrices.xml"))
-    read_price_element(prices)
-
-    def read_shop_element(element):
-        layout = element.single("shoplayoutnodes")
-        if layout:
-            for layout_node in layout.get("shoplayoutnode", []):
-                if any(fnmatch.fnmatchcase(layout_node["@name"], x) for x in hidden_patterns):
-                    continue
-
-                inventory = layout_node.single("shopinventorynodes")
-                if inventory:
-                    for inventory_node in inventory.get("shopinventorynode", []):
-                        for transaction in inventory_node.single("transactiontypes").get("transactiontype", []):
-                            if transaction and transaction["#text"] == "Buy":
-                                id_entries[inventory_node["@inventoryid"]]["shops"].append(layout_node["@name"])
-
-                read_shop_element(layout_node)
-
-
-    shops = read_xml_file(os.path.join(extracted_path, "Data", "Libs", "Subsumption", "Shops", "ShopLayouts.xml"))
-    read_shop_element(shops)
-
-    name_entries = {}
-    for value in id_entries.values():
-        name_entries[value["name"]] = value
-        #value.pop("name")
-        if not value["basePrice"] or not value["shops"]:
-            value["basePrice"] = None
-
-    return name_entries
 
 
 def modify_vehicle(implementation, modification_name, definition_path):
@@ -163,7 +114,7 @@ def modify_vehicle(implementation, modification_name, definition_path):
                         print("    Warning: Unable to modify element ID " + id)
 
 
-def convert_vehicles(game_xml_root, extracted_path, localization, prices):
+def convert_vehicles(game_xml_root, extracted_path, localization):
     hidden_patterns = read_lines_file(os.path.join(source_path, "scripts", "hidden_vehicles.txt"))
     vehicle_paths = ["libs/foundry/records/entities/spaceships", "libs/foundry/records/entities/groundvehicles"]
 
@@ -202,16 +153,12 @@ def convert_vehicles(game_xml_root, extracted_path, localization, prices):
             converted["displayName"] = entity.single("components").single("vehiclecomponentparams")["@vehiclename"]
             localize_key(converted, "displayName", localization)
 
-            price_details = prices.get(identifier)
-            if price_details:
-                converted.update(price_details)
-
             vehicles[identifier] = converted
 
     write_json_file(os.path.join(extracted_path, "vehicles.json"), vehicles)
 
 
-def convert_items(game_xml_root, extracted_path, localization, prices):
+def convert_items(game_xml_root, extracted_path, localization):
     hidden_patterns = read_lines_file(os.path.join(source_path, "scripts", "hidden_items.txt"))
     item_paths = [
         "libs/foundry/records/entities/scitem/doors",
@@ -237,10 +184,6 @@ def convert_items(game_xml_root, extracted_path, localization, prices):
             loadout_component = entity.single("components").single("sentitycomponentdefaultloadoutparams")
             if loadout_component:
                 converted["defaultItems"] = make_loadout(loadout_component, extracted_path)
-
-            price_details = prices.get(identifier)
-            if price_details:
-                converted.update(price_details)
 
             items[identifier] = converted
 
@@ -286,11 +229,10 @@ if __name__ == "__main__":
 
     if arguments.convert:
         localization = read_localization_file(os.path.join(extracted_path, "Data", "Localization", "english", "global.ini"))
-        prices = collect_prices(extracted_path)
 
         game_xml_root = ElementTree.parse(os.path.join(extracted_path, "Data", "Game.xml")).getroot()
-        convert_vehicles(game_xml_root, extracted_path, localization, prices)
-        convert_items(game_xml_root, extracted_path, localization, prices)
+        convert_vehicles(game_xml_root, extracted_path, localization)
+        convert_items(game_xml_root, extracted_path, localization)
         convert_ammo_params(game_xml_root, extracted_path)
 
     # TODO Don't be sad and make these constants.

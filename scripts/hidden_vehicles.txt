@@ -5,6 +5,14 @@ ANVL_Hornet_F7A_Mk1
 ANVL_Hornet_F7A_Mk1_*
 MISC_Prospector_Modifiers
 CRUS_Starlifter_A2_Bombless
+AEGS_Gladius_ShipRecall_Prototype
+DRAK_Cutlass_Red_Player_C19B
+RSI_Constellation_Andromeda_MFD
+DRAK_Vulture_SkidPerkins
+AEGS_Avenger_Titan_RN
+CRUS_Star_Runner_RN
+RSI_Mantis_RN
+*_Mission_*
 
 # Not actually vehicles
 *_OLD
@@ -56,6 +64,7 @@ XIAN_Nox_SM_TE
 *_Swarm
 *_S42
 *_S42_*
+*_ACFT
 
 # Recolors
 XIAN_Nox_Kue
@@ -69,3 +78,5 @@ ANVL_Ballista_*
 ANVL_Carrack_Expedition
 ANVL_Lightning_F8_*
 RSI_Bengal_*
+ANVL_Lightning_F8C_Plat
+ANVL_Lightning_F8C_Exec

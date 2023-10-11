@@ -88,7 +88,7 @@ def make_vehicle(definition_element):
                 if part_element.get("@mass", "").endswith("d"):
                     mass *= 64
 
-                if part_element["@class"] == "ItemPort":
+                if part_element.get("@class", "") == "ItemPort":
                     item_port_element = part_element.single("itemport")
                     if item_port_element:
                         types = []
